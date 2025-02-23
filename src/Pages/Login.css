@@ -1,0 +1,49 @@
+.istok-web-regular {
+    font-family: "Istok Web", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  .istok-web-bold {
+    font-family: "Istok Web", serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+  
+  .istok-web-regular-italic {
+    font-family: "Istok Web", serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+  
+  .istok-web-bold-italic {
+    font-family: "Istok Web", serif;
+    font-weight: 700;
+    font-style: italic;
+  }
+  
+
+.grad1{
+    background: rgb(0,0,0);
+    background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(43,5,32,1) 100%);
+}
+.grad2{
+    background: rgb(0,0,0);
+    background: linear-gradient(225deg, rgba(0,0,0,0) 23%, rgba(129,57,47,1) 100%);
+}
+.borderbox{
+    position: relative;
+}
+.borderbox::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 5vh; 
+    padding: 1px; 
+    background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(214,95,48,1) 100%);
+    
+    -webkit-mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
+    mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
