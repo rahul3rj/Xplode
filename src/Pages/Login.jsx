@@ -1,7 +1,7 @@
 import React from 'react';
 import './Login.css';
-import PasswordInput from'../components/eye';
 import { useState } from "react";
+import PasswordInput from'../components/eye';
 
 function Login() {
   const [activeDiv, setActiveDiv] = useState("signin");

@@ -1,0 +1,108 @@
+html,
+body {
+  overflow-x: hidden !important;
+}
+
+.istok-web-regular {
+    font-family: "Istok Web", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  .istok-web-bold {
+    font-family: "Istok Web", serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+  
+  .istok-web-regular-italic {
+    font-family: "Istok Web", serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+  
+  .istok-web-bold-italic {
+    font-family: "Istok Web", serif;
+    font-weight: 700;
+    font-style: italic;
+  }
+
+.g1{
+    background: rgb(0,0,0);
+    background: linear-gradient(0deg, rgba(0,0,0,0) -40%, rgb(43, 5, 32) 90%);
+}
+.g2{
+    background: rgb(0,0,0);
+    background: linear-gradient(225deg, rgba(0,0,0,0) 23%, rgba(129,57,47,1) 200%);
+}
+
+.shadow{
+  border-radius: 50px;
+  background: #D65F30;
+  box-shadow: 7px 0px 15.1px 2px rgba(214, 95, 48, 0.54);
+}
+
+.grad_1{
+  border-radius: 13px;
+background: linear-gradient(69deg, #DA4F25 -100%, rgba(0, 0, 0, 0.00) 80%);
+}
+.grad_2{
+  border-radius: 13px;
+background: linear-gradient(180deg, rgba(101, 40, 149, 0.42) -18%, rgba(0, 0, 0, 0.00) 90%);
+}
+.grad_3{
+  border-radius: 13px;
+background: linear-gradient(355deg, rgba(199, 41, 41, 0.69) -17.44%, rgba(0, 0, 0, 0.00) 70.12%);
+}
+
+
+/* Style pagination bullets */
+.swiper-pagination-bullet {
+  background-color: #D9D9D9 !important;
+  /* Bullet color */
+  opacity: 0.5;
+  width: 8px !important;
+  height: 8px !important;
+  transition: opacity 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #D65F30 !important;
+  /* Active bullet color */
+  opacity: 1;
+  border-radius: 8.5px !important;
+  box-shadow: 0px 4px 10.1px 0px rgba(214, 95, 48, 0.33);
+  width: 33.101px !important;
+  height: 6.862px !important;
+  flex-shrink: 0;
+}
+
+
+.swiper-button-next{
+  position: absolute;
+  right: 0vh;
+  /* background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='32' height='32' fill='rgba(255,255,255,1)'%3E%3Cpath d='M16 12L10 18V6L16 12Z'%3E%3C/path%3E%3C/svg%3E"); */
+  /* content-visibility: hidden; */
+  height: 2vh !important;
+  width: 2vh !important;
+  color: #D65F30 !important;
+}
+
+
+.borderboxfooter {
+  position: relative;
+}
+
+.borderboxfooter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2vh;
+  padding: 1px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(214, 95, 48, 1) 100%);
+
+  -webkit-mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
+  mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
