@@ -35,6 +35,11 @@ body {
     background: rgb(0,0,0);
     background: linear-gradient(225deg, rgba(0,0,0,0) 23%, rgba(129,57,47,1) 200%);
 }
+.g3{
+  /* border-radius: 13px; */
+    background: linear-gradient(69deg, #DA4F25 -100%, rgba(0, 0, 0, 0.00) 50%);
+}
+
 
 .shadow{
   border-radius: 50px;
@@ -53,6 +58,10 @@ background: linear-gradient(180deg, rgba(101, 40, 149, 0.42) -18%, rgba(0, 0, 0,
 .grad_3{
   border-radius: 13px;
 background: linear-gradient(355deg, rgba(199, 41, 41, 0.69) -17.44%, rgba(0, 0, 0, 0.00) 70.12%);
+}
+
+.shade{
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, #D65F30 100%);
 }
 
 

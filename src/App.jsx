@@ -5,6 +5,7 @@ import GameSlider from './components/slider'
 import GameList from './components/dock'
 import SmoothScroll from "./components/SmoothScroll";
 import Footer from "./components/footer"
+import Profile from "./Pages/Profile"
 
 function App() {
   return (
@@ -13,7 +14,8 @@ function App() {
     <div>
       {/* <GameList /> */}
       {/* <GameSlider /> */}
-      <Home />
+      {/* <Home /> */}
+      <Profile />
       {/* <Footer /> */}
       {/* <Login /> */}
     </div>
