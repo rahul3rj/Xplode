@@ -6,6 +6,7 @@ import GameList from './components/dock'
 import SmoothScroll from "./components/SmoothScroll";
 import Footer from "./components/footer"
 import Profile from "./Pages/Profile"
+import Vault from "./Pages/Vault"
 
 function App() {
   return (
@@ -15,7 +16,8 @@ function App() {
       {/* <GameList /> */}
       {/* <GameSlider /> */}
       {/* <Home /> */}
-      <Profile />
+      {/* <Profile /> */}
+      <Vault />
       {/* <Footer /> */}
       {/* <Login /> */}
     </div>
