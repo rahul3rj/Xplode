@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@font-face {
+    font-family: "gilroy-light";
+    src: url("../Fonts/Gilroy-Light.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "gilroy-ebold"; 
+    src: url("../Fonts/Gilroy-ExtraBold.otf") format("opentype");
+}
+@font-face {
+    font-family: "gilroy-bold"; 
+    src: url("../Fonts/Gilroy-Bold.ttf") format("opentype");
+}
