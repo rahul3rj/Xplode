@@ -13,14 +13,14 @@ const OtpInput = ({ otp, setOtp, step }) => {
         placeholder="Enter OTP"
         value={otp}
         onChange={(e) => setOtp(e.target.value)}
-        className="w-[80%] lg:w-[100%] rounded-lg mb-5 bg-black text-white px-4 py-1 outline-none border border-gray-700 focus:border-white transition-all"
+        className="h-[5vh] w-[80%] lg:w-[100%] rounded-lg mb-5 bg-black text-white px-4 py-1 outline-none border border-gray-700 focus:border-white transition-all"
       />
       <button
         type="button"
-        className="absolute top-2 right-3 text-gray-500"
+        className="absolute top-2 right-13 lg:top-2 lg:right-3 cursor-pointer text-gray-500"
         onClick={() => setShowPassword(!showPassword)}
       >
-        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+        {showPassword ? <Eye size={25} /> : <EyeOff size={25} />}
       </button>
     </div>
   );
@@ -30,21 +30,21 @@ const PasswordInput = ({ password, setPassword }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="w-[45%]  relative">
+    <div className="lg:w-[45%] w-[100%] relative flex flex-col justify-center items-center">
 
       <input
         type={showPassword ? "text" : "password"}
         placeholder="Enter Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-[80%] lg:w-[100%] rounded-lg bg-black mb-5 text-white px-4 py-1 outline-none border border-gray-700 focus:border-white transition-all"
+        className="h-[5vh] w-[80%] lg:w-[100%] rounded-lg bg-black mb-5 text-white px-4 py-1 outline-none border border-gray-700 focus:border-white transition-all"
       />
       <button
         type="button"
-        className="absolute top-2 right-3 cursor-pointer text-gray-500"
+        className="absolute top-2 right-13 lg:top-2 lg:right-3 cursor-pointer text-gray-500"
         onClick={() => setShowPassword(!showPassword)}
       >
-        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+        {showPassword ? <Eye size={25} /> : <EyeOff size={25} />}
       </button>
     </div>
   );
