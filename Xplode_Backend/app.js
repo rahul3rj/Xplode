@@ -46,7 +46,7 @@ app.use("/user" , userRouter)
 app.use("/profile" , profileRouter)
 app.use("/games" , gamesRouter)
 app.use("/vault", vaultRouter);
-app.use("/recent", recentRouter);
+// app.use("/recent", recentRouter);
 
 
 
