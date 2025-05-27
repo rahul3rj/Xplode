@@ -178,7 +178,7 @@ const Login = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-[80%] lg:w-[45%] py-1 rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+              className="h-[5%] w-[80%] lg:w-[45%] py-1 rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
             />
 
             <PasswordInput password={password} setPassword={setPassword} />
