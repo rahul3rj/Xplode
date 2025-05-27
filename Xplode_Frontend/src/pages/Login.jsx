@@ -214,7 +214,7 @@ const Login = () => {
               <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F]">
                 Don’t have an account ? &nbsp;
               </h4>
-              <h4 className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
+              <h4  onClick={() => setActiveDiv("reg")} className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
                 Create Account!
               </h4>
             </div>
@@ -286,7 +286,7 @@ const Login = () => {
                 <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F]">
                   Already have an account ? &nbsp;
                 </h4>
-                <h4 className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
+                <h4 onClick={() => setActiveDiv("signin")} className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
                   Login!
                 </h4>
               </div>

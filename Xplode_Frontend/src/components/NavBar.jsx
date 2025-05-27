@@ -1,6 +1,6 @@
 import React from "react";
 
-const NavBar = () => {
+const NavBar = ({user}) => {
   return (
     <>
       {/* Navbar */}
@@ -44,7 +44,7 @@ const NavBar = () => {
                 className="h-full w-full object-cover rounded-full"
               />
             </div>
-            <h4 className="font-[Gilroy-Bold] text-white">Isagi Youichi</h4>
+            <h4 className="font-[Gilroy-Bold] text-white">{ user.username}</h4>
             <img src="../HomePage/Polygon 6.svg" alt="" />
           </div>
         </div>
