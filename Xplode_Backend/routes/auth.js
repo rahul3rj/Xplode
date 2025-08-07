@@ -32,7 +32,7 @@ router.get(
 
       // Use DB user _id for token
       const token = jwt.sign(
-        { id: user._id, email: user.email },
+        { id: user._id, email: user.email ,name: user.name },
         process.env.JWT_KEY,
         { expiresIn: "1h" }
       );

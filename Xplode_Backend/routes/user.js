@@ -31,7 +31,7 @@ router.post("/login", async (req, res) => {
       message: "Invalid Credentials",
     });
   }
-  const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_KEY, { expiresIn: "1h" });
+  const token = jwt.sign({id: user._id, email: user.email ,name: user.name}, process.env.JWT_KEY, { expiresIn: "1h" });
   res.json({ success: true, token });
 }
 catch(err){
@@ -109,7 +109,7 @@ router.post("/verify-otp", async (req, res) => {
 
     await OTP.deleteOne({ email });
 
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_KEY, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id, email: user.email ,name: user.name}, process.env.JWT_KEY, { expiresIn: "1h" });
 
     res.status(200).json({ success: true, message: "OTP verified and user registered!", token });
   } catch (error) {
@@ -148,7 +148,7 @@ router.post("/register", async (req, res) => {
     await user.save();
 
 
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_KEY, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id, email: user.email ,name: user.name }, process.env.JWT_KEY, { expiresIn: "1h" });
 
 
     res.json({

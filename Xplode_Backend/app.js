@@ -6,7 +6,6 @@ const userRouter = require("./routes/user");
 const gamesRouter = require("./routes/games");
 const vaultRouter = require("./routes/vault");
 const profileRouter = require("./routes/profile");
-
 const passport = require("passport");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");

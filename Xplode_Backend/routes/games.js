@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const gameModel = require("../models/game");
 const HomeGame = require("../models/HomeGames");
+const { updateGamesInDB } = require("../scripts/updateHomeGames");
 require("dotenv").config();
 
 // Cache configuration
@@ -65,7 +65,7 @@ router.post("/fetch", async (req, res) => {
 
           return {
            appid: game.appid,
-            name: game.name || "Unknown Title",
+            name: gameDetails.name || "Unknown Title",
             description: gameDetails.short_description || "No description available",
             release_date: gameDetails.release_date?.date || "Unknown",
             price: gameDetails.price_overview?.final_formatted || "Free",
@@ -103,63 +103,17 @@ router.post("/fetch", async (req, res) => {
   }
 });
 
-router.post("/update-games-from-steam", async (req, res) => {
-  try {
-    const games = await HomeGame.find();
+// updateGamesInDB();
 
-    const updateResults = await Promise.all(
-      games.map(async (game) => {
-        try {
-          const response = await steamAPI.get(
-            `https://store.steampowered.com/api/appdetails?appids=${game.appid}&key=${process.env.STEAM_API_KEY}`
-          );
-
-          const gameDetails = response.data[game.appid]?.data;
-
-          const updatedData = {
-            description: gameDetails?.short_description || "No description available",
-            release_date: gameDetails?.release_date?.date || "Unknown",
-            price: gameDetails?.price_overview?.final_formatted || "Free",
-            platforms: gameDetails?.platforms || {},
-            genres: gameDetails?.genres?.map(g => g.description) || ["No genre"],
-            header_image: gameDetails?.header_image || "/default-game-cover.jpg",
-            capsule_image: gameDetails?.capsule_image || "/default-game-cover.jpg",
-            supported_languages: gameDetails?.supported_languages || "Unknown",
-            website: gameDetails?.website || "No website available",
-            about_the_game: gameDetails?.about_the_game || "No details available",
-            pc_requirements: gameDetails?.pc_requirements || {},
-            mac_requirements: gameDetails?.mac_requirements || {},
-            lastUpdated: new Date(),
-          };
-
-          await HomeGame.findByIdAndUpdate(game._id, updatedData, { new: true });
-
-          return { appid: game.appid, status: "updated" };
-        } catch (err) {
-          return { appid: game.appid, status: "failed", error: err.message };
-        }
-      })
-    );
-
-    res.status(200).json({ message: "Update complete", results: updateResults });
-  } catch (err) {
-    res.status(500).json({ message: "Update failed", error: err.message });
-  }
-});
-
-router.post("/home", async (req, res) => {
+router.get("/home", async (req, res) => { 
   try {
     const games = await HomeGame.find().sort({ lastUpdated: -1 });
-
-    if (!games.length) {
-      return res.status(404).json({ message: "No games found" });
-    }
-
-    res.status(200).json(games); // 🚀 Sirf DB se
+    res.status(200).json(games);
   } catch (err) {
+    console.error("Error fetching home games:", err.message);
     res.status(500).json({ message: "Failed to fetch home games", error: err.message });
   }
-});
+})
 
 
 router.get("/search", (req, res) => {

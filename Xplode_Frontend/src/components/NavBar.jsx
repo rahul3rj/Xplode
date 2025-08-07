@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const NavBar = ({user}) => {
   return (
@@ -36,7 +37,7 @@ const NavBar = ({user}) => {
           <div className="h-[5svh] w-[5svh] rounded-full bg-[#1B0033] flex justify-center items-center cursor-pointer">
             <img src="../HomePage/Shopping Cart.svg" alt="" />
           </div>
-          <div className="h-[5svh] w-[27%] flex justify-between items-center cursor-pointer">
+          <Link to={"/profile"} className="h-[5svh] w-[27%] flex justify-between items-center cursor-pointer">
             <div className="h-[5svh] w-[5svh] object-cover rounded-full border-2 border-[#A641FF] ">
               <img
                 src="../HomePage/profile.jpg"
@@ -44,9 +45,9 @@ const NavBar = ({user}) => {
                 className="h-full w-full object-cover rounded-full"
               />
             </div>
-            <h4 className="font-[Gilroy-Bold] text-white">{ user.username}</h4>
+            <h4 className="font-[Gilroy-Bold] text-white">{user.username}</h4>
             <img src="../HomePage/Polygon 6.svg" alt="" />
-          </div>
+          </Link>
         </div>
       </div>
     </>

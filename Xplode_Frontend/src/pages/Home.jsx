@@ -6,7 +6,7 @@ import SideNav from "../components/SideNav";
 import Store from "../pages/Store";
 
 const Home = () => {
-  const [user, setUser] = useState({ username: "", profilePic: null });
+  const [user, setUser] = useState({username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
@@ -71,7 +71,7 @@ const Home = () => {
           const profilePic = res.data.profilePic
             ? `data:${res.data.profilePic.contentType};base64,${res.data.profilePic.data}`
             : "/default.png";
-          setUser({ username: res.data.name, profilePic });
+          setUser({ username: res.data.username || res.data.name, profilePic });
         })
         .catch((err) => console.error("Failed to fetch user data:", err));
     }
