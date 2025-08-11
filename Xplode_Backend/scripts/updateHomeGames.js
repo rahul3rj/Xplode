@@ -3,13 +3,13 @@ const axios = require("axios");
 
 const steamAppids = {
   trending: [
-    { name: "Banana", appid: 2670630 },
-    { name: "Goose Goose Duck", appid: 1568590 },
-    { name: "BattleBit Remastered", appid: 671860 },
-    { name: "Crab Game", appid: 1782210 },
-    { name: "Only Up!", appid: 2448570 },
-    { name: "Brotato", appid: 1942280 },
-    { name: "The Finals", appid: 2073850 },
+    { appid: 3228590 },
+    { appid:2698780 },
+    { appid: 2424010 },
+    {  appid: 1229240 },
+    {  appid: 2855560 },
+    { appid: 1942280 },
+    { appid: 2073850 },
   ],
   top_games: [
     { name: "Counter-Strike 2", appid: 730 },
@@ -83,7 +83,7 @@ async function updateGamesInDB() {
 
         console.log(`✅ Inserted: ${gameDetails.name}`);
       } catch (err) {
-        console.error(`❌ Error inserting ${game.name}:`, err.message);
+        console.error(`❌ Error inserting ${gameDetails.name}:`, err.message);
       }
     }
   }
