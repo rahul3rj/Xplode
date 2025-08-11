@@ -102,14 +102,14 @@ const GameList = ({games, title, nextClass, prevClass }) => {
           prevEl: `.${prevClass}`
         }}
         loop={true}
-        className="mt-5 w-[87vw] cursor-pointer"
+        className="mt-5 w-[87vw] "
       >
         {games.map((game, index) => (
           <SwiperSlide
             key={index}
             onMouseEnter={() => setActiveIndex(index)}
             onMouseLeave={() => setActiveIndex(null)}
-            className={`transition-all duratio-500 rounded-xl `}
+            className={`transition-all duratio-500 cursor-pointer rounded-xl `}
             style={{
               backgroundImage: `url(${
                 activeIndex === index ? game.header_image : game.header_image
@@ -144,7 +144,7 @@ const GameList = ({games, title, nextClass, prevClass }) => {
                 activeIndex === index ? "opacity-0" : "opacity-100 delay-170"
               }`}
             >
-              <GameCard image={game.portraitUrl} title={game.title} />
+              <GameCard image={game.portrait_image} title={game.title} />
             </div>
           </SwiperSlide>
         ))}
