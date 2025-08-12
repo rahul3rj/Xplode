@@ -4,10 +4,10 @@ const axios = require("axios");
 const steamAppids = {
   trending: [
     { appid: 3228590 },
-    { appid:2698780 },
+    { appid: 2698780 },
     { appid: 2424010 },
-    {  appid: 1229240 },
-    {  appid: 2855560 },
+    { appid: 1229240 },
+    { appid: 2855560 },
     { appid: 1942280 },
     { appid: 2073850 },
   ],
@@ -28,7 +28,7 @@ const steamAppids = {
     { name: "Palworld", appid: 1623730 },
     { name: "Hogwarts Legacy", appid: 990080 },
     { name: "Elden Ring", appid: 1245620 },
-  ]
+  ],
 };
 
 async function fetchSteamDetails(appid) {
@@ -43,7 +43,6 @@ async function fetchPortraitImage(appid) {
   // You may need to scrape or use SteamGrid API (requires key)
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`; // fallback style
 }
-
 
 async function updateGamesInDB() {
   for (const category in steamAppids) {
@@ -63,19 +62,23 @@ async function updateGamesInDB() {
         const gameDoc = {
           steam_appid: game.appid,
           name: gameDetails.name || "Unknown Title",
-          description: gameDetails.short_description || "No description available",
+          description:
+            gameDetails.short_description || "No description available",
           release_date: gameDetails.release_date?.date || "Unknown",
           price: gameDetails.price_overview?.final_formatted || "Free",
           platforms: gameDetails.platforms || {},
-          genres: gameDetails.genres?.map(g => g.description) || ["No genre"],
+          genres: gameDetails.genres?.map((g) => g.description) || ["No genre"],
           header_image: gameDetails.header_image || "/default-game-cover.jpg",
+          background: gameDetails.background || "/default-game-cover.jpg",
+          background_raw:
+            gameDetails.background_raw || "/default-game-cover.jpg",
           capsule_image: gameDetails.capsule_image || "/default-game-cover.jpg",
           supported_languages: gameDetails.supported_languages || "Unknown",
           website: gameDetails.website || "No website available",
           about_the_game: gameDetails.about_the_game || "No details available",
           portrait_image: portraitImage,
           category,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
         };
 
         // No need for upsert now since we're deleting earlier
@@ -90,5 +93,5 @@ async function updateGamesInDB() {
 }
 
 module.exports = {
-  updateGamesInDB
+  updateGamesInDB,
 };

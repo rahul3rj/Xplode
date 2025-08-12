@@ -112,7 +112,7 @@ const GameList = ({games, title, nextClass, prevClass }) => {
             className={`transition-all duratio-500 cursor-pointer rounded-xl `}
             style={{
               backgroundImage: `url(${
-                activeIndex === index ? game.header_image : game.header_image
+                activeIndex === index ? game.background_raw : game.background_raw
               }) `,
               backgroundSize: "cover",
               backgroundPosition: "center",

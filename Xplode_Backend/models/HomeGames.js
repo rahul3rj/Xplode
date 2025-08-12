@@ -12,6 +12,8 @@ const HomeGameSchema = new mongoose.Schema({
   platforms: { type: Object, default: {} },
   genres: { type: [String], default: ["No genre"] },
   header_image: { type: String, default: "/default-game-cover.jpg" },
+  background: { type: String, default: "/default-game-cover.jpg" },
+  background_raw: { type: String, default: "/default-game-cover.jpg" },
   capsule_image: { type: String, default: "/default-game-cover.jpg" },
   supported_languages: { type: String, default: "Unknown" },
   website: { type: String, default: "No website available" },
