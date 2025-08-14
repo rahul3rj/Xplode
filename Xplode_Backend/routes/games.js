@@ -118,7 +118,7 @@ router.post("/fetch", async (req, res) => {
   }
 });
 
-// updateGamesInDB(); //--------------> Use this if you want to update the database with new games
+// updateGamesInDB();   //--------------> Use this if you want to update the database with new games
 
 router.get("/home", async (req, res) => {
   try {

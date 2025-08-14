@@ -17,7 +17,7 @@ const slides = [
     title: "Cyberpunk 2077",
     description: "Cyberpunk 2077 is an open-world RPG set in Night City, offering high-octane action, deep storylines, and immersive world-building.",
     price: "₹3499 INR",
-    image: "../Slider/EldenRing-banner.jpg",
+    image: "../Slider/cyberpunk-2077.jpg",
     screenshots: ["../Slider/ss1.jpg", "../Slider/ss2.jpg"]
   },
   {
@@ -31,7 +31,7 @@ const slides = [
     title: "God of War Ragnarok",
     description: "Embark on a mythological journey with Kratos and Atreus in God of War Ragnarok, featuring intense battles and gripping storytelling.",
     price: "₹4499 INR",
-    image: "../Slider/cod-banner.jpg",
+    image: "../Slider/gow.jpg",
     screenshots: ["../Slider/ss1.jpg", "../Slider/ss2.jpg"]
   }
 ];
@@ -62,13 +62,13 @@ export default function GameSlider() {
             <div className="h-[50vh] w-[30vw] flex absolute top-0 right-[2vw]">
               <div className='h-[50vh] w-[31vw] flex relative'>
                 {/* Game details card */}
-                <div className='h-[33vh] w-[29vw] bg-[#121921] mx-5 rounded-2xl absolute z-10 font-[gilroy-bold] p-6 flex flex-col justify-center'>
-                    <h1 className='text-white font-[gilroy-bold] text-[3vh] mb-5'>{slide.title}</h1>
-                    <p className='text-zinc-400 font-[gilroy] text-[1rem] mb-4'>{slide.description}</p>
+                <div className='h-[33vh] w-[29vw] bg-[#121921] mx-2 rounded-2xl absolute z-10 font-[gilroy-bold] p-9 flex flex-col justify-center'>
+                    <h1 className='text-white font-[gilroy-bold] text-lg mb-4'>{slide.title}</h1>
+                    <p className='text-zinc-400 font-[gilroy] text-xs mb-4'>{slide.description}</p>
                     <p className='text-white font-[gilroy-bold] text-[2vh] mb-4'>{slide.price}</p>
                     <div className='flex items-center justify-between'>
-                        <button className='h-[5vh] w-[10vw] bg-[#090909]/37 hover:bg-[#A641FF] transition-colors text-white text-lg rounded-xl cursor-pointer shadow-xl'>
-                            Available now
+                        <button className='h-[5vh] w-[10vw] bg-[#090909]/37 hover:bg-[#A641FF] transition-colors text-white text-sm rounded-xl cursor-pointer shadow-xl'>
+                            Add to vault
                         </button>
                         <img 
                             src="../Slider/win.svg" 
