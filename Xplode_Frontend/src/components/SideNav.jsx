@@ -5,7 +5,7 @@ const SideNav = ({ handleLogout }) => {
   const [active, setActive] = useState("store");
   return (
     <>
-      <div className="h-[90svh] w-[9%] ml-5 flex fixed top-[10svh] left-0 z-40">
+      <div className="h-[88svh] w-[9%] ml-5 flex fixed top-[12svh] left-0 z-40">
         <img
           src="../HomePage/sidenav-bg.svg"
           alt=""

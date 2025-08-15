@@ -133,7 +133,7 @@ const Home = () => {
       <div className="relative sticky z-10">
         <NavBar user={user} />
         <SideNav handleLogout={handleLogout} />
-        <div className="absolute top-[10svh] left-[10%] h-[90svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
+        <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           <Store games={games} />
         </div>
       </div>
