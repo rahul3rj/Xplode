@@ -8,12 +8,16 @@ import axios from "../utils/axios";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 
-
-
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
 const Profile = () => {
-  const [user, setUser] = useState({ username: "", profilePic: null });
+  const [user, setUser] = useState({
+    name: "",
+    bannerPic: "",
+    username: "",
+    profilePic: null,
+    email: "",
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [games, setGames] = useState([]);
   const navigate = useNavigate();
@@ -63,10 +67,17 @@ const Profile = () => {
         const profilePic = res.data.profilePic
           ? `data:${res.data.profilePic.contentType};base64,${res.data.profilePic.data}`
           : "/default.png";
+        const bannerPic = res.data.bannerPic
+          ? `data:${res.data.bannerPic.contentType};base64,${res.data.bannerPic.data}`
+          : "/default.png";
 
         setUser({
+          name: res.data.name,
           username: res.data.username || res.data.name,
           profilePic,
+          bannerPic,
+          email: res.data.email,
+          about: res.data.about,
         });
       } catch (err) {
         console.error(
@@ -87,15 +98,13 @@ const Profile = () => {
     }
   }, [navigate]);
 
-  
-
   return (
     <div className="h-screen w-full relative bg-transparent">
       <div className="relative sticky z-10">
         <NavBar user={user} />
         <SideNav handleLogout={handleLogout} />
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
-          <ProfilePage />
+          <ProfilePage user={user} setUser={setUser} />
           <CommunitySection />
           {topGames.length > 0 && (
             <GameList

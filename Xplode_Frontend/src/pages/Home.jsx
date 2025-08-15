@@ -6,7 +6,7 @@ import SideNav from "../components/SideNav";
 import Store from "../pages/Store";
 
 const Home = () => {
-  const [user, setUser] = useState({username: "", profilePic: null });
+  const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
@@ -19,7 +19,7 @@ const Home = () => {
     try {
       setIsLoading(true);
       const response = await axios.post(`/games/fetch?page=${page}&limit=200`);
-      console.log(response.data)
+      console.log(response.data);
       setGames(response.data);
     } catch (err) {
       console.error("Failed to fetch games:", err);
@@ -127,11 +127,16 @@ const Home = () => {
     }
   }, [navigate]);
 
-
   return (
     <div className="h-screen w-full relative bg-transparent">
       <div className="relative sticky z-10">
-        <NavBar user={user} />
+        <NavBar
+          user={user}
+          query={query}
+          setQuery={setQuery}
+          filteredGames={filteredGames}
+          isLoading={isLoading}
+        />
         <SideNav handleLogout={handleLogout} />
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           <Store games={games} />

@@ -39,9 +39,46 @@ async function fetchSteamDetails(appid) {
 }
 
 async function fetchPortraitImage(appid) {
-  // Example SteamGrid: https://images.steamgriddb.com/grid/<image_hash>.jpg
-  // You may need to scrape or use SteamGrid API (requires key)
-  return `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`; // fallback style
+  try {
+    const res = await axios.get(
+      `https://www.steamgriddb.com/api/v2/grids/steam/${appid}?types=static`,
+      {
+        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` }
+      }
+    );
+    if (res.data.success) {
+      // sirf url & thumb return karo
+      return res.data.data.map(img => ({
+        url: img.url,
+        thumb: img.thumb
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.error(`Portrait fetch failed for ${appid}:`, err.message);
+    return [];
+  }
+}
+
+async function fetchHeroImage(appid) {
+  try {
+    const res = await axios.get(
+      `https://www.steamgriddb.com/api/v2/heroes/steam/${appid}?types=static`,
+      {
+        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` }
+      }
+    );
+    if (res.data.success) {
+      return res.data.data.map(img => ({
+        url: img.url,
+        thumb: img.thumb
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.error(`Hero fetch failed for ${appid}:`, err.message);
+    return [];
+  }
 }
 
 async function updateGamesInDB() {
@@ -58,6 +95,7 @@ async function updateGamesInDB() {
         if (!gameDetails || gameDetails.type !== "game") continue;
 
         const portraitImage = await fetchPortraitImage(game.appid);
+        const heroImage = await fetchHeroImage(game.appid);
 
         const gameDoc = {
           steam_appid: game.appid,
@@ -76,7 +114,8 @@ async function updateGamesInDB() {
           supported_languages: gameDetails.supported_languages || "Unknown",
           website: gameDetails.website || "No website available",
           about_the_game: gameDetails.about_the_game || "No details available",
-          portrait_image: portraitImage,
+           portrait_image: portraitImage, // ab array store ho raha
+  hero_image: heroImage,  
           category,
           lastUpdated: new Date(),
         };

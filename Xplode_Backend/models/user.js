@@ -23,6 +23,10 @@ const userSchema = mongoose.Schema(
       data: { type: Buffer, default: null }, // ✅ Binary data with default null
       contentType: { type: String, default: null }, // ✅ Image type with default null
     },
+    bannerPic: {
+      data: { type: Buffer, default: null }, // ✅ Binary data with default null
+      contentType: { type: String, default: null }, // ✅ Image type with default null
+    },
     phone: {
       type: Number,
       match: /^[0-9]{10}$/,
@@ -40,8 +44,11 @@ const userSchema = mongoose.Schema(
       minlength: 3,
       maxlength: 50,
     },
+    about: {
+      type: String,
+      
+    },
     
-
   },
   { timestamps: true }
 );
