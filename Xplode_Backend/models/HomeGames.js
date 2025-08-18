@@ -21,10 +21,7 @@ const HomeGameSchema = new mongoose.Schema({
 
   // SteamGrid Image
   portrait_image: [
-  {
-    url: { type: String },
-    thumb: { type: String }
-  }
+  { type: String, default: "/default-game-cover.jpg" },
 ],
 hero_image: [
   {

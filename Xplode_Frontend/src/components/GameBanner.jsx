@@ -27,17 +27,7 @@ const GameBanner = ({ games }) => {
   return (
     <div className="h-[38svh] w-[87vw] flex gap-4 ">
       {games.map((game, idx) => {
-        const portraitThumb = useMemo(
-          () => getRandomImage(game?.portrait_image),
-          [game?.portrait_image]
-        );
-
-        const heroThumb = useMemo(() => {
-          if (game?.hero_image?.length > 0) {
-            return getRandomImage(game.hero_image);
-          }
-          return game?.header_image || "/default-game-cover.jpg";
-        }, [game?.hero_image, game?.header_image]);
+        
         return (
           <div
             key={idx}
@@ -45,8 +35,8 @@ const GameBanner = ({ games }) => {
             onMouseLeave={handleMouseLeave}
           >
             <GameCard
-              image={portraitThumb}
-              bg={heroThumb}
+              image={game.portrait_image[0]}
+              bg={game.capsule_image ||game.header_image}
               title={game.title}
               isActive={activeIndex === idx}
             />
