@@ -143,7 +143,7 @@ async function updateGamesInDB() {
 
         console.log(`✅ Inserted: ${gameDetails.name}`);
       } catch (err) {
-        console.error(`❌ Error inserting ${gameDetails.name}:`, err.message);
+        // console.error(`❌ Error inserting ${gameDetails.name}:`, err.message);
       }
     }
   }

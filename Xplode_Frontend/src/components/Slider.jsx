@@ -10,28 +10,28 @@ const slides = [
     title: "Modern Warfare 3",
     description: "Modern Warfare 3 (2023) is a fast-paced FPS where Task Force 141 battles Makarov in an intense campaign with evolved multiplayer.",
     price: "₹2999 INR",
-    image: "../Slider/cod-banner.jpg",
+    image: "https://cdn2.steamgriddb.com/grid/976e6cb2f9caea318b775f8ab300ebd1.jpg",
     screenshots: ["../Slider/ss1.jpg", "../Slider/ss2.jpg"]
   },
   {
     title: "Cyberpunk 2077",
     description: "Cyberpunk 2077 is an open-world RPG set in Night City, offering high-octane action, deep storylines, and immersive world-building.",
     price: "₹3499 INR",
-    image: "../Slider/cyberpunk-2077.jpg",
+    image: "https://cdn2.steamgriddb.com/grid/8c048326e93a94589190693897ce3456.jpg",
     screenshots: ["../Slider/ss1.jpg", "../Slider/ss2.jpg"]
   },
   {
     title: "Elden Ring",
     description: "Elden Ring is an epic action RPG from FromSoftware, featuring vast exploration, intense combat, and deep lore.",
     price: "₹3999 INR",
-    image: "../Slider/EldenRing-banner.jpg",
+    image: "https://cdn2.steamgriddb.com/grid/d00afdeafe11d50fcecedac911e278aa.png",
     screenshots: ["../Slider/ss1.jpg", "../Slider/ss2.jpg"]
   },
   {
     title: "God of War Ragnarok",
     description: "Embark on a mythological journey with Kratos and Atreus in God of War Ragnarok, featuring intense battles and gripping storytelling.",
     price: "₹4499 INR",
-    image: "../Slider/gow.jpg",
+    image: "https://cdn2.steamgriddb.com/grid/245c498e6413ad98feab0bb3ae6275d5.png",
     screenshots: ["../Slider/ss1.jpg", "../Slider/ss2.jpg"]
   }
 ];

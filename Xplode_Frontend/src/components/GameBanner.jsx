@@ -11,11 +11,11 @@ const GameBanner = ({ games }) => {
     hoverTimeout.current = setTimeout(() => {
       setActiveIndex(idx);
       setLastActiveIndex(idx);
-    }, 150); // 200ms delay, adjust as needed
+    }, 200); // 200ms delay, adjust as needed
   };
 
   const handleMouseLeave = () => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current); 
     setActiveIndex(lastActiveIndex);
   };
   const getRandomImage = (arr) => {
@@ -25,13 +25,13 @@ const GameBanner = ({ games }) => {
   };
 
   return (
-    <div className="h-[38svh] w-[87vw] flex gap-4 ">
+    <div className="h-[47svh] w-[87vw] flex gap-3 ">
       {games.map((game, idx) => {
         
         return (
           <div
             key={idx}
-            onMouseEnter={() => handleMouseEnter(idx)}
+            onMouseEnter={() => handleMouseEnter(idx)} 
             onMouseLeave={handleMouseLeave}
           >
             <GameCard

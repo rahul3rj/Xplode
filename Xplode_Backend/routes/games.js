@@ -118,7 +118,7 @@ router.post("/fetch", async (req, res) => {
   }
 });
 
-updateGamesInDB();   //--------------> Use this if you want to update the database with new games
+// updateGamesInDB();   //--------------> Use this if you want to update the database with new games
 
 router.get("/home", async (req, res) => {
   try {
@@ -132,16 +132,16 @@ router.get("/home", async (req, res) => {
   }
 });
 
-router.get("/search", (req, res) => {
+router.get("/search", async (req, res) => {
   const query = req.query.q?.toLowerCase() || "";
 
   if (!gameCache.rawGames.length) {
     return res.status(500).json({ message: "Games data not loaded yet" });
   }
 
-  // Use Set to ensure unique appids
+  // Get exact matches only
   const seen = new Set();
-  const filteredGames = gameCache.rawGames
+  const exactMatches = gameCache.rawGames
     .filter((game) => {
       if (!game?.appid || seen.has(game.appid)) return false;
       seen.add(game.appid);
@@ -149,7 +149,43 @@ router.get("/search", (req, res) => {
     })
     .slice(0, 20);
 
-  res.status(200).json(filteredGames);
+  try {
+    // Fetch detailed game information for each match
+    const detailedGames = await Promise.all(
+      exactMatches.map(async (game) => {
+        try {
+          const url = `https://store.steampowered.com/api/appdetails?appids=${game.appid}&cc=us&l=en`;
+          const response = await axios.get(url, { timeout: 5000 });
+          const data = response.data[game.appid]?.data;
+
+          if (!data || !data.name) return null;
+
+          return {
+            appid: game.appid,
+            name: data.name,
+            publisher: data.publishers?.[0] || "Unknown",
+            price: data.price_overview ? `${data.price_overview.final_formatted}` : "Free",
+            capsule_image: data.capsule_image || data.header_image || "/default-game-cover.jpg",
+            header_image: data.header_image || "/default-game-cover.jpg",
+          };
+        } catch (err) {
+          console.error(`Failed to fetch details for ${game.appid}:`, err.message);
+          return null;
+        }
+      })
+    );
+
+    // Filter out null results and limit to 7 games to prevent rate limiting
+    const validGames = detailedGames.filter(Boolean).slice(0, 7);
+    res.status(200).json(validGames);
+  } catch (error) {
+    console.error("Search endpoint error:", error.message);
+    res.status(500).json({ 
+      message: "Error fetching game details", 
+      error: error.message,
+      games: []
+    });
+  }
 });
 
 router.get("/game/:appid", async (req, res) => {

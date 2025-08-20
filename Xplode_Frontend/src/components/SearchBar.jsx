@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-const SearchBar = ({ query, setQuery, filteredGames, isLoading }) => {
+const DEBOUNCE_MS = 600;
+
+const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [localValue, setLocalValue] = useState(query || "");
   const searchRef = useRef(null);
 
+  // keep local input in sync if parent changes query from outside
+  useEffect(() => setLocalValue(query || ""), [query]);
+
+  // close on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -15,80 +22,111 @@ const SearchBar = ({ query, setQuery, filteredGames, isLoading }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // debounce updates sent to parent (prevents spammy network calls)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if ((query || "") !== localValue) setQuery(localValue);
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localValue]);
+
   const renderSearchContent = () => {
-    if (!query.trim()) {
-      return null;
-    }
+    const hasQuery = (localValue || "").trim().length > 0;
+    if (!hasQuery) return null;
+
     if (isLoading) {
       return (
         <div className="p-6 text-center text-white font-medium animate-pulse">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-6 h-6 border-2 border-[#D65F30] border-t-transparent rounded-full animate-spin"></div>
-            <span>Searching games...</span>
+          <div className="flex items-center justify-center gap-2 ">
+            <img src="./Preloader.svg" alt=""  className="h-6 text-[#A641FF]"/>
           </div>
         </div>
       );
     }
 
-    if (filteredGames.length === 0) {
-      return (
-        <div className="p-6 text-center text-white font-medium">
-          🚫 No games found. Try something else!
-        </div>
-      );
+    if (!filteredGames || filteredGames.length === 0) {
+      return (null);
     }
-
     return filteredGames.map((game, index) => (
       <Link
-        key={`${game.appid || game.id}-${index}`} // Added index to make key unique
+        key={`${game.appid || game.id}-${index}`}
         to={`/game/${game.appid || game.id}`}
-        className="flex items-center gap-4 p-4 hover:bg-[#1B0033] transition-all duration-300 cursor-pointer border-b border-zinc-800 last:border-b-0"
+        className="flex items-center gap-4 p-2 px-5 hover:bg-[#A641FF]/20 transition-all duration-300 cursor-pointer"
       >
         <img
-          src={game.background_image || "/default.png"}
+          src={game.capsule_image || game.header_image || "/default.png"}
           alt={game.name}
-          className="w-14 h-14 rounded-lg object-cover shadow-md"
-          onError={(e) => (e.target.src = "/default.png")}
+          className="w-[13vw] h-[11vh] rounded-lg object-cover shadow-md"
+          onError={(e) => {
+            e.currentTarget.src = "/default.png";
+          }}
         />
-        <div>
-          <h3 className="text-white font-medium">{game.name}</h3>
+        <div className="h-[11vh] w-[18vw] flex flex-col justify-center items-between">
+          <div className="w-[18vw] h-[8vh] flex flex-col justify-start items-start">
+            <h3 className="text-white w-full font-medium truncate">
+              {game.name}
+            </h3>
+            <h5 className="text-[#B5B5B5] font-[gilroy] font-[600] text-[10px]">
+              {game.publisher}
+            </h5>
+          </div>
+          <div className="w-full flex justify-between items-end">
+            <h5 className="text-white font-[gilroy-bold] text-sm">
+              {game.price}
+            </h5>
+          </div>
         </div>
       </Link>
     ));
   };
 
   return (
-    <div className="w-[50vw] relative" ref={searchRef}>
-      <div className="h-[60%] w-[80%] flex items-center ml-15 relative">
+    <div className="w-full relative" ref={searchRef}>
+      <div
+        className={`w-[35vw] flex flex-col items-start justify-start ml-[2vw] rounded-xl bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] absolute transition-all duration-300 ease-in-out overflow-hidden${
+          (localValue && isFocused) ? "h-[60vh]" : "h-[6vh]"
+        }`}
+      >
         <img
           src="../HomePage/Search.svg"
           alt=""
-          className="absolute top-[50%] left-1/50 transform -translate-y-1/2"
+          className="absolute top-[3vh] left-1/50 transform -translate-y-1/2"
         />
         <input
           type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="Search games..."
-          className=" h-full w-[80%] py-1 font-[Gilroy-bold]  rounded-lg bg-[#1B0033] py-2 text-[#fff] px-12 outline-none focus:border-white transition-all"
+          className="h-[6vh] w-full font-[gilroy-bold] placeholder-[#653591] bg-transparent py-3 text-[#fff] px-12 outline-none focus:border-white transition-all"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setLocalValue("");
+              setQuery("");
+              setIsFocused(false);
+            }
+          }}
         />
 
-        {query && (
+        {localValue && (
           <div
-            onClick={() => setQuery("")}
-            className="text-white bg-[#1B0033]/80 rounded-full flex items-center justify-center w-10 h-10 cursor-pointer hover:bg-[#1B0033] transition-colors duration-300"
+            onClick={() => {
+              setLocalValue("");
+              setQuery("");
+            }}
+            className="text-white bg-transparent absolute right-0 rounded-xl flex items-center justify-center w-10 h-10 cursor-pointer hover:bg-[#A641FF]/20 transition-opacity ease-out duration-500"
           >
-            <i className="ri-close-large-line text-lg"></i>
+            <i className="ri-close-large-line text-sm"></i>
+          </div>
+        )}
+
+        {(localValue && isFocused) && (
+          <div className="w-full max-h-[54vh] overflow-y-auto hide-scrollbar bg-transparent shadow-lg overflow-hidden">
+            {renderSearchContent()}
           </div>
         )}
       </div>
-
-      {query && isFocused && (
-        <div className="absolute w-[40vw] max-h-[45vh] overflow-y-auto z-10 top-[120%] bg-[#1c1c1c]  shadow-lg border-[1px] border-[#1B0033]">
-          {renderSearchContent()}
-        </div>
-      )}
     </div>
   );
 };

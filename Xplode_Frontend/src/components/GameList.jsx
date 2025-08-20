@@ -91,17 +91,17 @@ const GameList = ({games, title, nextClass, prevClass }) => {
   return (
     <>
       <div className="py-8 text-white">
-      <div className="h-[3vh] w-[87vw] relative flex justify-between items-center font-[gilroy-bold] ml-7 ">
-        <h1 className="text-xl">{title}</h1>
+      <div className="h-[3vh] w-[87vw] relative flex justify-between items-center font-[gilroy-bold] ml-6 ">
+        <h1 className="text-lg">{title}</h1>
         <div className="h-[3vh] w-[10vw] flex justify-between items-center ">
             <img src="../GameList/arrow.svg" alt="" className={`scale-x-[-1] ${prevClass} cursor-pointer`} />
-            <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-lg">
+            <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm">
               Learn More 
             </h4>
             <img src="../GameList/arrow.svg" alt="" className={`${nextClass} cursor-pointer`} />
         </div>
       </div>
-      <Swiper
+      <Swiper 
         modules={[Navigation]}
         slidesPerView={1}
         spaceBetween={20}
@@ -112,7 +112,7 @@ const GameList = ({games, title, nextClass, prevClass }) => {
         loop={false}
         className="mt-5 w-[87vw] "
       >
-        {gameChunks.map((chunk, idx) => (
+        {gameChunks.map((chunk, idx) => ( 
           <SwiperSlide key={idx}>
             <GameBanner games={chunk} />
           </SwiperSlide>
