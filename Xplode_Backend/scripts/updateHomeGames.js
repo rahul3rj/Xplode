@@ -31,6 +31,8 @@ const steamAppids = {
   ],
 };
 
+
+
 async function fetchSteamDetails(appid) {
   const url = `https://store.steampowered.com/api/appdetails?appids=${appid}&cc=IN&l=english`;
   const { data } = await axios.get(url);
@@ -148,6 +150,8 @@ async function updateGamesInDB() {
     }
   }
 }
+
+
 
 module.exports = {
   updateGamesInDB,

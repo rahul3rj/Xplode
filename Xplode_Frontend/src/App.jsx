@@ -5,11 +5,13 @@ import {Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
+import NavBar from "./components/NavBar";
 
 const App = () => {
   return (
     <div className="h-screen w-full bg-black">
       <ErrorBoundary>
+        
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />

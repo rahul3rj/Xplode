@@ -4,6 +4,24 @@ const axios = require("axios");
 const HomeGame = require("../models/HomeGames");
 const { updateGamesInDB } = require("../scripts/updateHomeGames");
 require("dotenv").config();
+const sliders = [
+  {
+    appid: "3595270",
+    title: "Modern Warfare 3",
+  },
+  {
+    appid: "1091500",
+    title: "Cyberpunk 2077",
+  },
+  {
+    appid: "1245620",
+    title: "Elden Ring",
+  },
+  {
+    appid: "2322010",
+    title: "God of War Ragnarok",
+  },
+];
 
 // Cache configuration
 const CACHE_DURATION = 3600000; // 1 hour in milliseconds
@@ -118,7 +136,7 @@ router.post("/fetch", async (req, res) => {
   }
 });
 
-updateGamesInDB();   //--------------> Use this if you want to update the database with new games
+// updateGamesInDB();   //--------------> Use this if you want to update the database with new games
 
 router.get("/home", async (req, res) => {
   try {
@@ -169,6 +187,27 @@ router.get("/game/:appid", async (req, res) => {
   } catch (err) {
     console.error(`❌ Error fetching details for appid ${appid}:`, err.message);
     res.status(500).json({ message: "Failed to fetch game details" });
+  }
+});
+
+router.get("/slider", async (req, res) => {
+  try {
+    const sliderDetails = [];
+    for (const slidergame of sliders) {
+      const { data } = await axios.get(
+        `https://store.steampowered.com/api/appdetails?appids=${slidergame.appid}&cc=IN&l=english`
+      );
+      const details = data[slidergame.appid]?.data;
+      if (details) {
+        sliderDetails.push(details);
+      }
+    }
+    res.status(200).json(sliderDetails);
+  } catch (err) {
+    console.error("Error fetching slider games:", err.message);
+    res
+      .status(500)
+      .json({ message: "Error fetching slider games", error: err.message });
   }
 });
 
