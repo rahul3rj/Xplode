@@ -7,6 +7,7 @@ import GameList from "../components/GameList";
 import axios from "../utils/axios";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import PreLoader from "../components/PreLoader";
 
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
@@ -21,8 +22,6 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [games, setGames] = useState([]);
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const [filteredGames, setFilteredGames] = useState([]);
   const handleLogout = async () => {
     try {
       await axios.get("/user/logout", { withCredentials: true });
@@ -46,31 +45,6 @@ const Profile = () => {
   useEffect(() => {
     fetchGames();
   }, []);
-  
-  const fetchSearchResults = async (query) => {
-    if (!query.trim()) {
-      setFilteredGames([]);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await axios.get(
-        `http://localhost:5000/games/search?q=${query}`
-      );
-      setFilteredGames(response.data);
-    } catch (err) {
-      console.error("❌ Search error:", err.message);
-      setFilteredGames([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const delay = setTimeout(() => fetchSearchResults(query), 300);
-    return () => clearTimeout(delay);
-  }, [query]);
 
   const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
@@ -127,14 +101,14 @@ const Profile = () => {
 
   return (
     <div className="h-screen w-full relative bg-transparent">
+
+      {isLoading && (
+        <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40">
+          <PreLoader />
+        </div>
+      )}
       <div className="relative sticky z-10">
-        <NavBar
-          user={user}
-          query={query}
-          setQuery={setQuery}
-          filteredGames={filteredGames}
-          isLoading={isLoading}
-        />
+        <NavBar user={user} />
         <SideNav handleLogout={handleLogout} />
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           <ProfilePage user={user} setUser={setUser} />

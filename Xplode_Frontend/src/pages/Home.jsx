@@ -9,10 +9,7 @@ const Home = () => {
   const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [query, setQuery] = useState("");
   const [games, setGames] = useState([]);
-  const [filteredGames, setFilteredGames] = useState([]);
-  const [active, setActive] = useState("Game store");
   const navigate = useNavigate();
 
   const fetchGames = async (page = 1) => {
@@ -32,31 +29,6 @@ const Home = () => {
   useEffect(() => {
     fetchGames();
   }, []);
-
-  const fetchSearchResults = async (query) => {
-    if (!query.trim()) {
-      setFilteredGames([]);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await axios.get(
-        `http://localhost:5000/games/search?q=${query}`
-      );
-      setFilteredGames(response.data);
-    } catch (err) {
-      console.error("❌ Search error:", err.message);
-      setFilteredGames([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const delay = setTimeout(() => fetchSearchResults(query), 300);
-    return () => clearTimeout(delay);
-  }, [query]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -130,13 +102,7 @@ const Home = () => {
   return (
     <div className="h-screen w-full relative bg-transparent">
       <div className="relative sticky z-10">
-        <NavBar
-          user={user}
-          query={query}
-          setQuery={setQuery}
-          filteredGames={filteredGames}
-          isLoading={isLoading}
-        />
+        <NavBar user={user} />
         <SideNav handleLogout={handleLogout} />
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           <Store games={games} />

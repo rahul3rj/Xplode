@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "express-rate-limit": "^8.0.1",
+    "fuse.js": "^7.1.0"
+  }
+}
