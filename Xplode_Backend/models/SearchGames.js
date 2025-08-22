@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-const HomeGameSchema = new mongoose.Schema({
-  steam_appid: { type: Number, required: true },
+const SearchGameSchema = new mongoose.Schema({
+  steam_appid: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
 
   // Steam Details
@@ -34,21 +34,8 @@ const HomeGameSchema = new mongoose.Schema({
   ],
 
   // Misc
-  category: {
-    type: String,
-    enum: [
-      "special",
-      "sliders",
-      "popular",
-      "new",
-      "coming",
-      "trending",
-      "top_games",
-      "top_records",
-    ],
-    required: true,
-  },
+   category: { type: String, default: "" },
   lastUpdated: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("HomeGame", HomeGameSchema);
+module.exports = mongoose.model("SearchGame", SearchGameSchema);

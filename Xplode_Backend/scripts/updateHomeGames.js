@@ -2,6 +2,12 @@ const HomeGame = require("../models/HomeGames");
 const axios = require("axios");
 
 const steamAppids = {
+  sliders: [
+    { appid: 3595270, name: "Modern Warfare 3" },
+    { appid: 1091500, name: "Cyberpunk 2077" },
+    { appid: 1245620, name: "Elden Ring" },
+    { appid: 2322010, name: "God of War Ragnarok" },
+  ],
   trending: [
     { appid: 3228590 },
     { appid: 2698780 },
@@ -30,8 +36,6 @@ const steamAppids = {
     { name: "Elden Ring", appid: 1245620 },
   ],
 };
-
-
 
 async function fetchSteamDetails(appid) {
   const url = `https://store.steampowered.com/api/appdetails?appids=${appid}&cc=IN&l=english`;
@@ -115,7 +119,10 @@ async function updateGamesInDB() {
 
         // const portraitImage = await fetchPortraitImage(game.appid);
         const heroImage = await fetchHeroImage(game.appid);
-        const capsule_image = await getValidCapsuleImage(game.appid, gameDetails.header_image);
+        const capsule_image = await getValidCapsuleImage(
+          game.appid,
+          gameDetails.header_image
+        );
 
         const gameDoc = {
           steam_appid: game.appid,
@@ -130,12 +137,16 @@ async function updateGamesInDB() {
           background: gameDetails.background || "/default-game-cover.jpg",
           background_raw:
             gameDetails.background_raw || "/default-game-cover.jpg",
-           capsule_image,
+          capsule_image,
           supported_languages: gameDetails.supported_languages || "Unknown",
           website: gameDetails.website || "No website available",
           about_the_game: gameDetails.about_the_game || "No details available",
           portrait_image: getPortrait(game.appid), // ab array store ho raha
           hero_image: heroImage,
+          screenshots: (gameDetails.screenshots || []).map((ss) => ({
+            id: ss.id,
+            path_thumbnail: ss.path_thumbnail,
+          })),
           category,
           lastUpdated: new Date(),
         };
@@ -145,13 +156,11 @@ async function updateGamesInDB() {
 
         console.log(`✅ Inserted: ${gameDetails.name}`);
       } catch (err) {
-        // console.error(`❌ Error inserting ${gameDetails.name}:`, err.message);
+        console.error(`❌ Error inserting appid ${game.appid}:`, err.message);
       }
     }
   }
 }
-
-
 
 module.exports = {
   updateGamesInDB,

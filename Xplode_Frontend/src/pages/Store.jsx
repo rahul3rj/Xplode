@@ -10,7 +10,7 @@ import Footer from "../components/Footer";
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
 const Store = () => {
-   const [games, setGames] = useState([]);
+  const [games, setGames] = useState([]);
 
   const fetchGames = async () => {
     try {
@@ -25,14 +25,14 @@ const Store = () => {
   useEffect(() => {
     fetchGames();
   }, []);
-
+  const sliderGames = games.filter((game) => game.category === "sliders");
   const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
   const topRecordGames = games.filter((game) => game.category === "top_records");
 
   return (
     <>
-      <GameSlider />
+      {sliderGames.length > 0 && <GameSlider games={sliderGames} />}
 
       {trendingGames.length > 0 && (
         <GameList

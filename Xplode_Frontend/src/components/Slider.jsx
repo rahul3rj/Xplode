@@ -47,42 +47,35 @@ const slides = [
   }
 ];
 
-export default function GameSlider() {
+export default function GameSlider({games}) {
   const [sliderGames, setsliderGames] = useState([]);
 
-  const fetchGames = async () => {
-    try {
-      const response = await axios.get("/games/slider");
-      const apiData = Array.isArray(response.data) ? response.data : [];
+ const fetchGames = async () => {
+  try {
+    const updatedData = games.map((item) => {
+      // appid base matching
+      const slideMatch =
+        slides.find(
+          (s) =>
+            String(s.appid) === String(item.appid) ||
+            String(s.appid) === String(item.steam_appid)
+        ) || {};
 
-      // Use images from local `slides` (same order) or match by appid as fallback
-      const updatedData = apiData.map((item, i) => {
-        const slideMatch =
-          slides[i] ||
-          slides.find(
-            (s) =>
-              String(s.appid) === String(item.appid) ||
-              String(s.appid) === String(item.steam_appid)
-          ) ||
-          {};
+      return {
+        ...item,
+        image:
+          slideMatch.image ||
+          item.header_image ||
+          "/default-slider.jpg",
+      };
+    });
 
-        return {
-          ...item,
-          image:
-            slideMatch.image ||
-            item.image ||
-            item.header_image ||
-            "/default-slider.jpg",
-
-        };
-      });
-
-      setsliderGames(updatedData);
-      console.log(updatedData);
-    } catch (err) {
-      console.error("Failed to fetch games:", err);
-    }
-  };
+    setsliderGames(updatedData);
+    console.log(updatedData);
+  } catch (err) {
+    console.error("Failed to fetch games:", err);
+  }
+};
 
   useEffect(() => {
     fetchGames();

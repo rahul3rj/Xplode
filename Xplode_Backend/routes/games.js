@@ -3,25 +3,9 @@ const router = express.Router();
 const axios = require("axios");
 const HomeGame = require("../models/HomeGames");
 const { updateGamesInDB } = require("../scripts/updateHomeGames");
+const { updateSearchGamesInDB } = require("../scripts/updateSearchGames");
+const SearchGames = require("../models/SearchGames");
 require("dotenv").config();
-const sliders = [
-  {
-    appid: "3595270",
-    title: "Modern Warfare 3",
-  },
-  {
-    appid: "1091500",
-    title: "Cyberpunk 2077",
-  },
-  {
-    appid: "1245620",
-    title: "Elden Ring",
-  },
-  {
-    appid: "2322010",
-    title: "God of War Ragnarok",
-  },
-];
 
 // Cache configuration
 const CACHE_DURATION = 3600000; // 1 hour in milliseconds
@@ -136,6 +120,8 @@ router.post("/fetch", async (req, res) => {
   }
 });
 
+// updateSearchGamesInDB();
+
 // updateGamesInDB();   //--------------> Use this if you want to update the database with new games
 
 router.get("/home", async (req, res) => {
@@ -151,58 +137,37 @@ router.get("/home", async (req, res) => {
 });
 
 router.get("/search", async (req, res) => {
-  const query = req.query.q?.toLowerCase() || "";
-
-  if (!gameCache.rawGames.length) {
-    return res.status(500).json({ message: "Games data not loaded yet" });
-  }
-
-  // Get exact matches only
-  const seen = new Set();
-  const exactMatches = gameCache.rawGames
-    .filter((game) => {
-      if (!game?.appid || seen.has(game.appid)) return false;
-      seen.add(game.appid);
-      return game?.name?.toLowerCase().includes(query);
-    })
-    .slice(0, 20);
+  const q = (req.query.q || "").trim();
+  if (!q) return res.status(200).json([]);
 
   try {
-    // Fetch detailed game information for each match
-    const detailedGames = await Promise.all(
-      exactMatches.map(async (game) => {
-        try {
-          const url = `https://store.steampowered.com/api/appdetails?appids=${game.appid}&cc=IN&l=english`;
-          const response = await axios.get(url, { timeout: 5000 });
-          const data = response.data[game.appid]?.data;
+    // If numeric, search by appid first; otherwise use case-insensitive name match.
+    const isNum = /^\d+$/.test(q);
+    const filter = isNum
+      ? { steam_appid: Number(q) }
+      : { name: { $regex: q, $options: "i" } };
 
-          if (!data || !data.name) return null;
+    // limit results to 7
+    const docs = await SearchGames.find(filter)
+      .limit(7)
+      .select("steam_appid name publishers price capsule_image header_image")
+      .lean();
 
-          return {
-            appid: game.appid,
-            name: data.name,
-            publisher: data.publishers?.[0] || "Unknown",
-            price: data.price_overview ? `${data.price_overview.final_formatted}` : "Free",
-            capsule_image: data.capsule_image || data.header_image || "/default-game-cover.jpg",
-            header_image: data.header_image || "/default-game-cover.jpg",
-          };
-        } catch (err) {
-          console.error(`Failed to fetch details for ${game.appid}:`, err.message);
-          return null;
-        }
-      })
-    );
-
-    // Filter out null results and limit to 7 games to prevent rate limiting
-    const validGames = detailedGames.filter(Boolean).slice(0, 7);
-    res.status(200).json(validGames);
-  } catch (error) {
-    console.error("Search endpoint error:", error.message);
-    res.status(500).json({ 
-      message: "Error fetching game details", 
-      error: error.message,
-      games: []
-    });
+    const results = docs.map((d) => ({
+      appid: d.steam_appid,
+      name: d.name,
+      publisher: d.publishers?.[0] || d.publisher || "Unknown",
+      price: d.price || "Free",
+      capsule_image:
+        d.capsule_image || d.header_image || "/default-game-cover.jpg",
+      header_image: d.header_image || "/default-game-cover.jpg",
+    }));
+    res.status(200).json(results);
+  } catch (err) {
+    console.error("Search DB error:", err.message);
+    res
+      .status(500)
+      .json({ message: "Search failed", error: err.message, games: [] });
   }
 });
 
@@ -223,27 +188,6 @@ router.get("/game/:appid", async (req, res) => {
   } catch (err) {
     console.error(`❌ Error fetching details for appid ${appid}:`, err.message);
     res.status(500).json({ message: "Failed to fetch game details" });
-  }
-});
-
-router.get("/slider", async (req, res) => {
-  try {
-    const sliderDetails = [];
-    for (const slidergame of sliders) {
-      const { data } = await axios.get(
-        `https://store.steampowered.com/api/appdetails?appids=${slidergame.appid}&cc=IN&l=english`
-      );
-      const details = data[slidergame.appid]?.data;
-      if (details) {
-        sliderDetails.push(details);
-      }
-    }
-    res.status(200).json(sliderDetails);
-  } catch (err) {
-    console.error("Error fetching slider games:", err.message);
-    res
-      .status(500)
-      .json({ message: "Error fetching slider games", error: err.message });
   }
 });
 
