@@ -22,7 +22,7 @@ const avatars = [
   {
     imageUrl: "../profile/profile_pic.jpg",
     profileUrl: "",
-  },
+  }, 
 ];
 
 const ProfilePage = ({ user, setUser }) => {

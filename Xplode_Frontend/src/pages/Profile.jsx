@@ -43,7 +43,7 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    fetchGames();
+    fetchGames(); 
   }, []);
 
   const trendingGames = games.filter((game) => game.category === "trending");
@@ -98,7 +98,7 @@ const Profile = () => {
       fetchUserData();
     }
   }, [navigate]);
-
+ 
   return (
     <div className="h-screen w-full relative bg-transparent">
 

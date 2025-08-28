@@ -62,7 +62,7 @@ const NavBar = ({ user }) => {
       <div className="h-[12svh] w-full bg-transparent flex justify-between items-center fixed top-0 left-0 z-50">
         <div className="h-[10svh] w-[50%] flex justify-between items-center">
           <img
-            src="./LoginPage/Complete logo.png"
+            src="/LoginPage/Complete logo.png"
             alt=""
             className="ml-[1.3vw] "
           />
