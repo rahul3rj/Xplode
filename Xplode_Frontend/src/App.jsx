@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import NavBar from "./components/NavBar";
 import Details from "./pages/Details";
+import SearchPage from "./pages/SearchPage"; // Add this import
 
 const App = () => {
   return (
@@ -19,6 +20,7 @@ const App = () => {
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/game/:appid" element={<ProtectedRoute><Details /></ProtectedRoute>} />
+          <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} /> {/* Add this line */}
         </Routes>
       </ErrorBoundary>
     </div>

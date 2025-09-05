@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const DEBOUNCE_MS = 600;
 
@@ -7,6 +7,7 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
   const [isFocused, setIsFocused] = useState(false);
   const [localValue, setLocalValue] = useState(query || "");
   const searchRef = useRef(null);
+  const navigate = useNavigate();
 
   // keep local input in sync if parent changes query from outside
   useEffect(() => setLocalValue(query || ""), [query]);
@@ -39,15 +40,16 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
       return (
         <div className="p-6 text-center text-white font-medium animate-pulse">
           <div className="flex items-center justify-center gap-2 ">
-            <img src="./Preloader.svg" alt=""  className="h-6 text-[#A641FF]"/>
+            <img src="./Preloader.svg" alt="" className="h-6 text-[#A641FF]" />
           </div>
         </div>
       );
     }
 
     if (!filteredGames || filteredGames.length === 0) {
-      return (null);
+      return null;
     }
+
     return filteredGames.map((game, index) => (
       <Link
         key={`${game.appid || index}  `}
@@ -85,7 +87,7 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
     <div className="w-full relative" ref={searchRef}>
       <div
         className={`w-[35vw] flex flex-col items-start justify-start ml-[2vw] rounded-xl bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] absolute transition-all duration-300 ease-in-out overflow-hidden${
-          (localValue && isFocused) ? "h-[60vh]" : "h-[6vh]"
+          localValue && isFocused ? "h-[60vh]" : "h-[6vh]"
         }`}
       >
         <img
@@ -106,6 +108,11 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
               setQuery("");
               setIsFocused(false);
             }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              setIsFocused(false);
+              navigate(`/search?q=${encodeURIComponent(localValue)}`);
+            }
           }}
         />
 
@@ -121,7 +128,7 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
           </div>
         )}
 
-        {(localValue && isFocused) && (
+        {localValue && isFocused && (
           <div className="w-full max-h-[54vh] overflow-y-auto hide-scrollbar bg-transparent shadow-lg overflow-hidden">
             {renderSearchContent()}
           </div>

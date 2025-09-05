@@ -7,6 +7,9 @@ import Footer from "../components/Footer";
 import { useEffect } from "react";
 import GameList from "../components/GameList";
 import { useNavigate, useParams } from "react-router-dom";
+import Rating from "@mui/material/Rating";
+import StarIcon from "@mui/icons-material/Star";
+import Likepercent from "../components/Likepercent";
 
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
@@ -21,6 +24,7 @@ const DetailsPage = () => {
   const [randomIndex4, setRandomIndex4] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -83,6 +87,9 @@ const DetailsPage = () => {
     fetchGames();
   }, []);
 
+  const sliderGames = games.filter((game) => game.category === "sliders");
+  const trendingGames = games.filter((game) => game.category === "trending");
+  const topGames = games.filter((game) => game.category === "top_games");
   const topRecordGames = games.filter(
     (game) => game.category === "top_records"
   );
@@ -146,9 +153,29 @@ const DetailsPage = () => {
                 key={idx}
                 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]"
               >
-                {genre}{" "}
+                {genre.description}
               </h4>
             ))}
+
+            <div className="h-[2svh] w-[5svw] flex items-center justify-center">
+              <Rating
+                name="read-only"
+                value={4} // Set to 5 for a 5-star rating
+                readOnly
+                precision={0.5}
+                emptyIcon={<StarIcon style={{ opacity: 0.55, stroke: '#C7C3C3', strokeWidth: 1 }} sx={{ fontSize: '2vh' }} />}
+                icon={<StarIcon sx={{ fontSize: '2vh' }} />}
+              />
+            </div>
+            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
+              Dark fantasy{" "}
+            </h4>
+            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
+              RPG{" "}
+            </h4>
+            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
+              Difficult{" "}
+            </h4>
           </div>
           <div className="h-[30%] w-[20vw]">
             <p className="text-xs font-[gilroy] text-[#C7C3C3]">
@@ -187,7 +214,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://store.steampowered.com/app/374320/`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -205,7 +232,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://store.epicgames.com/en-US/p/grand-theft-auto-v`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -223,7 +250,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://www.playstation.com/en-us/games/dark-souls-iii/`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -241,7 +268,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://www.xbox.com/en-US/games/store/dark-souls-iii-deluxe-edition/C23CWXL81H3L/0001`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -258,7 +285,9 @@ const DetailsPage = () => {
                 All Time
               </h3>
             </div>
-            <div className="h-full w-[12svw] flex justify-between items-center"></div>
+            <div className="h-full w-[12svw] flex justify-between items-center">
+              <Likepercent />
+            </div>
             <div className="flex justify-end items-center h-full w-auto">
               <h4 className="text-[#A641FF] font-[gilroy-ebold] text-sm ">
                 534,170 Reviews
@@ -272,8 +301,9 @@ const DetailsPage = () => {
               </h3>
             </div>
             <h3 className="text-white font-[gilroy-ebold] text-sm">
-              {game.release_date}
+              {game.release_date?.coming_soon ? "Coming Soon" : game.release_date?.date}
             </h3>
+
           </div>
           <div className="h-[5svh] w-full flex justify-start items-center ">
             <div className="w-[7svw]">
@@ -340,7 +370,7 @@ const DetailsPage = () => {
       <div className="h-[50svh] w-full flex justify-start items-start mb-15">
         <DetailsCommunity />
       </div>
-      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden">
+      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer">
         <div className="h-full w-full flex justify-center items-center bg-black relative">
           <img
             src={getGameImage(game, randomIndex2, 2)}
@@ -366,7 +396,7 @@ const DetailsPage = () => {
         <div className="h-[1px] w-full bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)] opacity-50"></div>
         <div className="h-[40vh] w-full rounded-xl overflow-hidden">
           <img
-           src={getGameImage(game, randomIndex3, 3)}
+            src={getGameImage(game, randomIndex3, 3)}
             className="h-full w-full object-cover"
             alt=""
           />
