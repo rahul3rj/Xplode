@@ -1,123 +1,144 @@
-import React, { useState } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
+import { gsap } from "gsap";
 
-const images = [
-  "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/374320/ss_12c4d9a3c04d6d340ffea9335441eb2ad84e0028.600x338.jpg",
-  "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/374320/ss_1318a04ef11d87f38aebe6d47a96124f8f888ca8.600x338.jpg",
-  "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/374320/ss_1c0fa39091901496d77cf4cecfea4ffb056d6452.600x338.jpg",
-];
+const SsSlider = ({ screenshots }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsRef = useRef([]);
+  const isAnimating = useRef(false);
 
-const SsSlider = () => {
-  const [index, setIndex] = useState(1); 
+ const visibleScreenshots = useMemo(() => {
+    if (!screenshots || screenshots.length === 0) return [];
+    return screenshots.slice(0, 3); // bas pehli 3 images
+  }, [screenshots]);
 
-  const prevSlide = () => {
-    setIndex((prev) => (prev - 1 + images.length) % images.length);
+
+  // Handle circular navigation
+  const goToSlide = (direction) => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    setCurrentIndex(
+      (prev) => (prev + direction + visibleScreenshots.length) % visibleScreenshots.length
+    );
   };
 
-  const nextSlide = () => {
-    setIndex((prev) => (prev + 1) % images.length);
-  };
+  // Animation effect
+  useEffect(() => {
 
-  const leftImg = images[(index - 1 + images.length) % images.length];
-  const centerImg = images[index];
-  const rightImg = images[(index + 1) % images.length];
+    // Now animate to new positions
+    const animationPromises = itemsRef.current.map((item, index) => {
+      if (!item) return Promise.resolve();
+
+      const position = (index - currentIndex + visibleScreenshots.length) % visibleScreenshots.length;
+      const isCenter = position === 0;
+      const isRight = position === 1;
+      const isLeft = position === visibleScreenshots.length - 1;
+
+      if (isCenter || isLeft || isRight) {
+        let xPosition, scale, opacity, zIndex;
+
+        if (isCenter) {
+          xPosition = 0;
+          scale = 1;
+          opacity = 1;
+        } else if (isRight) {
+          xPosition = 275;   // right side
+          scale = 0.6;
+          opacity = 0.8;
+        } else if (isLeft) {
+          xPosition = -275;  // left side
+          scale = 0.6;
+          opacity = 0.8;
+        }
+
+        // Create timeline for this item
+        const tl = gsap.timeline();
+
+        // Position and scale animations
+        tl.to(item, {
+          x: xPosition,
+          scale: scale,
+          opacity: opacity,
+          zIndex: isCenter ? 10 : 1,
+          duration: 0.1,
+          ease: "power2.out",
+        });
+
+        tl.eventCallback("onComplete", () => {
+          if (isCenter) isAnimating.current = false;
+        });
+
+        return tl;
+      }
+      return Promise.resolve();
+    });
+
+    Promise.all(animationPromises);
+  }, [currentIndex, visibleScreenshots.length]);
+
+  // Handle empty screenshots
+  if (!visibleScreenshots || visibleScreenshots.length === 0) {
+    return (
+      <div className="h-full w-full flex justify-center items-center">
+        No screenshots available
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full w-full flex justify-center items-end relative">
-      {/* left */}
-      <div className="h-[20vh] w-[18vw]">
-        <div className="relative h-full w-full">
-          <img src={leftImg} alt="left" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-black/60"></div>
-        </div>
-      </div>
-      {/* center */}
-      <div className="h-[30vh] w-[24vw]">
-        <img
-          src={centerImg}
-          alt="center"
-          className="h-full w-full object-cover"
-        />
-      </div>
-      {/* right */}
-      <div className="h-[20vh] w-[18vw]">
-        <div className="relative h-full w-full">
-          <img src={rightImg} alt="right" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-black/60"></div>
-        </div>
+    <div className="h-full w-full flex justify-center items-center relative overflow-hidden">
+      {/* Slider track */}
+      <div className="flex items-center justify-center h-full w-full relative">
+        {visibleScreenshots.map((screenshot, index) => {
+          const position = (index - currentIndex + visibleScreenshots.length) % visibleScreenshots.length;
+          const isVisible = position === 0 || position === 1 || position === visibleScreenshots.length - 1;
+
+          return (
+            <div
+              key={index}
+              ref={(el) => (itemsRef.current[index] = el)}
+              className="absolute h-[35vh] w-[28vw] transition-all duration-300"
+              style={{
+                pointerEvents: position === 0 ? "auto" : "none",
+                display: isVisible ? "block" : "none",
+              }}
+            >
+              {/* Main image container with hexagon clip */}
+              <div className="absolute inset-0 [clip-path:polygon(0%_0%,75%_0%,100%_25%,100%_100%,25%_100%,0%_75%)] bg-black/50">
+                {/* Image */}
+                <img
+                  className="h-full w-full object-cover"
+                  src={screenshot.path_thumbnail}
+                  alt={`Screenshot ${index + 1}`}
+                />
+
+                {/* Color bar */}
+                <div
+                  className="absolute w-[1vw] h-[15vh] bottom-0 right-0 color-bar"
+                  style={{
+                    backgroundColor: position === 0 ? "#56179dff" : "#808080",
+                  }}
+                ></div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* prev button */}
-      <div
-        onClick={prevSlide}
-        className=" absolute left-0 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center"
+      {/* Navigation buttons */}
+      <button
+        onClick={() => goToSlide(-1)}
+        className="absolute left-2 md:left-10 cursor-pointer text-[#9D2117] scale-[150%] top-1/2 z-20 -translate-y-1/2 duration-300 p-2 rounded-full hover:scale-[200%] transition-transform w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-black"
       >
-        <i className="ri-arrow-left-s-line text-white text-2xl"></i>
-      </div>
-
-      {/* next button */}
-      <div
-        onClick={nextSlide}
-        className=" absolute right-0 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center"
+        <i className="ri-arrow-left-s-line"></i>
+      </button>
+      <button
+        onClick={() => goToSlide(1)}
+        className="absolute right-2 md:right-10 cursor-pointer text-[#9D2117] scale-[150%] top-1/2 z-20 -translate-y-1/2 duration-300 p-2 rounded-full hover:scale-[200%] transition-transform w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-black"
       >
-        <i className="ri-arrow-right-s-line text-white text-2xl"></i>
-      </div>
+        <i className="ri-arrow-right-s-line"></i>
+      </button>
     </div>
   );
 };
 
 export default SsSlider;
-
-
-
-
-
-
-
-
-
-
-
-
-
-{/* <Swiper
-            modules={[Navigation]}
-            navigation={{
-              nextEl: ".swiper-button-next-custom",
-              prevEl: ".swiper-button-prev-custom",
-            }}
-            centeredSlides={true}
-            slidesPerView={3}
-            initialSlide={Math.floor(images.length / 2)}
-            loop={false}
-            spaceBetween={0}
-            className="w-full h-full"
-          >
-            {images.map((img, idx) => (
-              <SwiperSlide
-                key={idx}
-                className="flex justify-center items-center"
-              >
-                {({ isActive }) => (
-                  <img
-                    src={img}
-                    alt=""
-                    className={`transition-all duration-500 mx-auto rounded-xl shadow-lg object-cover
-            ${
-              isActive
-                ? "w-[32vw] h-[40vh] translate-y-0 scale-100 z-40 absolute z-90 "
-                : "w-[25vw] h-[30vh] translate-y-8 -translate-x-8 first:translate-x-8 scale-80 opacity-70 z-30"
-            }
-          `}
-                  />
-                )}
-              </SwiperSlide>
-            ))}
-
-            <div className="swiper-button-prev-custom absolute left-0 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center">
-              <i className="ri-arrow-left-s-line text-white text-2xl"></i>
-            </div>
-            <div className="swiper-button-next-custom absolute right-0 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center">
-              <i className="ri-arrow-right-s-line text-white text-2xl"></i>
-            </div>
-          </Swiper> */}
-

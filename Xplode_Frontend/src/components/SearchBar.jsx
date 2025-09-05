@@ -50,8 +50,8 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
     }
     return filteredGames.map((game, index) => (
       <Link
-        key={`${game.appid || game.id}-${index}`}
-        to={`/game/${game.appid || game.id}`}
+        key={`${game.appid || index}  `}
+        to={`/game/${game.appid }`}
         className="flex items-center gap-4 p-2 px-5 hover:bg-[#A641FF]/20 transition-all duration-300 cursor-pointer"
       >
         <img

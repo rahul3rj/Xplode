@@ -1,46 +1,123 @@
 import { React, useState } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { EffectCoverflow, Navigation } from "swiper/modules";
+
 import SsSlider from "../components/SsSlider";
 import DetailsCommunity from "../components/DetailsCommunity";
 import axios from "../utils/axios";
 import Footer from "../components/Footer";
 import { useEffect } from "react";
 import GameList from "../components/GameList";
-
-
+import { useNavigate, useParams } from "react-router-dom";
 
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
 const DetailsPage = () => {
-
+  const { appid } = useParams(); // ✅ param name fix
   const [games, setGames] = useState([]);
- const fetchGames = async () => {
-    try {
-      const response = await axios.get("/games/home"); // assuming it's a GET now
-      console.log(response.data);
-      setGames(response.data);
-    } catch (err) {
-      console.error("Failed to fetch games:", err);
-    }
-  };
+  const navigate = useNavigate();
+  const [game, setGame] = useState(null);
+  const [randomIndex1, setRandomIndex1] = useState(-1);
+  const [randomIndex2, setRandomIndex2] = useState(-1);
+  const [randomIndex3, setRandomIndex3] = useState(-1);
+  const [randomIndex4, setRandomIndex4] = useState(-1);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
+    const fetchGame = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`/games/game/${appid}`); // ✅ hits backend
+        console.log(res.data);
+        setGame(res.data); // ✅ single object
+      } catch (e) {
+        setErr(e?.response?.data?.message || e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGame();
+  }, [appid]);
+
+  function getRandomIndex(max) {
+    if (!max || max <= 0) return -1;
+    return Math.floor(Math.random() * max);
+  }
+
+  useEffect(() => {
+    if (game?.hero_image?.length > 0) {
+      setRandomIndex1(getRandomIndex(game.hero_image.length));
+      setRandomIndex2(getRandomIndex(game.hero_image.length));
+      setRandomIndex3(getRandomIndex(game.hero_image.length));
+      setRandomIndex4(getRandomIndex(game.hero_image.length));
+    }
+  }, [game?.steam_appid]);
+
+  function getGameImage(game, randomIndex, fallbackType) {
+    if (game?.hero_image?.length > 0 && randomIndex >= 0) {
+      return game.hero_image[randomIndex]?.url;
+    }
+
+    // Fallbacks
+    if (fallbackType === 1) {
+      return game?.background_raw || game?.capsule || game?.header;
+    } else if (fallbackType === 2) {
+      return game?.background || game?.background_raw || game?.header;
+    } else if (fallbackType === 3) {
+      return game?.header_image || game?.capsule || game?.background_raw;
+    } else if (fallbackType === 4) {
+      return game?.capsule_image || game?.header || game?.capsule;
+    }
+
+    return ""; // nothing available
+  }
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await axios.get("/games/home"); // assuming it's a GET now
+        setGames(response.data);
+      } catch (err) {
+        console.error("Failed to fetch games:", err);
+      }
+    };
     fetchGames();
   }, []);
-  const sliderGames = games.filter((game) => game.category === "sliders");
-  const trendingGames = games.filter((game) => game.category === "trending");
-  const topGames = games.filter((game) => game.category === "top_games");
-  const topRecordGames = games.filter((game) => game.category === "top_records");
+
+  const topRecordGames = games.filter(
+    (game) => game.category === "top_records"
+  );
 
   const [isActive, setIsActive] = useState(null);
+
+  if (loading) {
+    return (
+      <div className="h-[60vh] w-full flex items-center justify-center">
+        <img src="../Preloader.svg" alt="loading" className="h-10" />
+      </div>
+    );
+  }
+
+  if (err || !game) {
+    return (
+      <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3">
+        <p className="text-white/80">Kuch gadbad: {err || "Game not found"}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-[#A641FF] rounded text-white"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="h-auto w-full px-5 ">
       <div className="h-[85svh] w-full flex justify-center items-center rounded-xl relative overflow-hidden mb-15">
         <img
-          src="https://cdn2.steamgriddb.com/hero/2578eb9cdf020730f77793e8b58e165a.png"
+          src={getGameImage(game, randomIndex1, 1)}
+          className="h-full w-full object-cover"
           alt=""
-          className="object-cover h-full"
         />
         <div className=" absolute z-5 h-full w-[40%] left-0 rounded-l-[13px] bg-[linear-gradient(292deg,_rgba(28,0,0,0)_25.78%,_rgba(42,20,72,0.60)_76.18%)] "></div>
         <div className="absolute z-10 h-[10svh] w-full top-0 flex justify-between items-end px-10">
@@ -60,25 +137,22 @@ const DetailsPage = () => {
         </div>
         <div className="absolute z-10 top-30 left-0 px-10 h-[30svh] w-auto flex flex-col items-start justify-center gap-2">
           <h1 className="text-5xl font-[gilroy-ebold] text-white ">
-            DARK SOULS™ III
+            {game.name}
           </h1>
           <div className="h-[3svh] w-[15vw] flex justify-between items-center">
             <div className="h-[2svh] w-[5svw]"></div>
-            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
-              Dark fantasy{" "}
-            </h4>
-            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
-              RPG{" "}
-            </h4>
-            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
-              Difficult{" "}
-            </h4>
+            {game.genres.map((genre, idx) => (
+              <h4
+                key={idx}
+                className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]"
+              >
+                {genre}{" "}
+              </h4>
+            ))}
           </div>
           <div className="h-[30%] w-[20vw]">
             <p className="text-xs font-[gilroy] text-[#C7C3C3]">
-              Dark Souls continues to push the boundaries with the latest,
-              ambitious chapter in the critically-acclaimed and genre-defining
-              series. Prepare yourself and Embrace The Darkness!
+              {game.description}
             </p>
           </div>
           <div className="h-[20%] w-auto flex justify-between items-center gap-2 mt-2">
@@ -97,7 +171,7 @@ const DetailsPage = () => {
           </div>
         </div>
         <div className="absolute z-30 bottom-0 h-[30svh] w-[60vw]">
-          <SsSlider />
+          <SsSlider screenshots={game.screenshots} />
         </div>
       </div>
       <div className="h-[50svh] w-full flex justify-between items-center mb-15">
@@ -198,7 +272,7 @@ const DetailsPage = () => {
               </h3>
             </div>
             <h3 className="text-white font-[gilroy-ebold] text-sm">
-              25 Feb 2022
+              {game.release_date}
             </h3>
           </div>
           <div className="h-[5svh] w-full flex justify-start items-center ">
@@ -207,9 +281,14 @@ const DetailsPage = () => {
                 Developer
               </h3>
             </div>
-            <h3 className="text-[#A641FF] font-[gilroy-ebold] text-sm">
-              From Software
-            </h3>
+            {game.developers.map((developer, idx) => (
+              <h3
+                key={idx}
+                className=" text-[#A641FF] font-[gilroy-ebold] text-sm truncate cursor-pointer"
+              >
+                {developer}
+              </h3>
+            ))}
           </div>
           <div className="h-[5svh] w-full flex justify-start items-center ">
             <div className="w-[7svw]">
@@ -217,9 +296,14 @@ const DetailsPage = () => {
                 Publisher
               </h3>
             </div>
-            <h3 className="w-[18svw] text-[#A641FF] font-[gilroy-ebold] text-sm truncate cursor-pointer">
-              FromSoftware, Bandai Namco Entertainment
-            </h3>
+            {game.publishers.map((publisher, idx) => (
+              <h3
+                key={idx}
+                className="w-[18svw] text-[#A641FF] font-[gilroy-ebold] text-sm truncate cursor-pointer"
+              >
+                {publisher}
+              </h3>
+            ))}
           </div>
           <div className="h-[10svh] w-full flex flex-col justify-between items-start ">
             <div className="w-[7svw]">
@@ -259,14 +343,15 @@ const DetailsPage = () => {
       <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden">
         <div className="h-full w-full flex justify-center items-center bg-black relative">
           <img
-            src="https://cdn2.steamgriddb.com/hero/1818639605cebf18979ba92707e10850.png"
+            src={getGameImage(game, randomIndex2, 2)}
             alt=""
             className="h-full w-full object-cover rounded-lg mix-blend-luminosity  "
           />
+
           <div className="h-full w-full absolute z-10 top-0 left-0 bg-black/40 shadow-[inset_0_4px_79.2px_0_rgba(255,41,195,0.50)] rounded-xl"></div>
           <div className="h-full w-full absolute z-10 top-0 left-0 flex justify-center items-center">
             <h1 className="text-white font-[gilroy] font-[600] text-3xl">
-              Check out the entire FromSoftware Inc collection on{" "}
+              Check out the entire {game.publishers[0]} collection on{" "}
               <span className="bg-clip-text text-transparent bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)]">
                 Xplode
               </span>
@@ -281,9 +366,9 @@ const DetailsPage = () => {
         <div className="h-[1px] w-full bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)] opacity-50"></div>
         <div className="h-[40vh] w-full rounded-xl overflow-hidden">
           <img
-            src="https://cdn2.steamgriddb.com/hero/18c746a0e715b82e90f0b63ba322576f.png"
-            alt=""
+           src={getGameImage(game, randomIndex3, 3)}
             className="h-full w-full object-cover"
+            alt=""
           />
         </div>
         <div className="h-[45vh] w-full flex flex-col justify-center items-start gap-7">
@@ -312,12 +397,14 @@ const DetailsPage = () => {
             Now only embers remain… Prepare yourself once more and Embrace The
             Darkness!
           </p>
+
+
         </div>
         <div className="h-[40vh] w-full rounded-xl overflow-hidden">
           <img
-            src="https://cdn2.steamgriddb.com/hero/0c71f0a8c36a3212e6569e6186febd41.png"
-            alt=""
+            src={getGameImage(game, randomIndex4, 4)}
             className="h-full w-full object-cover"
+            alt=""
           />
         </div>
         <div className="h-[1px] w-full bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)] opacity-50 "></div>
@@ -328,98 +415,108 @@ const DetailsPage = () => {
         </h4>
         <div className="h-auto w-full flex justify-between items-center">
           <div className="h-auto w-[45%]">
-            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">Minimum</h4>
+            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
+              Minimum
+            </h4>
             <ul className="list-disc list-inside text-[#9F9B9B] text-xs font-[gilroy] ml-4 ">
               <li className="mb-2">
-                <span className="font-[600] text-white">OS *:</span> Windows 7 SP1 64bit,
-                Windows 8.1 64bit Windows 10 64bit
+                <span className="font-[600] text-white">OS *:</span> Windows 7
+                SP1 64bit, Windows 8.1 64bit Windows 10 64bit
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Processor:</span> Intel Core
-                i3-2100 / AMD® FX-6300
+                <span className="font-[600] text-white">Processor:</span> Intel
+                Core i3-2100 / AMD® FX-6300
               </li>
               <li className="mb-2">
                 <span className="font-[600] text-white">Memory:</span> 4 GB RAM
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Graphics:</span> NVIDIA® GeForce
-                GTX 750 Ti / ATI Radeon HD 7950
+                <span className="font-[600] text-white">Graphics:</span> NVIDIA®
+                GeForce GTX 750 Ti / ATI Radeon HD 7950
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">DirectX:</span> Version 11
+                <span className="font-[600] text-white">DirectX:</span> Version
+                11
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Network:</span> Broadband Internet
-                connection
+                <span className="font-[600] text-white">Network:</span>{" "}
+                Broadband Internet connection
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Storage:</span> 25 GB available
-                space
+                <span className="font-[600] text-white">Storage:</span> 25 GB
+                available space
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Sound Card:</span> DirectX 11 sound
-                device
+                <span className="font-[600] text-white">Sound Card:</span>{" "}
+                DirectX 11 sound device
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Additional Notes:</span> Internet
-                connection required for online play and product activation
+                <span className="font-[600] text-white">Additional Notes:</span>{" "}
+                Internet connection required for online play and product
+                activation
               </li>
             </ul>
           </div>
           <div className="h-auto w-[45%]">
-            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">RECOMMENDED:</h4>
+            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
+              RECOMMENDED:
+            </h4>
             <ul className="list-disc list-inside text-[#9F9B9B] text-xs font-[gilroy] ml-4 ">
               <li className="mb-2">
-                <span className="font-[600] text-white">OS *:</span> Windows 7 SP1 64bit,
-                Windows 8.1 64bit Windows 10 64bit
+                <span className="font-[600] text-white">OS *:</span> Windows 7
+                SP1 64bit, Windows 8.1 64bit Windows 10 64bit
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Processor:</span> Intel Core
-                i7-3770 / AMD® FX-8350
+                <span className="font-[600] text-white">Processor:</span> Intel
+                Core i7-3770 / AMD® FX-8350
               </li>
               <li className="mb-2">
                 <span className="font-[600] text-white">Memory:</span> 8 GB RAM
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Graphics:</span> NVIDIA® GeForce
-                GTX 970 / ATI Radeon R9 series
+                <span className="font-[600] text-white">Graphics:</span> NVIDIA®
+                GeForce GTX 970 / ATI Radeon R9 series
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">DirectX:</span> Version 11
+                <span className="font-[600] text-white">DirectX:</span> Version
+                11
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Network:</span> Broadband Internet
-                connection
+                <span className="font-[600] text-white">Network:</span>{" "}
+                Broadband Internet connection
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Storage:</span> 25 GB available
-                space
+                <span className="font-[600] text-white">Storage:</span> 25 GB
+                available space
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Sound Card:</span> DirectX 11 sound
-                device
+                <span className="font-[600] text-white">Sound Card:</span>{" "}
+                DirectX 11 sound device
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Additional Notes:</span> Internet
-                connection required for online play and product activation
+                <span className="font-[600] text-white">Additional Notes:</span>{" "}
+                Internet connection required for online play and product
+                activation
               </li>
             </ul>
           </div>
-          
         </div>
         <div className="h-auto w-full flex justify-center items-center">
-          <p className="text-xs text-[#9F9B9B] font-[gilroy]">DARK SOULS® III & ©BANDAI NAMCO Entertainment Inc. / ©2011-2016 FromSoftware, Inc.</p>
+          <p className="text-xs text-[#9F9B9B] font-[gilroy]">
+            DARK SOULS® III & ©BANDAI NAMCO Entertainment Inc. / ©2011-2016
+            FromSoftware, Inc.
+          </p>
         </div>
       </div>
       <div className=" h-auto w-full">
         {topRecordGames.length > 0 && (
-            <GameList
-              games={topRecordGames}
-              title={GameListTitle[2]}
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
-            />
-          )}
+          <GameList
+            games={topRecordGames}
+            title={GameListTitle[2]}
+            nextClass="game-list-swiper-next-2"
+            prevClass="game-list-swiper-prev-2"
+          />
+        )}
       </div>
       <Footer />
     </div>

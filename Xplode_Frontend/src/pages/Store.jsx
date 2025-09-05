@@ -15,7 +15,6 @@ const Store = () => {
   const fetchGames = async () => {
     try {
       const response = await axios.get("/games/home"); // assuming it's a GET now
-      console.log(response.data);
       setGames(response.data);
     } catch (err) {
       console.error("Failed to fetch games:", err);

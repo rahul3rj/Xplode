@@ -171,23 +171,45 @@ router.get("/search", async (req, res) => {
   }
 });
 
+
+//OLD - if needed
+// router.get("/game/:appid", async (req, res) => {
+//   const { appid } = req.params;
+
+//   try {
+//     const response = await steamAPI.get(
+//       `https://store.steampowered.com/api/appdetails?appids=${appid}`
+//     );
+
+//     const gameDetails = response.data[appid]?.data;
+//     if (!gameDetails) {
+//       return res.status(404).json({ message: "Game details not found" });
+//     }
+
+//     res.status(200).json(gameDetails);
+//   } catch (err) {
+//     console.error(`❌ Error fetching details for appid ${appid}:`, err.message);
+//     res.status(500).json({ message: "Failed to fetch game details" });
+//   }
+// });
+
 router.get("/game/:appid", async (req, res) => {
-  const { appid } = req.params;
-
   try {
-    const response = await steamAPI.get(
-      `https://store.steampowered.com/api/appdetails?appids=${appid}`
-    );
-
-    const gameDetails = response.data[appid]?.data;
-    if (!gameDetails) {
-      return res.status(404).json({ message: "Game details not found" });
+    const appid = parseInt(req.params.appid, 10);
+    if (isNaN(appid)) {
+      return res.status(400).json({ message: "Invalid appid" });
     }
 
-    res.status(200).json(gameDetails);
+    const game = await SearchGames.findOne({ steam_appid: appid });
+
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+
+    res.json(game); // ✅ send full object
   } catch (err) {
-    console.error(`❌ Error fetching details for appid ${appid}:`, err.message);
-    res.status(500).json({ message: "Failed to fetch game details" });
+    console.error("Error fetching game by appid:", err.message);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from "react";
 import GameCard from "./GameCard";
+import { Link } from "react-router-dom";
 
 const GameBanner = ({ games }) => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -15,7 +16,7 @@ const GameBanner = ({ games }) => {
   };
 
   const handleMouseLeave = () => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current); 
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
     setActiveIndex(lastActiveIndex);
   };
   const getRandomImage = (arr) => {
@@ -27,20 +28,21 @@ const GameBanner = ({ games }) => {
   return (
     <div className="h-[47svh] w-[87vw] flex gap-3 ">
       {games.map((game, idx) => {
-        
+     
         return (
-          <div
-            key={idx}
-            onMouseEnter={() => handleMouseEnter(idx)} 
+          <Link
+            key={`${game.steam_appid }`}
+            to={`/game/${game.steam_appid }`}
+            onMouseEnter={() => handleMouseEnter(idx)}
             onMouseLeave={handleMouseLeave}
           >
             <GameCard
               image={game.portrait_image[0]}
-              bg={game.capsule_image ||game.header_image}
+              bg={game.capsule_image || game.header_image}
               title={game.title}
               isActive={activeIndex === idx}
             />
-          </div>
+          </Link>
         );
       })}
     </div>

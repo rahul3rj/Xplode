@@ -61,11 +61,15 @@ const NavBar = ({ user }) => {
       {/* Navbar */}
       <div className="h-[12svh] w-full bg-transparent flex justify-between items-center fixed top-0 left-0 z-50">
         <div className="h-[10svh] w-[50%] flex justify-between items-center">
-          <img
+          <Link to={"/home"}
+          className=" flex justify-start items-center cursor-pointer">
+            <img
             src="/LoginPage/Complete logo.png"
             alt=""
-            className="ml-[1.3vw] "
+            className="ml-[1.3vw] r"
           />
+          </Link>
+          
           <div className="w-full h-[6svh]">
             <SearchBar
               query={query}

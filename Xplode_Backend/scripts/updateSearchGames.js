@@ -1005,16 +1005,19 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Create axios instance with better defaults
 const steamApi = axios.create({
-  baseURL: 'https://store.steampowered.com/api',
+  baseURL: "https://store.steampowered.com/api",
   timeout: 10000,
   headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  }
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+  },
 });
 
 async function fetchSteamDetails(appid) {
   try {
-    const { data } = await steamApi.get(`/appdetails?appids=${appid}&cc=IN&l=english`);
+    const { data } = await steamApi.get(
+      `/appdetails?appids=${appid}&cc=IN&l=english`
+    );
     return data[String(appid)]?.data || null;
   } catch (err) {
     console.warn(`Steam details fetch failed for ${appid}: ${err.message}`);
@@ -1044,7 +1047,7 @@ async function fetchHeroImage(appid) {
       `https://www.steamgriddb.com/api/v2/heroes/steam/${appid}?types=static`,
       {
         headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
-        timeout: 5000
+        timeout: 5000,
       }
     );
     if (res.data && res.data.success) {
@@ -1066,27 +1069,36 @@ async function updateSearchGamesInDB() {
   for (const game of steamAppids) {
     processed++;
     if (!game?.appid) {
-      console.warn(`[${processed}/${totalGames}] Skipping entry without appid:`, game);
+      console.warn(
+        `[${processed}/${totalGames}] Skipping entry without appid:`,
+        game
+      );
       skipped++;
       continue;
     }
 
     try {
-      console.log(`[${processed}/${totalGames}] Processing: ${game.name} (${game.appid})`);
-      
+      console.log(
+        `[${processed}/${totalGames}] Processing: ${game.name} (${game.appid})`
+      );
+
       let details = await fetchSteamDetails(game.appid);
-      
+
       // Add delay between requests to avoid rate limiting
       await sleep(2000); // 2 seconds between requests
 
       if (!details) {
-        console.warn(`[${processed}/${totalGames}] No details for ${game.appid}, skipping.`);
+        console.warn(
+          `[${processed}/${totalGames}] No details for ${game.appid}, skipping.`
+        );
         skipped++;
         continue;
       }
 
       if (details.type !== "game") {
-        console.warn(`[${processed}/${totalGames}] Not a game: ${game.appid}, skipping.`);
+        console.warn(
+          `[${processed}/${totalGames}] Not a game: ${game.appid}, skipping.`
+        );
         skipped++;
         continue;
       }
@@ -1106,21 +1118,56 @@ async function updateSearchGamesInDB() {
       const gameDoc = {
         steam_appid: game.appid,
         name: details.name || game.name || "Unknown Title",
+
+        // Basic
         description: details.short_description || "",
         release_date: details.release_date?.date || "",
         price: details.price_overview?.final_formatted || "Free",
         platforms: details.platforms || {},
         genres: details.genres?.map((g) => g.description) || [],
+
+        // Media
         header_image: details.header_image || "/default-game-cover.jpg",
         background: details.background || "/default-game-cover.jpg",
         background_raw: details.background_raw || "/default-game-cover.jpg",
         capsule_image,
-        supported_languages: details.supported_languages || "",
-        website: details.website || "",
-        about_the_game: details.about_the_game || "",
         portrait_image: getPortrait(game.appid),
         hero_image: heroImage,
         screenshots,
+
+        // Texts
+        supported_languages: details.supported_languages || "",
+        website: details.website || "",
+        about_the_game: details.about_the_game || "",
+        detailed_description: details.detailed_description || "",
+
+        // Extra fields
+        is_free: details.is_free || false,
+        required_age: details.required_age || 0,
+        controller_support: details.controller_support || "",
+
+        developers: details.developers || [],
+        publishers: details.publishers || [],
+
+        price_overview: details.price_overview || {},
+        recommendations: details.recommendations || {},
+        achievements: details.achievements || {},
+        ratings: details.ratings || {},
+        support_info: details.support_info || {},
+        content_descriptors: details.content_descriptors || {},
+        categories: details.categories || [],
+        movies: details.movies || [],
+        dlc: details.dlc || [],
+        packages: details.packages || [],
+        package_groups: details.package_groups || [],
+        type: details.type || "game",
+
+        // Requirements
+        pc_requirements: details.pc_requirements || {},
+        mac_requirements: details.mac_requirements || [],
+        linux_requirements: details.linux_requirements || [],
+
+        // Misc
         lastUpdated: new Date(),
       };
 
@@ -1131,11 +1178,12 @@ async function updateSearchGamesInDB() {
       );
 
       console.log(`[${processed}/${totalGames}] ✅ Upserted: ${gameDoc.name}`);
-      
     } catch (err) {
-      console.error(`[${processed}/${totalGames}] ❌ Error processing appid ${game.appid}: ${err.message}`);
+      console.error(
+        `[${processed}/${totalGames}] ❌ Error processing appid ${game.appid}: ${err.message}`
+      );
       failed++;
-      
+
       // If it's a rate limit error, wait longer
       if (err.response?.status === 429) {
         console.log("Rate limited, waiting 30 seconds...");

@@ -4,7 +4,7 @@ const SearchGameSchema = new mongoose.Schema({
   steam_appid: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
 
-  // Steam Details
+  // Steam Details (already existing)
   description: { type: String, default: "No description available" },
   release_date: { type: String, default: "Unknown" },
   price: { type: String, default: "Free" },
@@ -33,8 +33,34 @@ const SearchGameSchema = new mongoose.Schema({
     },
   ],
 
+  // --- NEW FIELDS FROM STEAM API ---
+  short_description: { type: String, default: "" },
+  detailed_description: { type: String, default: "" },
+  is_free: { type: Boolean, default: false },
+  required_age: { type: Number, default: 0 },
+  controller_support: { type: String, default: "" },
+  developers: { type: [String], default: [] },
+  publishers: { type: [String], default: [] },
+  price_overview: { type: Object, default: {} },
+  recommendations: { type: Object, default: {} },
+  achievements: { type: Object, default: {} },
+  ratings: { type: Object, default: {} },
+  support_info: { type: Object, default: {} },
+  content_descriptors: { type: Object, default: {} },
+  categories: { type: Array, default: [] },
+  movies: { type: Array, default: [] },
+  dlc: { type: Array, default: [] },
+  packages: { type: Array, default: [] },
+  package_groups: { type: Array, default: [] },
+  type: { type: String, default: "game" },
+
+  // --- System Requirements ---
+  pc_requirements: { type: Object, default: {} },
+  mac_requirements: { type: Array, default: [] },
+  linux_requirements: { type: Array, default: [] },
+
   // Misc
-   category: { type: String, default: "" },
+  category: { type: String, default: "" },
   lastUpdated: { type: Date, default: Date.now },
 });
 
