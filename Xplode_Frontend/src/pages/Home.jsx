@@ -4,12 +4,16 @@ import { useNavigate, Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import SideNav from "../components/SideNav";
 import Store from "../pages/Store";
+import Library from "../pages/Library";
+import Community from "../pages/Community";
+import Settings from "../pages/Settings";
 
 const Home = () => {
   const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [games, setGames] = useState([]);
+  const [activePage, setActivePage] = useState("store");
   const navigate = useNavigate();
 
   const fetchGames = async (page = 1) => {
@@ -59,6 +63,21 @@ const Home = () => {
     }
   };
 
+  const renderPage = () => {
+    switch (activePage) {
+      case "store":
+        return <Store games={games} />;
+      case "library":
+        return <Library />;
+      case "community":
+        return <Community />;
+      case "settings":
+        return <Settings />;
+      default:
+        return <Store games={games} />;
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -103,9 +122,9 @@ const Home = () => {
     <div className="h-screen w-full relative bg-transparent">
       <div className="relative sticky z-10">
         <NavBar user={user} />
-        <SideNav handleLogout={handleLogout} />
+        <SideNav handleLogout={handleLogout} setActivePage={setActivePage} activePage={activePage}  />
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
-          <Store games={games} />
+          {renderPage()}
         </div>
       </div>
       <div className="absolute bottom-0 left-0 w-full fixed z-0">

@@ -26,7 +26,7 @@ const SsSlider = () => {
       {/* left */}
       <div className="h-[20vh] w-[18vw]">
         <div className="relative h-full w-full">
-          <img src={leftImg} alt="left" className="h-full w-full object-cover" />
+          <img src={leftImg} alt="left" className="h-full w-full object-cover rounded-lg" />
           <div className="absolute inset-0 bg-black/60"></div>
         </div>
       </div>
@@ -35,13 +35,13 @@ const SsSlider = () => {
         <img
           src={centerImg}
           alt="center"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover rounded-lg shadow-xl"
         />
       </div>
       {/* right */}
       <div className="h-[20vh] w-[18vw]">
         <div className="relative h-full w-full">
-          <img src={rightImg} alt="right" className="h-full w-full object-cover" />
+          <img src={rightImg} alt="right" className="h-full w-full object-cover rounded-lg" />
           <div className="absolute inset-0 bg-black/60"></div>
         </div>
       </div>
@@ -49,7 +49,7 @@ const SsSlider = () => {
       {/* prev button */}
       <div
         onClick={prevSlide}
-        className=" absolute left-0 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center"
+        className=" absolute -left-5 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center"
       >
         <i className="ri-arrow-left-s-line text-white text-2xl"></i>
       </div>
@@ -57,7 +57,7 @@ const SsSlider = () => {
       {/* next button */}
       <div
         onClick={nextSlide}
-        className=" absolute right-0 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center"
+        className=" absolute -right-5 top-1/2 -translate-y-1/2 z-30 cursor-pointer bg-black/40 hover:bg-black rounded-full h-[6svh] w-[6svh] flex items-center justify-center"
       >
         <i className="ri-arrow-right-s-line text-white text-2xl"></i>
       </div>

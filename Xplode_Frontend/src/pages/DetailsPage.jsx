@@ -7,17 +7,17 @@ import axios from "../utils/axios";
 import Footer from "../components/Footer";
 import { useEffect } from "react";
 import GameList from "../components/GameList";
-
-
+import Rating from "@mui/material/Rating";
+import StarIcon from "@mui/icons-material/Star";
+import Likepercent from "../components/Likepercent";
 
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
 const DetailsPage = () => {
-
   const [games, setGames] = useState([]);
- const fetchGames = async () => {
+  const fetchGames = async () => {
     try {
-      const response = await axios.get("/games/home"); // assuming it's a GET now
+      const response = await axios.get("/games/home"); 
       console.log(response.data);
       setGames(response.data);
     } catch (err) {
@@ -31,7 +31,9 @@ const DetailsPage = () => {
   const sliderGames = games.filter((game) => game.category === "sliders");
   const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
-  const topRecordGames = games.filter((game) => game.category === "top_records");
+  const topRecordGames = games.filter(
+    (game) => game.category === "top_records"
+  );
 
   const [isActive, setIsActive] = useState(null);
   return (
@@ -63,7 +65,16 @@ const DetailsPage = () => {
             DARK SOULS™ III
           </h1>
           <div className="h-[3svh] w-[15vw] flex justify-between items-center">
-            <div className="h-[2svh] w-[5svw]"></div>
+            <div className="h-[2svh] w-[5svw] flex items-center justify-center">
+              <Rating
+                name="read-only"
+                value={4} // Set to 5 for a 5-star rating
+                readOnly
+                precision={0.5}
+                emptyIcon={<StarIcon style={{ opacity: 0.55, stroke: '#C7C3C3', strokeWidth: 1 }} sx={{ fontSize: '2vh' }} />}
+                icon={<StarIcon sx={{ fontSize: '2vh' }} />}
+              />
+            </div>
             <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
               Dark fantasy{" "}
             </h4>
@@ -113,7 +124,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://store.steampowered.com/app/374320/`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -131,7 +142,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://store.epicgames.com/en-US/p/grand-theft-auto-v`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -149,7 +160,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://www.playstation.com/en-us/games/dark-souls-iii/`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -167,7 +178,7 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button onClick={() => window.open(`https://www.xbox.com/en-US/games/store/dark-souls-iii-deluxe-edition/C23CWXL81H3L/0001`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -184,7 +195,9 @@ const DetailsPage = () => {
                 All Time
               </h3>
             </div>
-            <div className="h-full w-[12svw] flex justify-between items-center"></div>
+            <div className="h-full w-[12svw] flex justify-between items-center">
+              <Likepercent />
+            </div>
             <div className="flex justify-end items-center h-full w-auto">
               <h4 className="text-[#A641FF] font-[gilroy-ebold] text-sm ">
                 534,170 Reviews
@@ -256,7 +269,7 @@ const DetailsPage = () => {
       <div className="h-[50svh] w-full flex justify-start items-start mb-15">
         <DetailsCommunity />
       </div>
-      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden">
+      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer">
         <div className="h-full w-full flex justify-center items-center bg-black relative">
           <img
             src="https://cdn2.steamgriddb.com/hero/1818639605cebf18979ba92707e10850.png"
@@ -328,98 +341,108 @@ const DetailsPage = () => {
         </h4>
         <div className="h-auto w-full flex justify-between items-center">
           <div className="h-auto w-[45%]">
-            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">Minimum</h4>
+            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
+              Minimum
+            </h4>
             <ul className="list-disc list-inside text-[#9F9B9B] text-xs font-[gilroy] ml-4 ">
               <li className="mb-2">
-                <span className="font-[600] text-white">OS *:</span> Windows 7 SP1 64bit,
-                Windows 8.1 64bit Windows 10 64bit
+                <span className="font-[600] text-white">OS *:</span> Windows 7
+                SP1 64bit, Windows 8.1 64bit Windows 10 64bit
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Processor:</span> Intel Core
-                i3-2100 / AMD® FX-6300
+                <span className="font-[600] text-white">Processor:</span> Intel
+                Core i3-2100 / AMD® FX-6300
               </li>
               <li className="mb-2">
                 <span className="font-[600] text-white">Memory:</span> 4 GB RAM
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Graphics:</span> NVIDIA® GeForce
-                GTX 750 Ti / ATI Radeon HD 7950
+                <span className="font-[600] text-white">Graphics:</span> NVIDIA®
+                GeForce GTX 750 Ti / ATI Radeon HD 7950
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">DirectX:</span> Version 11
+                <span className="font-[600] text-white">DirectX:</span> Version
+                11
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Network:</span> Broadband Internet
-                connection
+                <span className="font-[600] text-white">Network:</span>{" "}
+                Broadband Internet connection
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Storage:</span> 25 GB available
-                space
+                <span className="font-[600] text-white">Storage:</span> 25 GB
+                available space
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Sound Card:</span> DirectX 11 sound
-                device
+                <span className="font-[600] text-white">Sound Card:</span>{" "}
+                DirectX 11 sound device
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Additional Notes:</span> Internet
-                connection required for online play and product activation
+                <span className="font-[600] text-white">Additional Notes:</span>{" "}
+                Internet connection required for online play and product
+                activation
               </li>
             </ul>
           </div>
           <div className="h-auto w-[45%]">
-            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">RECOMMENDED:</h4>
+            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
+              RECOMMENDED:
+            </h4>
             <ul className="list-disc list-inside text-[#9F9B9B] text-xs font-[gilroy] ml-4 ">
               <li className="mb-2">
-                <span className="font-[600] text-white">OS *:</span> Windows 7 SP1 64bit,
-                Windows 8.1 64bit Windows 10 64bit
+                <span className="font-[600] text-white">OS *:</span> Windows 7
+                SP1 64bit, Windows 8.1 64bit Windows 10 64bit
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Processor:</span> Intel Core
-                i7-3770 / AMD® FX-8350
+                <span className="font-[600] text-white">Processor:</span> Intel
+                Core i7-3770 / AMD® FX-8350
               </li>
               <li className="mb-2">
                 <span className="font-[600] text-white">Memory:</span> 8 GB RAM
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Graphics:</span> NVIDIA® GeForce
-                GTX 970 / ATI Radeon R9 series
+                <span className="font-[600] text-white">Graphics:</span> NVIDIA®
+                GeForce GTX 970 / ATI Radeon R9 series
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">DirectX:</span> Version 11
+                <span className="font-[600] text-white">DirectX:</span> Version
+                11
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Network:</span> Broadband Internet
-                connection
+                <span className="font-[600] text-white">Network:</span>{" "}
+                Broadband Internet connection
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Storage:</span> 25 GB available
-                space
+                <span className="font-[600] text-white">Storage:</span> 25 GB
+                available space
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Sound Card:</span> DirectX 11 sound
-                device
+                <span className="font-[600] text-white">Sound Card:</span>{" "}
+                DirectX 11 sound device
               </li>
               <li className="mb-2">
-                <span className="font-[600] text-white">Additional Notes:</span> Internet
-                connection required for online play and product activation
+                <span className="font-[600] text-white">Additional Notes:</span>{" "}
+                Internet connection required for online play and product
+                activation
               </li>
             </ul>
           </div>
-          
         </div>
         <div className="h-auto w-full flex justify-center items-center">
-          <p className="text-xs text-[#9F9B9B] font-[gilroy]">DARK SOULS® III & ©BANDAI NAMCO Entertainment Inc. / ©2011-2016 FromSoftware, Inc.</p>
+          <p className="text-xs text-[#9F9B9B] font-[gilroy]">
+            DARK SOULS® III & ©BANDAI NAMCO Entertainment Inc. / ©2011-2016
+            FromSoftware, Inc.
+          </p>
         </div>
       </div>
       <div className=" h-auto w-full">
         {topRecordGames.length > 0 && (
-            <GameList
-              games={topRecordGames}
-              title={GameListTitle[2]}
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
-            />
-          )}
+          <GameList
+            games={topRecordGames}
+            title={GameListTitle[2]}
+            nextClass="game-list-swiper-next-2"
+            prevClass="game-list-swiper-prev-2"
+          />
+        )}
       </div>
       <Footer />
     </div>

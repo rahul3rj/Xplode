@@ -9,9 +9,12 @@ import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 import PreLoader from "../components/PreLoader";
 
+
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
+
 const Profile = () => {
+  const [activePage, setActivePage] = useState("store");
   const [user, setUser] = useState({
     name: "",
     bannerPic: "",
@@ -109,7 +112,7 @@ const Profile = () => {
       )}
       <div className="relative sticky z-10">
         <NavBar user={user} />
-        <SideNav handleLogout={handleLogout} />
+        <SideNav handleLogout={handleLogout} setActivePage={setActivePage} activePage={activePage}/>
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           <ProfilePage user={user} setUser={setUser} />
           <CommunitySection />
