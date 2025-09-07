@@ -6,6 +6,7 @@ const GameBanner = ({ games }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastActiveIndex, setLastActiveIndex] = useState(0);
   const hoverTimeout = useRef(null);
+  // console.log(games);
 
   const handleMouseEnter = (idx) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
@@ -39,7 +40,9 @@ const GameBanner = ({ games }) => {
             <GameCard
               image={game.portrait_image[0]}
               bg={game.capsule_image || game.header_image}
-              title={game.title}
+              name={game.name}
+              price={game.price || "Free"}
+              genres={game.genres}
               isActive={activeIndex === idx}
             />
           </Link>

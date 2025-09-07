@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
@@ -50,12 +50,35 @@ const squares = [
   },
 ];
 
-const DetailsCommunity = () => {
+const DetailsCommunity = ({ game }) => {
+    const [randomIndex1, setRandomIndex1] = useState(-1);
+    const [randomIndex2, setRandomIndex2] = useState(-1);
+    const [randomIndex3, setRandomIndex3] = useState(-1);
+    const [randomIndex4, setRandomIndex4] = useState(-1);
+
+  function getGameImage(game, randomIndex, fallbackType) {
+    if (game?.hero_image?.length > 0 && randomIndex >= 0) {
+      return game.hero_image[randomIndex]?.url;
+    }
+
+    // Fallbacks
+    if (fallbackType === 1) {
+      return game?.background_raw || game?.capsule || game?.header;
+    } else if (fallbackType === 2) {
+      return game?.background || game?.background_raw || game?.header;
+    } else if (fallbackType === 3) {
+      return game?.header_image || game?.capsule || game?.background_raw;
+    } else if (fallbackType === 4) {
+      return game?.capsule_image || game?.header || game?.capsule;
+    }
+
+    return ""; // nothing available
+  }
   return (
     <div className=" h-[50vh] w-full">
       <div className="h-auto w-full relative flex justify-between items-center font-[gilroy-bold] mb-3">
         <h1 className="text-lg text-white font-[gilroy-bold]">
-          DARK SOULS™ III Community
+          {game.name} Community
         </h1>
         <div className="h-[3vh] w-[10vw] flex justify-between items-center ">
           <img
@@ -89,7 +112,7 @@ const DetailsCommunity = () => {
             <div className="h-full w-full flex items-center justify-between rounded-lg text-white text-2xl font-bold ">
               <div className="h-full w-full flex items-center justify-center rounded-xl text-white text-2xl font-bold relative ">
                 <img
-                  src={`${num.image}`}
+                   src={getGameImage(game, randomIndex2, 1)}
                   alt=""
                   className="h-full w-full object-cover rounded-xl"
                 />
@@ -97,10 +120,10 @@ const DetailsCommunity = () => {
                 <div className="h-full w-full absolute z-50 top-0 left-0 flex flex-col justify-start items-center px-10">
                   <div className="h-[70%] w-auto flex flex-col justify-start items-start gap-5">
                     <h3 className="mt-10 font-[gilroy-bold] text-3xl">
-                      {num.title}
+                      {game.name}
                     </h3>
                     <p className="w-[50%] text-xs font-[gilroy] font-[500] text-[#D7D7D7]">
-                      {num.description}
+                      {game.description}
                     </p>
                   </div>
                   <div className="h-[30%] w-full flex items-center justify-between">

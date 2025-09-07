@@ -138,6 +138,8 @@ router.get("/home", async (req, res) => {
 
 router.get("/search", async (req, res) => {
   const q = (req.query.q || "").trim();
+  const limit = parseInt(req.query.limit) || 7; // Default to 7 if not specified
+  
   if (!q) return res.status(200).json([]);
 
   try {
@@ -147,20 +149,26 @@ router.get("/search", async (req, res) => {
       ? { steam_appid: Number(q) }
       : { name: { $regex: q, $options: "i" } };
 
-    // limit results to 7
+    // Use the limit parameter
     const docs = await SearchGames.find(filter)
-      .limit(7)
-      .select("steam_appid name publishers price capsule_image header_image")
+      .limit(limit)
+      .select(
+        "steam_appid website name release_date publishers developers price genres capsule_image header_image"
+      )
       .lean();
 
     const results = docs.map((d) => ({
       appid: d.steam_appid,
       name: d.name,
+      release_date: d.release_date|| "Unknown",
       publisher: d.publishers?.[0] || d.publisher || "Unknown",
+      developer: d.developers?.[0] || d.developer || "Unknown",
       price: d.price || "Free",
+      genres: d.genres?.map((g) => g) || ["No genre"],
+      header_image: d.header_image || "/default-game-cover.jpg",
       capsule_image:
         d.capsule_image || d.header_image || "/default-game-cover.jpg",
-      header_image: d.header_image || "/default-game-cover.jpg",
+      website: d.website || "No website available",
     }));
     res.status(200).json(results);
   } catch (err) {
@@ -171,6 +179,38 @@ router.get("/search", async (req, res) => {
   }
 });
 
+router.get("/search/by-genres", async (req, res) => {
+  const genres = (req.query.genres || "").split(',').filter(Boolean);
+  const limit = parseInt(req.query.limit) || 10;
+  
+  if (genres.length === 0) return res.status(200).json([]);
+
+  try {
+    // Create a case-insensitive regex for each genre
+    const genreRegexes = genres.map(genre => new RegExp(genre, 'i'));
+    
+    // Find games that have at least one matching genre
+    const docs = await SearchGames.find({
+      genres: { $in: genreRegexes }
+    })
+    .limit(limit)
+    .select("steam_appid name developers genres header_image")
+    .lean();
+
+    const results = docs.map((d) => ({
+      appid: d.steam_appid,
+      name: d.name,
+      developer: d.developers?.[0] || "Unknown",
+      genres: d.genres || ["No genre"],
+      header_image: d.header_image || "/default-game-cover.jpg",
+    }));
+    
+    res.status(200).json(results);
+  } catch (err) {
+    console.error("Genre search DB error:", err.message);
+    res.status(500).json({ message: "Genre search failed", error: err.message, games: [] });
+  }
+});
 
 //OLD - if needed
 // router.get("/game/:appid", async (req, res) => {

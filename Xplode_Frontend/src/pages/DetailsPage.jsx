@@ -25,7 +25,6 @@ const DetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-
   useEffect(() => {
     const fetchGame = async () => {
       try {
@@ -41,6 +40,36 @@ const DetailsPage = () => {
     };
     fetchGame();
   }, [appid]);
+
+  function sanitizeAbout(html) {
+    if (!html) return [];
+
+    // 1. Remove video + image containers
+    let cleaned = html
+      .replace(/<span class="bb_img_ctn">.*?<\/span>/gs, "")
+      .replace(/<video.*?<\/video>/gs, "")
+      .replace(/<source.*?>/gs, "");
+
+    // 2. Convert line breaks
+    cleaned = cleaned
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/?p.*?>/gi, "\n");
+
+    // 3. Keep headings but simplify
+    cleaned = cleaned
+      .replace(/<\/?strong>/gi, "**") // mark headings with **
+      .replace(/<\/?u>/gi, "")
+      .replace(/<\/?h\d.*?>/gi, "**"); // h1–h6 as heading
+
+    // 4. Strip remaining HTML
+    cleaned = cleaned.replace(/<\/?[^>]+(>|$)/g, "");
+
+    // 5. Split lines
+    return cleaned
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
 
   function getRandomIndex(max) {
     if (!max || max <= 0) return -1;
@@ -153,7 +182,7 @@ const DetailsPage = () => {
                 key={idx}
                 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]"
               >
-                {genre.description}
+                {genre}
               </h4>
             ))}
 
@@ -163,8 +192,13 @@ const DetailsPage = () => {
                 value={4} // Set to 5 for a 5-star rating
                 readOnly
                 precision={0.5}
-                emptyIcon={<StarIcon style={{ opacity: 0.55, stroke: '#C7C3C3', strokeWidth: 1 }} sx={{ fontSize: '2vh' }} />}
-                icon={<StarIcon sx={{ fontSize: '2vh' }} />}
+                emptyIcon={
+                  <StarIcon
+                    style={{ opacity: 0.55, stroke: "#C7C3C3", strokeWidth: 1 }}
+                    sx={{ fontSize: "2vh" }}
+                  />
+                }
+                icon={<StarIcon sx={{ fontSize: "2vh" }} />}
               />
             </div>
             <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
@@ -198,7 +232,7 @@ const DetailsPage = () => {
           </div>
         </div>
         <div className="absolute z-30 bottom-0 h-[30svh] w-[60vw]">
-          <SsSlider screenshots={game.screenshots} />
+          <SsSlider screenshots={game.screenshots} movies ={game.movies} />
         </div>
       </div>
       <div className="h-[50svh] w-full flex justify-between items-center mb-15">
@@ -214,7 +248,12 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button onClick={() => window.open(`https://store.steampowered.com/app/374320/`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button
+                onClick={() =>
+                  window.open(`https://store.steampowered.com/app/${game.steam_appid}/`)
+                }
+                className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
+              >
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -232,7 +271,14 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button onClick={() => window.open(`https://store.epicgames.com/en-US/p/grand-theft-auto-v`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button
+                onClick={() =>
+                  window.open(
+                    `https://store.epicgames.com/en-US/p/grand-theft-auto-v`
+                  )
+                }
+                className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
+              >
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -250,7 +296,14 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button onClick={() => window.open(`https://www.playstation.com/en-us/games/dark-souls-iii/`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button
+                onClick={() =>
+                  window.open(
+                    `https://www.playstation.com/en-us/games/dark-souls-iii/`
+                  )
+                }
+                className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
+              >
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -268,7 +321,14 @@ const DetailsPage = () => {
               </h1>
             </div>
             <div className="flex justify-center items-center gap-5">
-              <button onClick={() => window.open(`https://www.xbox.com/en-US/games/store/dark-souls-iii-deluxe-edition/C23CWXL81H3L/0001`)} className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+              <button
+                onClick={() =>
+                  window.open(
+                    `https://www.xbox.com/en-US/games/store/dark-souls-iii-deluxe-edition/C23CWXL81H3L/0001`
+                  )
+                }
+                className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
+              >
                 <i class="ri-download-line"></i> Download
               </button>
               <div className="cursor-pointer flex justify-center items-center">
@@ -301,9 +361,8 @@ const DetailsPage = () => {
               </h3>
             </div>
             <h3 className="text-white font-[gilroy-ebold] text-sm">
-              {game.release_date?.coming_soon ? "Coming Soon" : game.release_date?.date}
+              {game.release_date}
             </h3>
-
           </div>
           <div className="h-[5svh] w-full flex justify-start items-center ">
             <div className="w-[7svw]">
@@ -368,7 +427,7 @@ const DetailsPage = () => {
         </div>
       </div>
       <div className="h-[50svh] w-full flex justify-start items-start mb-15">
-        <DetailsCommunity />
+        <DetailsCommunity game={game} />
       </div>
       <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer">
         <div className="h-full w-full flex justify-center items-center bg-black relative">
@@ -401,34 +460,24 @@ const DetailsPage = () => {
             alt=""
           />
         </div>
-        <div className="h-[45vh] w-full flex flex-col justify-center items-start gap-7">
-          <p className="font-[gilroy] text-sm text-white ">
-            Get the DARK SOULS™ III Season Pass now and challenge yourself with
-            all the available content!
-          </p>
-          <p className="font-[gilroy] text-sm text-white ">
-            Winner of gamescom award 2015 "Best RPG" and over 35 E3 2015 Awards
-            and Nominations.
-          </p>
-          <p className="font-[gilroy] text-sm text-white ">
-            DARK SOULS™ III continues to push the boundaries with the latest,
-            ambitious chapter in the critically-acclaimed and genre-defining
-            series.
-          </p>
-          <p className="font-[gilroy] text-sm text-white ">
-            As fires fade and the world falls into ruin, journey into a universe
-            filled with more colossal enemies and environments. Players will be
-            immersed into a world of epic atmosphere and darkness through faster
-            gameplay and amplified combat intensity. Fans and newcomers alike
-            will get lost in the game hallmark rewarding gameplay and immersive
-            graphics.
-          </p>
-          <p className="font-[gilroy] text-sm text-white ">
-            Now only embers remain… Prepare yourself once more and Embrace The
-            Darkness!
-          </p>
+        <div className="min-h-[45vh] w-full flex flex-col justify-center p-10 items-start gap-4">
+          {sanitizeAbout(game.about_the_game).map((line, idx) => {
+            const isHeading = line.startsWith("**") && line.endsWith("**");
+            const text = isHeading ? line.replace(/\*\*/g, "") : line;
 
-
+            return (
+              <p
+                key={idx}
+                className={`font-[gilroy] text-sm ${
+                  isHeading
+                    ? "text-white font-[700] text-base mt-4"
+                    : "text-[#C7C3C3]"
+                }`}
+              >
+                {text}
+              </p>
+            );
+          })}
         </div>
         <div className="h-[40vh] w-full rounded-xl overflow-hidden">
           <img
@@ -439,104 +488,96 @@ const DetailsPage = () => {
         </div>
         <div className="h-[1px] w-full bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)] opacity-50 "></div>
       </div>
+
       <div className="h-[50vh] w-full flex flex-col justify-start items-start gap-5 mb-5">
         <h4 className="font-[gilroy-bold] text-white text-md ">
           System Requirements
         </h4>
         <div className="h-auto w-full flex justify-between items-center">
+          {game.pc_requirements?.minimum &&
           <div className="h-auto w-[45%]">
             <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
-              Minimum
+              MINIMUM:
             </h4>
-            <ul className="list-disc list-inside text-[#9F9B9B] text-xs font-[gilroy] ml-4 ">
-              <li className="mb-2">
-                <span className="font-[600] text-white">OS *:</span> Windows 7
-                SP1 64bit, Windows 8.1 64bit Windows 10 64bit
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Processor:</span> Intel
-                Core i3-2100 / AMD® FX-6300
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Memory:</span> 4 GB RAM
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Graphics:</span> NVIDIA®
-                GeForce GTX 750 Ti / ATI Radeon HD 7950
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">DirectX:</span> Version
-                11
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Network:</span>{" "}
-                Broadband Internet connection
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Storage:</span> 25 GB
-                available space
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Sound Card:</span>{" "}
-                DirectX 11 sound device
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Additional Notes:</span>{" "}
-                Internet connection required for online play and product
-                activation
-              </li>
+            <ul className="list-disc list-inside text-white text-xs font-[gilroy] ml-4">
+              {game.pc_requirements?.minimum
+                ? game.pc_requirements.minimum
+                    .match(/<li>(.*?)<\/li>/g) // sab <li> extract karo
+                    ?.map((item, idx) => {
+                      const clean = item
+                        .replace(/<\/?li>/g, "")
+                        .replace(/<br>/g, "");
+                      const labelMatch = clean.match(/<strong>(.*?)<\/strong>/);
+                      const label = labelMatch ? labelMatch[1] : null;
+                      const value = clean
+                        .replace(/<strong>.*?<\/strong>/, "")
+                        .trim();
+                      return (
+                        <li key={idx} className="mb-2">
+                          {label ? (
+                            <>
+                              <span className="font-[600] text-white">
+                                {label}:
+                              </span>{" "}
+                              <span className="text-[#9F9B9B]">{value}</span>
+                            </>
+                          ) : (
+                            <span className="text-[#9F9B9B]">{clean}</span>
+                          )}
+                        </li>
+                      );
+                    })
+                : "No data available"}
             </ul>
           </div>
-          <div className="h-auto w-[45%]">
-            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
-              RECOMMENDED:
-            </h4>
-            <ul className="list-disc list-inside text-[#9F9B9B] text-xs font-[gilroy] ml-4 ">
-              <li className="mb-2">
-                <span className="font-[600] text-white">OS *:</span> Windows 7
-                SP1 64bit, Windows 8.1 64bit Windows 10 64bit
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Processor:</span> Intel
-                Core i7-3770 / AMD® FX-8350
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Memory:</span> 8 GB RAM
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Graphics:</span> NVIDIA®
-                GeForce GTX 970 / ATI Radeon R9 series
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">DirectX:</span> Version
-                11
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Network:</span>{" "}
-                Broadband Internet connection
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Storage:</span> 25 GB
-                available space
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Sound Card:</span>{" "}
-                DirectX 11 sound device
-              </li>
-              <li className="mb-2">
-                <span className="font-[600] text-white">Additional Notes:</span>{" "}
-                Internet connection required for online play and product
-                activation
-              </li>
-            </ul>
-          </div>
+
+          }
+          {game.pc_requirements?.recommended && (
+            <div className="h-auto w-[45%]">
+              <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
+                RECOMMENDED:
+              </h4>
+              <ul className="list-disc list-inside text-white text-xs font-[gilroy] ml-4">
+                {game.pc_requirements?.recommended
+                  ? game.pc_requirements.recommended
+                      .match(/<li>(.*?)<\/li>/g) // sab <li> extract karo
+                      ?.map((item, idx) => {
+                        const clean = item
+                          .replace(/<\/?li>/g, "")
+                          .replace(/<br>/g, "");
+                        const labelMatch = clean.match(
+                          /<strong>(.*?)<\/strong>/
+                        );
+                        const label = labelMatch ? labelMatch[1] : null;
+                        const value = clean
+                          .replace(/<strong>.*?<\/strong>/, "")
+                          .trim();
+                        return (
+                          <li key={idx} className="mb-2">
+                            {label ? (
+                              <>
+                                <span className="font-[600] text-white">
+                                  {label}:
+                                </span>{" "}
+                                <span className="text-[#9F9B9B]">{value}</span>
+                              </>
+                            ) : (
+                              <span className="text-[#9F9B9B]">{clean}</span>
+                            )}
+                          </li>
+                        );
+                      })
+                  : "No data available"}
+              </ul>
+            </div>
+          )}
         </div>
-        <div className="h-auto w-full flex justify-center items-center">
+        {/* <div className="h-auto w-full flex justify-center items-center">
           <p className="text-xs text-[#9F9B9B] font-[gilroy]">
             DARK SOULS® III & ©BANDAI NAMCO Entertainment Inc. / ©2011-2016
             FromSoftware, Inc.
           </p>
-        </div>
+        </div> */}
       </div>
       <div className=" h-auto w-full">
         {topRecordGames.length > 0 && (

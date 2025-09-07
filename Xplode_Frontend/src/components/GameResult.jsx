@@ -1,17 +1,17 @@
 import React from "react";
 import Likepercent from "./Likepercent";
+import { Link } from "react-router-dom";
 
 const GameResult = ({ game }) => {
-  const { title, developer, image, tags, matchType } = game;
-  
+  const { appid, name,  developer,  genres, header_image, matchType} = game;
+
+
   return (
-    <div className="h-[25vh] w-full rounded-xl bg-[#8800FF]/20 flex justify-start items-center p-3 mb-5 gap-5 cursor-pointer transition-all duration-300 ease-in-out delay-100 hover:shadow-3xl hover:bg-[#8800FF]/40 hover:shadow-[0px_0px_100px_50px_#8800FF]/20">
+    <Link
+      key={`${appid || index}  `}
+      to={`/game/${appid}`} className="h-[25vh] w-full rounded-xl bg-[#8800FF]/20 flex justify-start items-center p-3 mb-5 gap-5 cursor-pointer transition-all duration-300 ease-in-out delay-100 hover:shadow-3xl hover:bg-[#8800FF]/40 hover:shadow-[0px_0px_100px_50px_#8800FF]/20">
       <div className="h-full w-[18.5vw] rounded-md overflow-hidden flex justify-center items-center">
-        <img
-          src={image}
-          alt={title}
-          className="object-cover"
-        />
+        <img src={header_image} alt={name} className="object-cover" />
       </div>
       <div className="h-full w-[50%] flex flex-col justify-between items-start">
         <div className="h-auto w-auto rounded-sm bg-[#8B2CF5]/50 flex justify-center items-center px-2 py-1">
@@ -20,17 +20,16 @@ const GameResult = ({ game }) => {
           </h5>
         </div>
         <div>
-          <h3 className="text-white font-[gilroy-bold] text-xl">{title}</h3>
+          <h3 className="text-white font-[gilroy-bold] text-xl">{name}</h3>
           <h4 className="text-[#9F9B9B] font-[gilroy] text-[1.4vh] mt-1">
             {developer}
           </h4>
           <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((tag, index) => (
-              <h4 
+            {genres.map((tag, index) => (
+              <h4
                 key={index}
-                className={`text-xs font-[gilroy-ebold] cursor-pointer ${
-                  index === 0 ? 'text-[#A641FF]' : 'text-[#837F7F] hover:text-[#A641FF]'
-                }`}
+                className={`text-xs font-[gilroy-ebold] cursor-pointer ${index === 0 ? 'text-[#A641FF]' : 'text-[#837F7F] hover:text-[#A641FF]'
+                  }`}
               >
                 {tag}{" "}
               </h4>
@@ -59,7 +58,7 @@ const GameResult = ({ game }) => {
           <i class="ri-download-line "></i> Download
         </button>
       </div>
-    </div>
+    </Link>
   );
 };
 

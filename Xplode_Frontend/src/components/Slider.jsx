@@ -121,8 +121,8 @@ export default function GameSlider({games}) {
                 </h1>
 
                 <p className="text-zinc-400 font-[gilroy] text-xs mb-4">
-                  {slide.detailed_description
-                    ? truncateWords(stripHtml(slide.detailed_description), 18)
+                  {slide.description
+                    ? truncateWords(stripHtml(slide.description), 18)
                     : ""}
                 </p>
                 <p className="text-white font-[gilroy-bold] text-[2vh] mb-4">
