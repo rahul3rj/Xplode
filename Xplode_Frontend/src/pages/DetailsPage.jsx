@@ -1,5 +1,5 @@
 import { React, useState } from "react";
-
+import { addToLibrary, requireAuth }  from "../utils/addToLibrary";
 import SsSlider from "../components/SsSlider";
 import DetailsCommunity from "../components/DetailsCommunity";
 import axios from "../utils/axios";
@@ -40,6 +40,33 @@ const DetailsPage = () => {
     };
     fetchGame();
   }, [appid]);
+
+  const handleAddToLibrary = async () => {
+   
+      if (!requireAuth()) return;
+    try {
+      const gameData = {
+        steam_appid: game.steam_appid,
+        name: game.name,
+        portrait_image: game.header_image || game.capsule_image,
+        hero_image: {
+          url: game.background_raw || game.background || game.header_image,
+          thumb: game.background || game.header_image
+        },
+        developers: game.developers,
+        publishers: game.publishers,
+        categories: game.categories || [],
+        movies: game.movies || []
+      };
+      
+      const result = await addToLibrary(gameData);
+      // Show success message
+      alert("Game added to your library!");
+    } catch (error) {
+      console.error("Failed to add game to library:", error);
+      alert(error.message || "Failed to add game to library");
+    }
+  };
 
   function sanitizeAbout(html) {
     if (!html) return [];
@@ -226,7 +253,7 @@ const DetailsPage = () => {
             <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
               <img src="../HomePage/Shopping Cart.svg" alt="" className="p-2" />
             </div>
-            <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
+            <div  onClick={handleAddToLibrary} className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
               <i class="ri-add-line text-white"></i>
             </div>
           </div>

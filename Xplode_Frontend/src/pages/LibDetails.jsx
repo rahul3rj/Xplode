@@ -1,22 +1,35 @@
 import React from "react";
 import { useNavigate } from 'react-router-dom'
 
-const LibDetails = ({ game }) => {
+const LibDetails = ({ game, onClose }) => {
   const navigate = useNavigate()
+
+  console.log(game)
+
+   if (!game) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <p className="text-white">Game not found</p>
+      </div>
+    );
+  }
   return (
     <div className="h-full w-full px-5">
       <div className="h-[30vh] w-full relative">
         <div className="h-full w-full onject-cover flex items-center justify-center overflow-hidden rounded-sm">
-          <img
-            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appId}/library_hero.jpg`}
-            alt={game.title}
+           <img
+            src={game.hero_image?.url || `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/library_hero.jpg` || game.portrait_image}
+            alt={game.name}
+             className="w-full h-full object-cover"
           />
         </div>
         <div className="absolute bottom-0 left-10 h-[100%] w-[20vw] onject-cover flex items-center justify-center overflow-hidden">
-          <img
-            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appId}/logo.png`}
-            alt=""
+           <img
+            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/logo.png`}
+            alt={game.name}
+            className="max-h-full max-w-full object-contain"
           />
+          
         </div>
       </div>
       <div className="h-[10vh] w-full flex items-center justify-between">
@@ -25,7 +38,7 @@ const LibDetails = ({ game }) => {
           <i className="ri-play-fill text-white text-xl"></i> Play
         </button>
         <div className="flex items-center justify-center gap-2">
-          <button className="px-8 py-2 cursor-pointer rounded-sm hover:bg-[#8800FF]/40 bg-[#8800FF]/20 text-white transition-all duration-200 ease-in-out" onClick={() => navigate(`/game/${game.appId}`)}>
+          <button className="px-8 py-2 cursor-pointer rounded-sm hover:bg-[#8800FF]/40 bg-[#8800FF]/20 text-white transition-all duration-200 ease-in-out"  onClick={() => navigate(`/game/${game.steam_appid}`)}>
             {" "}
             <i class="ri-store-2-fill text-white text-xl"></i> Store Page
           </button>
