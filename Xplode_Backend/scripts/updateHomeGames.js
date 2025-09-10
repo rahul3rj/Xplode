@@ -10,6 +10,7 @@ const steamAppids = {
   ],
   trending: [
     { appid: 570 },
+     { appid: 3595270, name: "Modern Warfare 3" },
     { appid: 1172470 },
     { appid: 1203220 },
     { appid: 252490 },
@@ -44,27 +45,26 @@ async function fetchSteamDetails(appid) {
   return details;
 }
 
-// async function fetchPortraitImage(appid) {
-//   try {
-//     const res = await axios.get(
-//       `https://www.steamgriddb.com/api/v2/grids/steam/${appid}?types=static`,
-//       {
-//         headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
-//       }
-//     );
-//     if (res.data.success) {
-//       // sirf url & thumb return karo
-//       return res.data.data.map((img) => ({
-//         url: img.url,
-//         thumb: img.thumb,
-//       }));
-//     }
-//     return [];
-//   } catch (err) {
-//     console.error(`Portrait fetch failed for ${appid}:`, err.message);
-//     return [];
-//   }
-// }
+async function fetchPortraitImage(appid) {
+    try {
+    const res = await axios.get(
+      `https://www.steamgriddb.com/api/v2/grids/steam/${appid}?types=static`,
+      {
+        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
+      }
+    );
+    if (res.data.success) {
+      return res.data.data.map((img) => ({
+        url: img.url,
+        thumb: img.thumb,
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.error(`Portrait fetch failed for ${appid}:`, err.message);
+    return [];
+  }
+}
 
 async function getValidCapsuleImage(appid, headerImage) {
   if (!appid) return headerImage || "/default-game-cover.jpg";
@@ -78,10 +78,11 @@ async function getValidCapsuleImage(appid, headerImage) {
     return headerImage || "/default-game-cover.jpg";
   }
 }
-function getPortrait(appid) {
-  if (!appid) return "/default-game-cover.jpg";
-  return `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
-}
+
+// function fetchPortraitImage(appid) {
+//   if (!appid) return "/default-game-cover.jpg";
+//   return `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
+// }
 
 async function fetchHeroImage(appid) {
   try {
@@ -119,6 +120,7 @@ async function updateGamesInDB() {
 
         // const portraitImage = await fetchPortraitImage(game.appid);
         const heroImage = await fetchHeroImage(game.appid);
+        const portraitImage = await fetchPortraitImage(game.appid);
         const capsule_image = await getValidCapsuleImage(
           game.appid,
           gameDetails.header_image
@@ -141,7 +143,7 @@ async function updateGamesInDB() {
           supported_languages: gameDetails.supported_languages || "Unknown",
           website: gameDetails.website || "No website available",
           about_the_game: gameDetails.about_the_game || "No details available",
-          portrait_image: getPortrait(game.appid), // ab array store ho raha
+          portrait_image: portraitImage, // ab array store ho raha
           hero_image: heroImage,
           screenshots: (gameDetails.screenshots || []).map((ss) => ({
             id: ss.id,

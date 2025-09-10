@@ -1,5 +1,5 @@
 import { React, useState } from "react";
-import { addToLibrary, requireAuth }  from "../utils/addToLibrary";
+import { addToLibrary, requireAuth } from "../utils/addToLibrary";
 import SsSlider from "../components/SsSlider";
 import DetailsCommunity from "../components/DetailsCommunity";
 import axios from "../utils/axios";
@@ -42,23 +42,27 @@ const DetailsPage = () => {
   }, [appid]);
 
   const handleAddToLibrary = async () => {
-   
-      if (!requireAuth()) return;
+    if (!requireAuth()) return;
     try {
       const gameData = {
         steam_appid: game.steam_appid,
         name: game.name,
-        portrait_image: game.header_image || game.capsule_image,
+        portrait_image: game.portrait_image || game.capsule_image,
         hero_image: {
-          url: game.background_raw || game.background || game.header_image,
-          thumb: game.background || game.header_image
+          url:
+            game.hero_image[0].url ||
+            game.background_raw ||
+            game.background ||
+            game.header_image,
+          thumb:
+            game.hero_image[0].thumb || game.background || game.header_image,
         },
         developers: game.developers,
         publishers: game.publishers,
         categories: game.categories || [],
-        movies: game.movies || []
+        movies: game.movies || [],
       };
-      
+
       const result = await addToLibrary(gameData);
       // Show success message
       alert("Game added to your library!");
@@ -253,13 +257,16 @@ const DetailsPage = () => {
             <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
               <img src="../HomePage/Shopping Cart.svg" alt="" className="p-2" />
             </div>
-            <div  onClick={handleAddToLibrary} className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
+            <div
+              onClick={handleAddToLibrary}
+              className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg"
+            >
               <i class="ri-add-line text-white"></i>
             </div>
           </div>
         </div>
         <div className="absolute z-30 bottom-0 h-[30svh] w-[60vw]">
-          <SsSlider screenshots={game.screenshots} movies ={game.movies} />
+          <SsSlider screenshots={game.screenshots} movies={game.movies} />
         </div>
       </div>
       <div className="h-[50svh] w-full flex justify-between items-center mb-15">
@@ -277,7 +284,9 @@ const DetailsPage = () => {
             <div className="flex justify-center items-center gap-5">
               <button
                 onClick={() =>
-                  window.open(`https://store.steampowered.com/app/${game.steam_appid}/`)
+                  window.open(
+                    `https://store.steampowered.com/app/${game.steam_appid}/`
+                  )
                 }
                 className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
               >
@@ -521,44 +530,45 @@ const DetailsPage = () => {
           System Requirements
         </h4>
         <div className="h-auto w-full flex justify-between items-center">
-          {game.pc_requirements?.minimum &&
-          <div className="h-auto w-[45%]">
-            <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
-              MINIMUM:
-            </h4>
-            <ul className="list-disc list-inside text-white text-xs font-[gilroy] ml-4">
-              {game.pc_requirements?.minimum
-                ? game.pc_requirements.minimum
-                    .match(/<li>(.*?)<\/li>/g) // sab <li> extract karo
-                    ?.map((item, idx) => {
-                      const clean = item
-                        .replace(/<\/?li>/g, "")
-                        .replace(/<br>/g, "");
-                      const labelMatch = clean.match(/<strong>(.*?)<\/strong>/);
-                      const label = labelMatch ? labelMatch[1] : null;
-                      const value = clean
-                        .replace(/<strong>.*?<\/strong>/, "")
-                        .trim();
-                      return (
-                        <li key={idx} className="mb-2">
-                          {label ? (
-                            <>
-                              <span className="font-[600] text-white">
-                                {label}:
-                              </span>{" "}
-                              <span className="text-[#9F9B9B]">{value}</span>
-                            </>
-                          ) : (
-                            <span className="text-[#9F9B9B]">{clean}</span>
-                          )}
-                        </li>
-                      );
-                    })
-                : "No data available"}
-            </ul>
-          </div>
-
-          }
+          {game.pc_requirements?.minimum && (
+            <div className="h-auto w-[45%]">
+              <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">
+                MINIMUM:
+              </h4>
+              <ul className="list-disc list-inside text-white text-xs font-[gilroy] ml-4">
+                {game.pc_requirements?.minimum
+                  ? game.pc_requirements.minimum
+                      .match(/<li>(.*?)<\/li>/g) // sab <li> extract karo
+                      ?.map((item, idx) => {
+                        const clean = item
+                          .replace(/<\/?li>/g, "")
+                          .replace(/<br>/g, "");
+                        const labelMatch = clean.match(
+                          /<strong>(.*?)<\/strong>/
+                        );
+                        const label = labelMatch ? labelMatch[1] : null;
+                        const value = clean
+                          .replace(/<strong>.*?<\/strong>/, "")
+                          .trim();
+                        return (
+                          <li key={idx} className="mb-2">
+                            {label ? (
+                              <>
+                                <span className="font-[600] text-white">
+                                  {label}:
+                                </span>{" "}
+                                <span className="text-[#9F9B9B]">{value}</span>
+                              </>
+                            ) : (
+                              <span className="text-[#9F9B9B]">{clean}</span>
+                            )}
+                          </li>
+                        );
+                      })
+                  : "No data available"}
+              </ul>
+            </div>
+          )}
           {game.pc_requirements?.recommended && (
             <div className="h-auto w-[45%]">
               <h4 className="font-[gilroy-bold] text-[#D7D7D7] text-sm mb-3">

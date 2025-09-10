@@ -6,7 +6,6 @@ const GameBanner = ({ games }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lastActiveIndex, setLastActiveIndex] = useState(0);
   const hoverTimeout = useRef(null);
-  // console.log(games);
 
   const handleMouseEnter = (idx) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
@@ -29,16 +28,15 @@ const GameBanner = ({ games }) => {
   return (
     <div className="h-[47svh] w-[87vw] flex gap-3 ">
       {games.map((game, idx) => {
-     
         return (
           <Link
-            key={`${game.steam_appid }`}
-            to={`/game/${game.steam_appid }`}
+            key={`${game.steam_appid}`}
+            to={`/game/${game.steam_appid}`}
             onMouseEnter={() => handleMouseEnter(idx)}
             onMouseLeave={handleMouseLeave}
           >
             <GameCard
-              image={game.portrait_image[0]}
+              image={game.portrait_image[0].thumb}
               bg={game.capsule_image || game.header_image}
               name={game.name}
               price={game.price || "Free"}

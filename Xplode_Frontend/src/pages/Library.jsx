@@ -4,7 +4,7 @@ import LibDetails from "./LibDetails";
 import { getUserLibrary } from "../utils/addToLibrary";
 
 const Library = () => {
-    const [gameList, setGameList] = useState(null);
+  const [gameList, setGameList] = useState(null);
   const [userGames, setUserGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -117,7 +117,6 @@ const Library = () => {
   //   },
   // ];
 
-
   useEffect(() => {
     const fetchUserLibrary = async () => {
       try {
@@ -175,7 +174,7 @@ const Library = () => {
             </div>
             <div
               className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-             onClick={() => {
+              onClick={() => {
                 if (historyRef.current.length > 0) {
                   const lastGame = historyRef.current.pop();
                   setGameList(lastGame);
@@ -208,15 +207,17 @@ const Library = () => {
           }`}
         >
           <h3 className="text-white text-sm font-[gilroy-bold] pl-10">
-              My Games
+            My Games
           </h3>
-          <p className="text-[#696969] text-sm font-[gilroy] px-2">({userGames.length})</p>
+          <p className="text-[#696969] text-sm font-[gilroy] px-2">
+            ({userGames.length})
+          </p>
           <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
           <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
         </div>
 
         <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
-         {gameList === null ? (
+          {gameList === null ? (
             <LibGames games={userGames} onSelect={setGameList} />
           ) : (
             <LibDetails
@@ -244,17 +245,27 @@ const Library = () => {
               <div
                 className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
                 ${
-                 gameList === g.steam_appid
+                  gameList === g.steam_appid
                     ? "bg-[#A641FF]/30"
                     : "hover:bg-[#A641FF]/10"
                 }`}
                 onClick={() =>
-                   setGameList((prev) => (prev === g.steam_appid ? null : g.steam_appid))
+                  setGameList((prev) =>
+                    prev === g.steam_appid ? null : g.steam_appid
+                  )
                 }
               >
                 <div className="h-[6vh] w-[80%] flex justify-start items-center gap-5 px-5">
                   <div className="h-[5vh] w-[5vh]  rounded-full overflow-hidden flex justify-center items-center ">
-                    <img className="w-full h-full object-cover" src={g.portrait_image} alt="" />
+                    <img
+                      className="w-full h-full object-cover"
+                      src={
+                        g.portrait_image?.[0].thumb
+                          ? g.portrait_image[0].thumb
+                          : g.hero_image?.thumb
+                      }
+                      alt=""
+                    />
                   </div>
                   <h3 className="text-white text-xs font-[gilroy-bold] truncate">
                     {g.name}
