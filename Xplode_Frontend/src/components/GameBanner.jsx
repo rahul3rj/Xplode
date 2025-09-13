@@ -38,7 +38,7 @@ const GameBanner = ({ games }) => {
             onMouseLeave={handleMouseLeave}
           >
             <GameCard
-              image={game.portrait_image[0]}
+              image={game.portrait_image[0].thumb}
               bg={game.capsule_image || game.header_image}
               name={game.name}
               price={game.price || "Free"}
