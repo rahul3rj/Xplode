@@ -1006,7 +1006,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Create axios instance with better defaults
 const steamApi = axios.create({
   baseURL: "https://store.steampowered.com/api",
-  timeout: 10000,
+  timeout: 6000,
   headers: {
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -1036,18 +1036,36 @@ async function getValidCapsuleImage(appid, headerImage) {
   }
 }
 
-function getPortrait(appid) {
-  if (!appid) return "/default-game-cover.jpg";
-  return `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
-}
+// function getPortrait(appid) {
+//   if (!appid) return "/default-game-cover.jpg";
+//   return `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
+// }
 
+async function fetchPortraitImage(appid) {
+  try {
+    const res = await axios.get(
+      `https://www.steamgriddb.com/api/v2/grids/steam/${appid}?types=static`,
+      { 
+        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
+        timeout: 5000,
+      }
+    );
+    if (res.data && res.data.success) {
+      return res.data.data.map((img) => ({ url: img.url, thumb: img.thumb }));
+    }
+    return [];
+  } catch (err) {
+    console.warn(`grid fetch failed for ${appid}: ${err.message}`);
+    return [];
+  }
+}
 async function fetchHeroImage(appid) {
   try {
     const res = await axios.get(
       `https://www.steamgriddb.com/api/v2/heroes/steam/${appid}?types=static`,
       {
         headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
-        timeout: 5000,
+        timeout: 10000,
       }
     );
     if (res.data && res.data.success) {
@@ -1104,6 +1122,8 @@ async function updateSearchGamesInDB() {
       }
 
       const heroImage = await fetchHeroImage(game.appid);
+      const portraitImage = await fetchPortraitImage(game.appid);
+
       const capsule_image = await getValidCapsuleImage(
         game.appid,
         details.header_image
@@ -1131,7 +1151,7 @@ async function updateSearchGamesInDB() {
         background: details.background || "/default-game-cover.jpg",
         background_raw: details.background_raw || "/default-game-cover.jpg",
         capsule_image,
-        portrait_image: getPortrait(game.appid),
+        portrait_image: portraitImage,
         hero_image: heroImage,
         screenshots,
 

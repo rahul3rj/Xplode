@@ -4,7 +4,10 @@ const mongoose = require("mongoose");
 const LibrarySchema = new mongoose.Schema({
   steam_appid: { type: Number, required: true },
   name: { type: String, required: true },
-  portrait_image: { type: String, default: "/default-game-cover.jpg" },
+  portrait_image: [{
+      url: { type: String },
+      thumb: { type: String },
+    },],
   hero_image: {
     url: { type: String },
     thumb: { type: String },

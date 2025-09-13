@@ -1,15 +1,50 @@
 import React from "react";
 import Likepercent from "./Likepercent";
+import { addToLibrary, requireAuth } from "../utils/addToLibrary";
 import { Link } from "react-router-dom";
 
 const GameResult = ({ game }) => {
-  const { appid, name,  developer,  genres, header_image, matchType} = game;
+  const { appid, name, developer, genres, header_image, matchType } = game;
 
+  const handleAddToLibrary = async (e) => {
+    e.stopPropagation(); // Prevent redirection
+    e.preventDefault();
+    if (!requireAuth()) return;
+    try {
+      const gameData = {
+        steam_appid: game.appid,
+        name: name,
+        portrait_image: game.portrait_image || game.capsule_image,
+        hero_image: {
+          url:
+            game.hero_image[0].url ||
+            game.background_raw ||
+            game.background ||
+            game.header_image,
+          thumb:
+            game.hero_image[0].thumb || game.background || game.header_image,
+        },
+        developers: developer,
+        publishers: game.publishers,
+        categories: game.categories || [],
+        movies: game.movies || [],
+      };
+
+      const result = await addToLibrary(gameData);
+      // Show success message
+      alert("Game added to your library!");
+    } catch (error) {
+      console.error("Failed to add game to library:", error);
+      alert(error.message || "Failed to add game to library");
+    }
+  };
 
   return (
     <Link
       key={`${appid || index}  `}
-      to={`/game/${appid}`} className="h-[25vh] w-full rounded-xl bg-[#8800FF]/20 flex justify-start items-center p-3 mb-5 gap-5 cursor-pointer transition-all duration-300 ease-in-out delay-100 hover:shadow-3xl hover:bg-[#8800FF]/40 hover:shadow-[0px_0px_100px_50px_#8800FF]/20">
+      to={`/game/${appid}`}
+      className="h-[25vh] w-full rounded-xl bg-[#8800FF]/20 flex justify-start items-center p-3 mb-5 gap-5 cursor-pointer transition-all duration-300 ease-in-out delay-100 hover:shadow-3xl hover:bg-[#8800FF]/40 hover:shadow-[0px_0px_100px_50px_#8800FF]/20"
+    >
       <div className="h-full w-[18.5vw] rounded-md overflow-hidden flex justify-center items-center">
         <img src={header_image} alt={name} className="object-cover" />
       </div>
@@ -28,8 +63,11 @@ const GameResult = ({ game }) => {
             {genres.map((tag, index) => (
               <h4
                 key={index}
-                className={`text-xs font-[gilroy-ebold] cursor-pointer ${index === 0 ? 'text-[#A641FF]' : 'text-[#837F7F] hover:text-[#A641FF]'
-                  }`}
+                className={`text-xs font-[gilroy-ebold] cursor-pointer ${
+                  index === 0
+                    ? "text-[#A641FF]"
+                    : "text-[#837F7F] hover:text-[#A641FF]"
+                }`}
               >
                 {tag}{" "}
               </h4>
@@ -47,7 +85,10 @@ const GameResult = ({ game }) => {
       </div>
       <div className="h-full w-[17%] flex flex-col justify-between items-center">
         <div className="h-[5vh] w-full flex justify-between items-center">
-          <button className="h-[5svh] w-[75%] rounded-sm bg-[#8B2CF5]/50 text-white font-[gilroy-bold] text-xs cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2">
+          <button
+            onClick={handleAddToLibrary}
+            className="h-[5svh] w-[75%] rounded-sm bg-[#8B2CF5]/50 text-white font-[gilroy-bold] text-xs cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
+          >
             <i class="ri-add-line text-lg"></i> Add Game
           </button>
           <div className="h-[5vh] w-[5vh] flex justify-center items-center cursor-pointer border border-[#8B2CF5]/50 rounded-sm">

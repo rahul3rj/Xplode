@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect, useMemo } from "react";
 import { gsap } from "gsap";
 
 const SsSlider = ({ screenshots, movies }) => {
-
   const [playingIndex, setPlayingIndex] = useState(null);
   const itemsRef = useRef([]);
   const [activeVideo, setActiveVideo] = useState(null);
@@ -22,15 +21,18 @@ const SsSlider = ({ screenshots, movies }) => {
       webm: m.webm?.max,
     }));
 
+    if (!movies || movies.length === 0) {
+      return ss.slice(0, 3); // Show only 3 screenshots if no movies
+    }
+
     return [...ss.slice(0, 2), ...mv.slice(0, 1)]; // 2 screenshots + 1 movie
   }, [screenshots, movies]);
 
   const movieIndex = combinedItems.findIndex((item) => item.type === "movie");
-      const [currentIndex, setCurrentIndex] = useState(() => {
-        // Agar movie mil gayi to uska index, warna 0
-        return movieIndex !== -1 ? movieIndex : 0;
-      });
-
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    // Agar movie mil gayi to uska index, warna 0
+    return movieIndex !== -1 ? movieIndex : 0;
+  });
 
   // Handle circular navigation
   const goToSlide = (direction) => {
@@ -43,13 +45,12 @@ const SsSlider = ({ screenshots, movies }) => {
 
   // Animation effect
   useEffect(() => {
-
     // Now animate to new positions
     const animationPromises = itemsRef.current.map((item, index) => {
       if (!item) return Promise.resolve();
-      
 
-      const position = (index - currentIndex + combinedItems.length) % combinedItems.length;
+      const position =
+        (index - currentIndex + combinedItems.length) % combinedItems.length;
       const isCenter = position === 0;
       const isRight = position === 1;
       const isLeft = position === combinedItems.length - 1;
@@ -62,11 +63,11 @@ const SsSlider = ({ screenshots, movies }) => {
           scale = 1;
           opacity = 1;
         } else if (isRight) {
-          xPosition = 275;   // right side
+          xPosition = 275; // right side
           scale = 0.6;
           opacity = 0.8;
         } else if (isLeft) {
-          xPosition = -275;  // left side
+          xPosition = -275; // left side
           scale = 0.6;
           opacity = 0.8;
         }
@@ -110,8 +111,13 @@ const SsSlider = ({ screenshots, movies }) => {
       {/* Slider track */}
       <div className="flex items-center justify-center h-full w-full relative">
         {combinedItems.map((item, index) => {
-          const position = (index - currentIndex + combinedItems.length) % combinedItems.length;
-          const isVisible = position === 0 || position === 1 || position === combinedItems.length - 1;
+          const position =
+            (index - currentIndex + combinedItems.length) %
+            combinedItems.length;
+          const isVisible =
+            position === 0 ||
+            position === 1 ||
+            position === combinedItems.length - 1;
 
           return (
             <div
@@ -124,7 +130,6 @@ const SsSlider = ({ screenshots, movies }) => {
               }}
             >
               <div className="absolute inset-0 [clip-path:polygon(0%_0%,75%_0%,100%_25%,100%_100%,25%_100%,0%_75%)] bg-black/50 relative">
-
                 {/* Screenshot */}
                 {item.type === "screenshot" && (
                   <img
@@ -155,28 +160,23 @@ const SsSlider = ({ screenshots, movies }) => {
                 {/* Color bar */}
                 <div
                   className="absolute w-[1vw] h-[15vh] bottom-0 right-0"
-                  style={{ backgroundColor: position === 0 ? "#56179dff" : "#808080" }}
+                  style={{
+                    backgroundColor: position === 0 ? "#56179dff" : "#808080",
+                  }}
                 />
               </div>
             </div>
           );
         })}
-
-
       </div>
 
       {activeVideo && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
           <div className="relative w-[80%] h-[80%]">
-            <video
-              className="w-full h-full object-contain"
-              controls
-              autoPlay
-            >
+            <video className="w-full h-full object-contain" controls autoPlay>
               {activeVideo.webm && (
                 <source src={activeVideo.webm480} type="video/webm" />
               )}
-
             </video>
 
             {/* Close button */}
@@ -189,7 +189,6 @@ const SsSlider = ({ screenshots, movies }) => {
           </div>
         </div>
       )}
-
 
       {/* Navigation buttons */}
       <button

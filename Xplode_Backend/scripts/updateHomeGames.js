@@ -10,6 +10,7 @@ const steamAppids = {
   ],
   trending: [
     { appid: 570 },
+     { appid: 3595270, name: "Modern Warfare 3" },
     { appid: 1172470 },
     { appid: 1203220 },
     { appid: 252490 },
@@ -142,6 +143,7 @@ async function updateGamesInDB() {
           supported_languages: gameDetails.supported_languages || "Unknown",
           website: gameDetails.website || "No website available",
           about_the_game: gameDetails.about_the_game || "No details available",
+          portrait_image: portraitImage, // ab array store ho raha
           portrait_image: portraitImage, // ab array store ho raha
           hero_image: heroImage,
           screenshots: (gameDetails.screenshots || []).map((ss) => ({
