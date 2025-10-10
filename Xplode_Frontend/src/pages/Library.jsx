@@ -133,6 +133,8 @@ const Library = () => {
     fetchUserLibrary();
   }, []);
 
+  const [activeFilter, setActiveFilter] = useState("all");
+
   useEffect(() => {
     if (gameList && !historyRef.current.includes(gameList)) {
       historyRef.current.push(gameList);
@@ -141,7 +143,7 @@ const Library = () => {
 
   if (loading) {
     return (
-      <div className="h-[85vh] w-full flex items-center justify-center">
+      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10vw] flex justify-center items-center gap-5">
         <img src="../Preloader.svg" alt="loading" className="h-10" />
       </div>
     );
@@ -162,127 +164,155 @@ const Library = () => {
   }
 
   return (
-    <div className="h-auto w-full flex justify-center items-center gap-5">
-      <div className="h-[85vh] w-[70%] ">
-        <div className="h-[6vh] w-full flex justify-start items-center px-5">
-          <div className="h-[6vh] w-[14vh] flex items-center justify-center gap-2">
-            <div
-              className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-              onClick={() => setGameList(null)}
-            >
-              <i className="ri-arrow-left-s-line text-white text-xl"></i>
-            </div>
-            <div
-              className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-              onClick={() => {
-                if (historyRef.current.length > 0) {
-                  const lastGame = historyRef.current.pop();
-                  setGameList(lastGame);
-                }
-              }}
-            >
-              <i className="ri-arrow-right-s-line text-white text-xl"></i>
-            </div>
-          </div>
-          <div className="h-[6vh] w-[20vw] flex items-center justify-between ">
-            <div className="h-[6vh] w-auto flex items-center justify-center px-10">
-              <h3 className="text-white text-sm font-[gilroy-bold]">Library</h3>
-            </div>
-            <div className="h-[6vh] w-auto flex items-center justify-center px-10">
-              <h3 className="text-white text-sm font-[gilroy-bold]">
-                Whishlist
-              </h3>
-            </div>
-          </div>
-          <button className="h-[6vh] w-[10vw] flex items-center justify-center rounded-md bg-[#8800FF]/20 hover:bg-[#8800FF]/40 cursor-pointer gap-2 ml-10">
-            <i className="ri-add-line text-[#A641FF] text-xl"></i>
-            <h3 className="text-[#A641FF] text-sm font-[gilroy-bold]">
-              Add Game
-            </h3>
-          </button>
-        </div>
-        <div
-          className={`h-[5vh] w-full flex justify-between items-center transition-opacity duration-300 ${
-            gameList !== null ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          <h3 className="text-white text-sm font-[gilroy-bold] pl-10">
-            My Games
-          </h3>
-          <p className="text-[#696969] text-sm font-[gilroy] px-2">
-            ({userGames.length})
-          </p>
-          <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
-          <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
-        </div>
-
-        <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
-          {gameList === null ? (
-            <LibGames games={userGames} onSelect={setGameList} />
-          ) : (
-            <LibDetails
-              game={userGames.find((g) => g.steam_appid === gameList)}
-              onClose={() => setGameList(null)}
-            />
-          )}
-        </div>
-      </div>
-      <div className="h-[85vh] w-[25vw] mr-7 pt-10">
-        <div className="h-full w-full bg-[#8800FF]/20 rounded-lg">
-          <div className="h-[10vh] w-full flex justify-center items-center px-5">
-            <input
-              type="text"
-              placeholder="Search by name"
-              className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
-            />
-            <i className="ri-search-line text-[#A641FF] text-xl absolute right-15 z-10"></i>
-          </div>
-          <div className="h-[69vh] w-full flex flex-col justify-start items-start px-5 overflow-y-auto hide-scrollbar">
-            <h3 className="text-[#A641FF] text-sm font-[gilroy-bold] py-2">
-              All games
-            </h3>
-            {userGames.map((g) => (
+    <div className="absolute h-screen w-full z-30 overflow-y-auto hide-scrollbar">
+      <img
+        src="../bg.svg"
+        alt=""
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none saturate-140 -z-10"
+        style={{ zIndex: -10 }}
+      />
+      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10.5vw] flex justify-center items-center gap-5">
+        <div className="h-[85vh] w-[70%] ">
+          <div className="h-[6vh] w-full flex justify-start items-center px-5">
+            <div className="h-[6vh] w-[14vh] flex items-center justify-center gap-2">
               <div
-                className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
+                className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
+                onClick={() => setGameList(null)}
+              >
+                <i className="ri-arrow-left-s-line text-white text-xl"></i>
+              </div>
+              <div
+                className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
+                onClick={() => {
+                  if (historyRef.current.length > 0) {
+                    const lastGame = historyRef.current.pop();
+                    setGameList(lastGame);
+                  }
+                }}
+              >
+                <i className="ri-arrow-right-s-line text-white text-xl"></i>
+              </div>
+            </div>
+            <div className="h-[6vh] w-[30vw] flex items-center justify-between ml-5">
+              <div
+                className={`h-[6vh] w-auto flex items-center justify-center px-10 rounded-md cursor-pointer transition-colors ${
+                  activeFilter === "all"
+                    ? "bg-[#8800FF]/40"
+                    : "bg-transparent hover:bg-[#8800FF]/20"
+                }`}
+                onClick={() => setActiveFilter("all")}
+              >
+                <h3 className="text-white text-sm font-[gilroy-bold]">
+                  All Games
+                </h3>
+              </div>
+              <div
+                className={`h-[6vh] w-auto flex items-center justify-center px-10 rounded-md cursor-pointer transition-colors ${
+                  activeFilter === "installed"
+                    ? "bg-[#8800FF]/40"
+                    : "bg-transparent hover:bg-[#8800FF]/20"
+                }`}
+                onClick={() => setActiveFilter("installed")}
+              >
+                <h3 className="text-white text-sm font-[gilroy-bold]">
+                  Installed
+                </h3>
+              </div>
+              <button
+                className={`h-[6vh] w-[10vw] flex items-center justify-center rounded-md cursor-pointer transition-colors ${
+                  activeFilter === "wishlist"
+                    ? "bg-[#8800FF]/40"
+                    : "bg-transparent hover:bg-[#8800FF]/20"
+                }`}
+                onClick={() => setActiveFilter("wishlist")}
+              >
+                <h3 className="text-white text-sm font-[gilroy-bold]">
+                  Whishlist
+                </h3>
+              </button>
+            </div>
+          </div>
+          <div
+            className={`h-[5vh] w-full flex justify-between items-center transition-opacity duration-300 ${
+              gameList !== null
+                ? "opacity-0 pointer-events-none"
+                : "opacity-100"
+            }`}
+          >
+            <h3 className="text-white text-sm font-[gilroy-bold] pl-10">
+              My Games
+            </h3>
+            <p className="text-[#696969] text-sm font-[gilroy] px-2">
+              ({userGames.length})
+            </p>
+            <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
+            <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
+          </div>
+
+          <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
+            {gameList === null ? (
+              <LibGames games={userGames} onSelect={setGameList} />
+            ) : (
+              <LibDetails
+                game={userGames.find((g) => g.steam_appid === gameList)}
+                onClose={() => setGameList(null)}
+              />
+            )}
+          </div>
+        </div>
+        <div className="h-[85vh] w-[25vw] mr-7 pt-10">
+          <div className="h-full w-full bg-[#8800FF]/20 rounded-lg">
+            <div className="h-[10vh] w-full flex justify-center items-center px-5">
+              <input
+                type="text"
+                placeholder="Search by name"
+                className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
+              />
+              <i className="ri-search-line text-[#A641FF] text-xl absolute right-15 z-10"></i>
+            </div>
+            <div className="h-[69vh] w-full flex flex-col justify-start items-start px-5 overflow-y-auto hide-scrollbar">
+              <h3 className="text-[#A641FF] text-sm font-[gilroy-bold] py-2">
+                All games
+              </h3>
+              {userGames.map((g) => (
+                <div
+                  className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
                 ${
                   gameList === g.steam_appid
                     ? "bg-[#A641FF]/30"
                     : "hover:bg-[#A641FF]/10"
                 }`}
-                onClick={() =>
-                  setGameList((prev) =>
-                    prev === g.steam_appid ? null : g.steam_appid
-                  )
-                }
-              >
-                <div className="h-[6vh] w-[80%] flex justify-start items-center gap-5 px-5">
-                  <div className="h-[5vh] w-[5vh]  rounded-full overflow-hidden flex justify-center items-center ">
-                    <img
-                      className="w-full h-full object-cover"
-                      src={
-                        g.portrait_image?.[0].thumb
-                          ? g.portrait_image[0].thumb
-                          : g.hero_image?.thumb
-                      }
-                      alt=""
-                    />
+                  onClick={() =>
+                    setGameList((prev) =>
+                      prev === g.steam_appid ? null : g.steam_appid
+                    )
+                  }
+                >
+                  <div className="h-[6vh] w-[80%] flex justify-start items-center gap-5 px-5">
+                    <div className="h-[5vh] w-[5vh]  rounded-full overflow-hidden flex justify-center items-center ">
+                      <img
+                        className="w-full h-full object-cover"
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.steam_appid}/library_600x900.jpg`}
+                        alt=""
+                      />
+                    </div>
+                    <h3 className="text-white text-xs font-[gilroy-bold] truncate">
+                      {g.name}
+                    </h3>
                   </div>
-                  <h3 className="text-white text-xs font-[gilroy-bold] truncate">
-                    {g.name}
-                  </h3>
+                  <i className="ri-delete-bin-fill text-white hover:text-red-400 text-md px-3 py-1"></i>
                 </div>
-                <i className="ri-play-fill text-white hover:text-[#A641FF] text-xl px-3 py-1"></i>
-              </div>
-            ))}
-            {userGames.length === 0 && (
-              <div className="h-full w-full flex flex-col items-center justify-center">
-                <i className="ri-gamepad-line text-[#A641FF] text-4xl mb-3"></i>
-                <p className="text-[#696969] text-sm text-center">
-                  Your library is empty. <br />
-                  Add games from the store to get started!
-                </p>
-              </div>
-            )}
+              ))}
+              {userGames.length === 0 && (
+                <div className="h-full w-full flex flex-col items-center justify-center">
+                  <i className="ri-gamepad-line text-[#A641FF] text-4xl mb-3"></i>
+                  <p className="text-[#696969] text-sm text-center">
+                    Your library is empty. <br />
+                    Add games from the store to get started!
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

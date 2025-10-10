@@ -18,18 +18,27 @@ const LibDetails = ({ game, onClose }) => {
       <div className="h-[30vh] w-full relative">
         <div className="h-full w-full onject-cover flex items-center justify-center overflow-hidden rounded-sm">
           <img
-            src={
-              game.hero_image?.url ||
-              `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/library_hero.jpg` ||
-              game.portrait_image
-            }
+            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/library_hero.jpg`}
             alt={game.name}
             className="w-full h-full object-cover"
           />
         </div>
+        <div className="absolute h-[20vh] w-[20vw] z-30 bottom-0 left-10 flex items-center justify-center">
+          <img
+            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/logo.png`}
+            alt={game.name}
+            className="h-full w-full object-contain"
+          />
+        </div>
       </div>
       <div className="h-[10vh] w-full flex items-center justify-between">
-        <button className="px-12 py-2 cursor-pointer rounded-sm bg-[#A641FF] text-white">
+        {/* verify game files logic dalna hai yaha par */}
+        <button
+          onClick={() => {
+            window.location.href = `steam://rungameid/${game.steam_appid}`;
+          }}
+          className="px-12 py-2 cursor-pointer rounded-sm bg-[#A641FF] text-white"
+        >
           {" "}
           <i className="ri-play-fill text-white text-xl"></i> Play
         </button>

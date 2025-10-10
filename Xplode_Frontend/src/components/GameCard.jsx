@@ -32,12 +32,6 @@ const GameCard = ({ image, bg, name, price, genres, isActive }) => {
     loadImage();
   }, [bg]);
 
-  // rgba(${colorPalette[0][0]}, ${colorPalette[0][1]}, ${colorPalette[0][2]}, 0.5),
-  // rgba(${colorPalette[1][0]}, ${colorPalette[1][1]}, ${colorPalette[1][2]}, 0.5),
-  // rgba(${colorPalette[2][0]}, ${colorPalette[2][1]}, ${colorPalette[2][2]}, 0.5),
-  // rgba(${colorPalette[3][0]}, ${colorPalette[3][1]}, ${colorPalette[3][2]}, 0.5),
-  // rgba(${colorPalette[4][0]}, ${colorPalette[4][1]}, ${colorPalette[4][2]}, 0.5)
-
   const gradientBackground = colorPalette
     ? `linear-gradient(to bottom, 
           rgba(54, 20, 65, 0.4)
@@ -52,66 +46,90 @@ const GameCard = ({ image, bg, name, price, genres, isActive }) => {
 
   return (
     <>
-      <div className="relative overflow-hidden">
-
+      <div className="relative overflow-hidden"> 
+        {/* Image container - unified transition duration and easing */}
         <div
-          className={`h-[36vh] rounded-t-lg overflow-hidden shadow-lg cursor-pointer relative duration-600 transform ${isActive ? "w-[28vw]" : "w-[11vw]"
-            }`}
+          className={`h-[36vh] rounded-t-lg overflow-hidden shadow-lg cursor-pointer relative transition-all duration-500 ease-in-out transform ${
+            isActive ? "w-[28vw]" : "w-[11vw]"
+          }`}
         >
           <img
             ref={imageRef}
             src={image}
             alt={name}
-            className={`w-full h-full object-cover transition-opacity duration-400 ease-in-out transform absolute z-10 ${isActive ? "opacity-0" : "opacity-100"
-              }`}
+            className={`w-full h-full object-cover transition-opacity duration-500 ease-in-out transform absolute z-10 ${
+              isActive ? "opacity-0" : "opacity-100"
+            }`}
           />
           <img
             src={bg}
             alt={name}
-            className={`w-full h-full object-cover transition-opacity absolute`}
+            className={`w-full h-full object-cover transition-opacity duration-500 ease-in-out absolute`}
           />
         </div>
+
+        {/* Bottom bar - synced transition */}
         <div
-          className="h-[11svh] w-full px-[1.4vw] flex justify-between items-center cursor-pointer relative rounded-b-lg"
+          className="h-[11svh] w-full px-5 flex justify-between items-center cursor-pointer relative rounded-b-lg transition-all duration-500 ease-in-out"
           style={{
             background: gradientBackground,
-            transition: "background 0.5s ease",
           }}
         >
-          <div className="h-[11svh] flex flex-col justify-center items-start">
-            <h1 className="text-white text-[1rem] font-bold font-[gilroy-bold]">
+          <div
+            className={`h-[8svh] ${
+              isActive ? "w-full" : "w-[8vw]"
+            } flex flex-col justify-between items-start transition-all duration-500 ease-in-out`}
+          >
+            <h1
+              className={`text-white text-[1rem] w-full font-bold font-[gilroy-bold] truncate`}
+            >
               {name}
             </h1>
-            <h4 className="text-[#696969] text-[0.7rem] font-[gilroy-bold] mb-1">Valve</h4>
-            <h3 className="text-white text-sm font-[gilroy-ebold]">{price}</h3>
-
-          </div>
-          <div
-            className={`h-[8svh] flex flex-col transition-opacity absolute right-4 ${isActive ? "duration-700" : "duration-300"
-              } ease-in-out ${isActive ? "opacity-100" : "opacity-0"
-              } justify-between items-end`}
-          >
-            <div className="flex flex-row justify-center items-center gap-2">
-              {genres.map((genre, idx) => (
-                <h3
-                  key={idx}
-                  className="text-white text-xs font-[gilroy-bold]">
-                  {genre}
-                </h3>
-              ))}
+            <div className="w-full flex flex-row justify-start items-center gap-2 truncate">
+              {genres
+                .slice(0, isActive ? 4 : 2)
+                .map((genre, idx, arr) => (
+                  <h3
+                    key={idx}
+                    className={`text-white text-[10px] font-[gilroy] px-3 py-1 rounded-full transition-all duration-500 ease-in-out ${
+                      isActive
+                        ? idx === arr.length - 1
+                          ? "truncate"
+                          : ""
+                        : idx === 1
+                        ? "truncate"
+                        : ""
+                    }`}
+                    style={{
+                      background: bgcircle.replace("0.8", "0.3"),
+                    }}
+                  >
+                    {genre}
+                  </h3>
+                ))}
             </div>
+          </div>
+
+          {/* Win icon - synced fade */}
+          <div
+            className={`h-[4svh] flex flex-col transition-all duration-500 ease-in-out absolute right-4 justify-between items-end ${
+              isActive ? "opacity-100" : "opacity-0"
+            }`}
+          >
             <div className="h-[4svh] flex flex-col justify-center items-center">
               <img src="../Slider/win.svg" alt="" />
             </div>
           </div>
         </div>
+
+        {/* Blur circle - synced transition */}
         <div
-          className={`absolute -z-10 top-4/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 h-[20svh]  ${isActive ? "w-[70vh]" : "w-[40svh]"
-            } rounded-[50%] blur-2xl bg-[#696969]`}
+          className={`absolute -z-10 top-4/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-in-out h-[20svh] ${
+            isActive ? "w-[70vh]" : "w-[40svh]"
+          } rounded-[50%] blur-2xl bg-[#696969]`}
           style={{
             background: bgcircle,
           }}
-
         ></div>
       </div>
     </>

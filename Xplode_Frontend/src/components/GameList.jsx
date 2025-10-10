@@ -94,11 +94,11 @@ const GameList = ({games, title, nextClass, prevClass }) => {
       <div className="h-[3vh] w-[87vw] relative flex justify-between items-center font-[gilroy-bold] ml-6 ">
         <h1 className="text-lg">{title}</h1>
         <div className="h-[3vh] w-[10vw] flex justify-between items-center ">
-            <img src="../GameList/arrow.svg" alt="" className={`scale-x-[-1] ${prevClass} cursor-pointer`} />
-            <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm">
+            <img src="../GameList/arrow.svg" alt="" className={`scale-x-[-1] ${prevClass} cursor-pointer hover:bg-white/10 transition-all duration-200 rounded-full p-1`} />
+            <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm hover:text-zinc-400 transition-all duration-200">
               Learn More 
             </h4>
-            <img src="../GameList/arrow.svg" alt="" className={`${nextClass} cursor-pointer`} />
+            <img src="../GameList/arrow.svg" alt="" className={`${nextClass} cursor-pointer hover:bg-white/10 transition-all duration-200 rounded-full p-1`} />
         </div>
       </div>
       <Swiper 

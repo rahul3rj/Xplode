@@ -3,7 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 
 const DEBOUNCE_MS = 600;
 
-const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) => {
+const SearchBar = ({
+  query,
+  setQuery,
+  filteredGames = [],
+  isLoading = false,
+  onShowSearch,
+}) => {
   const [isFocused, setIsFocused] = useState(false);
   const [localValue, setLocalValue] = useState(query || "");
   const searchRef = useRef(null);
@@ -53,11 +59,11 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
     return filteredGames.map((game, index) => (
       <Link
         key={`${game.appid || index}  `}
-        to={`/game/${game.appid }`}
+        to={`/game/${game.appid}`}
         className="flex items-center gap-4 p-2 px-5 hover:bg-[#A641FF]/20 transition-all duration-300 cursor-pointer"
       >
         <img
-          src={game.capsule_image || game.header_image || "/default.png"}
+          src={game.header_image || "/default.png"}
           alt={game.name}
           className="w-[13vw] h-[11vh] rounded-lg object-cover shadow-md"
           onError={(e) => {
@@ -74,9 +80,9 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
             </h5>
           </div>
           <div className="w-full flex justify-between items-end">
-            <h5 className="text-white font-[gilroy-bold] text-sm">
+            {/* <h5 className="text-white font-[gilroy-bold] text-sm">
               {game.price}
-            </h5>
+            </h5> */}
           </div>
         </div>
       </Link>
@@ -84,16 +90,16 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
   };
 
   return (
-    <div className="w-full relative" ref={searchRef}>
+    <div className="w-full relative " ref={searchRef}>
       <div
-        className={`w-[35vw] flex flex-col items-start justify-start ml-[2vw] rounded-xl bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] absolute transition-all duration-300 ease-in-out overflow-hidden${
+        className={`w-[35vw] flex flex-col items-start justify-start ml-[2vw] rounded-xl bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] relative overflow-clip transition-all  duration-300 ease-in-out overflow-hidden${
           localValue && isFocused ? "h-[60vh]" : "h-[6vh]"
         }`}
       >
         <img
           src="../HomePage/Search.svg"
           alt=""
-          className="absolute top-[3vh] left-1/50 transform -translate-y-1/2"
+          className="absolute top-[3vh] left-1/50 transform -translate-y-1/2 w-[2vw] h-[3vh]"
         />
         <input
           type="text"
@@ -116,17 +122,26 @@ const SearchBar = ({ query, setQuery, filteredGames = [], isLoading = false }) =
           }}
         />
 
-        {localValue && (
+        <div
+          className={`absolute right-0 rounded-xl flex items-center justify-center w-10 h-10 group transition-opacity duration-600 ${
+            localValue
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
+          }`}
+        >
+          {/* blurred backdrop */}
+          <div className="absolute inset-0 bg-[#A641FF] blur-lg rounded-xl" />
+          {/* interactive content above the blur */}
           <div
             onClick={() => {
               setLocalValue("");
               setQuery("");
             }}
-            className="text-white bg-transparent absolute right-0 rounded-xl flex items-center justify-center w-10 h-10 cursor-pointer hover:bg-[#A641FF]/20 transition-opacity ease-out duration-500"
+            className="relative text-zinc-300 hover:text-white cursor-pointer w-full h-full flex items-center justify-center"
           >
-            <i className="ri-close-large-line text-sm"></i>
+            <i className="ri-close-large-line group-hover:scale-125 transition-transform duration-300 text-sm"></i>
           </div>
-        )}
+        </div>
 
         {localValue && isFocused && (
           <div className="w-full max-h-[54vh] overflow-y-auto hide-scrollbar bg-transparent shadow-lg overflow-hidden">

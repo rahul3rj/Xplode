@@ -7,7 +7,7 @@ import Notification from "./Notification";
 import { useState, useRef, useEffect } from "react";
 import { useSearch } from "../lib/SearchContext";
 
-const NavBar = ({ user }) => {
+const NavBar = ({ user, onShowProfile }) => {
   const { query, setQuery, filteredGames, isLoading } = useSearch();
   const [showWallet, setShowWallet] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -45,7 +45,7 @@ const NavBar = ({ user }) => {
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside); 
     };
   }, []);
 
@@ -61,16 +61,16 @@ const NavBar = ({ user }) => {
       {/* Navbar */}
       <div className="h-[12svh] w-full bg-transparent flex justify-between items-center fixed top-0 left-0 z-50">
         <div className="h-[10svh] w-[50%] flex justify-between items-center">
-          <Link to={"/home"}
+          <Link to={"/store"}
           className=" flex justify-start items-center cursor-pointer">
             <img
             src="/LoginPage/Complete logo.png"
             alt=""
-            className="ml-[1.3vw] r"
+            className="ml-[1.8vw] "
           />
           </Link>
           
-          <div className="w-full h-[6svh]">
+          <div className="w-full h-[6svh] ml-[1.7vw]">
             <SearchBar
               query={query}
               setQuery={setQuery}
@@ -82,7 +82,7 @@ const NavBar = ({ user }) => {
 
         <div className="h-[6svh] w-[39%] flex ml-5 justify-between mr-8 items-center">
           <div
-            className="h-[100%] w-[24%] rounded-full bg-[#1B0033] flex justify-between items-center cursor-pointer"
+            className="h-[100%] w-[24%] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-between items-center cursor-pointer"
             onClick={() => {
               setShowWallet(!showWallet); // Toggle between true/false
             }}
@@ -107,14 +107,14 @@ const NavBar = ({ user }) => {
             <Wallet ref={walletRef} />
           )}
           
-          <div className="h-[6svh] w-[6svh] rounded-full bg-[#1B0033] flex justify-center items-center cursor-pointer">
+          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer">
             <img
               src="../HomePage/Heart.svg"
               alt=""
               className="h-[3svh] w-[3svh]"
             />
           </div>
-          <div className="h-[6svh] w-[6svh] rounded-full bg-[#1B0033] flex justify-center items-center cursor-pointer"
+          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
           onClick={() => {
             setShowNotification(!showNotification); // Toggle between true/false
           }}
@@ -130,18 +130,17 @@ const NavBar = ({ user }) => {
             <Notification ref={notificationRef} />
           )}
 
-          <div className="h-[6svh] w-[6svh] rounded-full bg-[#1B0033] flex justify-center items-center cursor-pointer">
+          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer">
             <img
               src="../HomePage/Shopping Cart.svg"
               alt=""
               className="h-[3svh] w-[3svh]"
             />
           </div>
-          <Link
-            to={"/profile"}
+          <div onClick={onShowProfile}
             className="h-[5svh] w-[27%] flex justify-between items-center cursor-pointer"
           >
-            <div className="h-[5svh] w-[5svh] object-cover rounded-full border-2 border-[#A641FF] ">
+            <div className="h-[5svh] w-[5svh] object-cover rounded-full border-2 border-[#A641FF] " >
               <img
                 src={user.profilePic || "../profile/profile_pic.jpg"}
                 alt=""
@@ -154,7 +153,7 @@ const NavBar = ({ user }) => {
               alt=""
               className="h-[1.5svh]"
             />
-          </Link>
+          </div>
         </div>
       </div>
     </>

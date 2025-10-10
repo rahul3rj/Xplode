@@ -156,8 +156,7 @@ router.get("/search", async (req, res) => {
         "steam_appid website name portrait_image hero_image categories release_date publishers developers price genres capsule_image header_image"
       )
       .lean();
-    
-
+      
     const results = docs.map((d) => ({
       appid: d.steam_appid,
       name: d.name,

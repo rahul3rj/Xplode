@@ -148,7 +148,7 @@ useEffect(() => {
                 (relatedGame) =>
                   !exactMatchesData.some(
                     (exactGame) => exactGame.appid === relatedGame.appid
-                  )
+                  ) 
               )
               .map((game) => ({
                 ...game,
@@ -286,15 +286,15 @@ const genreCounts = useMemo(() => {
     <div className="h-[290vh] w-full px-5 flex items-start justify-start gap-5 relative">
       <div className="h-full w-[70%] relative">
         <div className="h-[6vh] w-full flex items-center justify-start mb-3">
-          <div className="h-full w-[14vh] flex justify-center items-center gap-2">
+          {/* <div className="h-full w-[14vh] flex justify-center items-center gap-2">
             <div className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-black/40 cursor-pointer">
               <i className="ri-arrow-left-s-line text-white text-xl"></i>
             </div>
             <div className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-black/40 cursor-pointer">
               <i className="ri-arrow-right-s-line text-white text-xl"></i>
             </div>
-          </div>
-          <h2 className="text-white font-[gilroy-bold] text-xl mx-5">
+          </div> */}
+          <h2 className="text-white font-[gilroy-bold] text-lg mx-3">
             Search results for "<span className="text-[#A641FF]">{query}</span>"
           </h2>
         </div>
@@ -311,7 +311,7 @@ const genreCounts = useMemo(() => {
         </div>
       </div>
       {/* Right section */}
-      <div className="h-[85vh] w-auto sticky top-0 z-10 right-7">
+      <div className="h-[85vh] w-[28%] sticky top-0 z-10 right-7">
         {/* Pagination */}
         <div className="h-[6vh] w-full flex flex-col items-center justify-center">
           <div className="h-[4vh] w-full flex items-center justify-between">
@@ -322,6 +322,8 @@ const genreCounts = useMemo(() => {
               Prev
             </button>
             <div className="h-[4vh] w-[60%] flex justify-center items-center gap-2">
+
+              {/* isse disable type karna hai matlab data jisme nhi aarhe to disable rahega page  */}
               {getPageNumbers().map((page, index) =>
                 page === "..." ? (
                   <span
@@ -359,16 +361,12 @@ const genreCounts = useMemo(() => {
               Next
             </button>
 
-            <div className="mt-2 text-white text-sm font-[gilroy]">
-              Showing {startIndex + 1}-
-              {Math.min(startIndex + GAMES_PER_PAGE, searchResults.length)} of{" "}
-              {searchResults.length} games
-            </div>
+            
           </div>
         </div>
         {/* Tag search */}
         <div className="h-[76vh] w-full flex flex-col items-center justify-start bg-[#8800FF]/20 rounded-lg mt-5 overflow-auto hide-scrollbar ">
-          <div className="h-[30vh] w-full px-5 py-4 relative">
+          <div className="h-[27vh] w-full px-5 py-4 relative">
             <input
               placeholder="Search for a tag..."
               type="text"
@@ -385,7 +383,7 @@ const genreCounts = useMemo(() => {
             </div>
 
             {/* Tags display */}
-            <div className="mt-4 h-[15vh] flex flex-wrap gap-3 overflow-auto hide-scrollbar">
+            <div className="mt-4 h-[15vh] flex  gap-3 overflow-auto hide-scrollbar">
               {tags.length === 0 ? (
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <img
@@ -401,23 +399,23 @@ const genreCounts = useMemo(() => {
                 tags.map((tag, index) => (
                   <div
                     key={index}
-                    className="h-[6vh] flex items-center gap-2 bg-[#A641FF]/40 px-4 py-2 rounded-sm"
+                    className="h-[6vh] flex items-center gap-2 bg-[#A641FF]/20 px-4 py-2 rounded-full"
                   >
                     <span className="text-white font-[gilroy-bold] text-sm">
                       {tag}
                     </span>
                     <button onClick={() => removeTag(tag)}>
-                      <i className="ri-close-line w-4 h-4 text-white hover:text-red-800"></i>
+                      <i className="ri-close-line w-4 h-4 text-zinc-400 hover:scale-125 transition-transform duration-300 ease-in-out hover:text-white cursor-pointer"></i>
                     </button>
                   </div>
                 ))
               )}
             </div>
-            <div className="h-[2px] w-full bg-[#A641FF] mt-3"></div>
+            {/* <div className="h-[2px] w-full bg-[#A641FF] mt-3"></div> */}
           </div>
-          <div className="h-auto w-full flex flex-col items-center justify-start px-5">
+          <div className="h-auto w-[90%] flex flex-col items-center justify-start px-5 py-2 bg-[#8800FF]/20 rounded-lg mt-5">
             <div
-              className="h-auto w-full flex items-center justify-between "
+              className="h-auto w-full flex items-center justify-between cursor-pointer"
               onClick={() => setshowGenre(!showGenre)}
             >
               <p className="text-white text-lg font-[gilroy-bold]">Genre</p>
@@ -430,20 +428,18 @@ const genreCounts = useMemo(() => {
 
             <div
               className={`${
-                showGenre ? "h-[25vh] opacity-100 mt-3" : "h-0 opacity-0"
-              } w-full mt-3 flex flex-col items-center gap-3 transition-all duration-300 overflow-hidden`}
+                showGenre ? "max-h-[25vh] opacity-100 mt-3" : "max-h-0 opacity-0"
+              } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-hidden`}
             >
               {genreCounts.slice(0, 4).map((genre, index) => (
                 <div
                   key={genre.name}
-                  className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm ${
-                    index % 2 === 0 ? "bg-[#A641FF]/50" : ""
-                  }`}
+                  className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer`}
                 >
-                  <p className="text-white text-sm font-[gilroy-bold]">
+                  <p className="text-white text-xs font-[gilroy]">
                     {genre.name}
                   </p>
-                  <p className="text-white text-sm font-[gilroy-bold]">
+                  <p className="text-white text-xs font-[gilroy]">
                     {genre.count}
                   </p>
                 </div>
@@ -463,7 +459,7 @@ const genreCounts = useMemo(() => {
                 </div>
               )}
             </div>
-            <div
+            {/* <div
               className={`${
                 showGenre ? "block h-[2vh] mt-3" : "hidden h-0"
               } w-full  flex justify-end items-center`}
@@ -473,17 +469,17 @@ const genreCounts = useMemo(() => {
               >
                 see more...
               </p>
-            </div>
+            </div> */}
 
-            <div
+            {/* <div
               className={`${
                 showGenre ? "mt-3" : "mt-0"
               } h-[2px] w-full bg-[#A641FF] mb-3`}
-            ></div>
+            ></div> */}
           </div>
-          <div className="h-auto w-full flex flex-col items-center justify-start px-5">
+          <div className="h-auto w-[90%] flex flex-col items-center justify-start px-5 py-2 bg-[#8800FF]/20 rounded-lg mt-4">
             <div
-              className="h-auto w-full flex items-center justify-between "
+              className="h-auto w-full flex items-center justify-between cursor-pointer"
               onClick={() => setshowPublisher(!showPublisher)}
             >
               <p className="text-white text-lg font-[gilroy-bold]">Publisher</p>
@@ -496,20 +492,18 @@ const genreCounts = useMemo(() => {
 
             <div
               className={`${
-                showPublisher ? "h-[25vh] opacity-100 mt-3" : "h-0 opacity-0"
-              } w-full mt-3 flex flex-col items-center gap-3 transition-all duration-300 overflow-hidden`}
+                showPublisher ? "max-h-[25vh] opacity-100 mt-3" : "max-h-0 opacity-0"
+              } w-full  flex flex-col items-center gap-2 transition-all duration-300 overflow-hidden cursor-pointer`}
             >
               {publisherCounts.slice(0, 4).map((publisher, index) => (
                 <div
                   key={publisher.name}
-                  className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm ${
-                    index % 2 === 0 ? "bg-[#A641FF]/50" : ""
-                  }`}
+                  className="h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer"
                 >
-                  <p className="text-white text-sm font-[gilroy-bold]">
+                  <p className="text-white text-xs font-[gilroy]">
                     {publisher.name}
                   </p>
-                  <p className="text-white text-sm font-[gilroy-bold]">
+                  <p className="text-white text-xs font-[gilroy]">
                     {publisher.count}
                   </p>
                 </div>
@@ -529,7 +523,7 @@ const genreCounts = useMemo(() => {
                 </div>
               )}
             </div>
-            <div
+            {/* <div
               className={`${
                 showPublisher ? "block h-[2vh] mt-3" : "hidden h-0"
               } w-full  flex justify-end items-center`}
@@ -545,7 +539,7 @@ const genreCounts = useMemo(() => {
               className={`${
                 showPublisher ? "mt-3" : "mt-0"
               } h-[2px] w-full bg-[#A641FF] mb-3`}
-            ></div>
+            ></div> */}
           </div>
         </div>
       </div>

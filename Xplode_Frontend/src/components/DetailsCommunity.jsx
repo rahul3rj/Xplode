@@ -84,15 +84,15 @@ const DetailsCommunity = ({ game }) => {
           <img
             src="../GameList/arrow.svg"
             alt=""
-            className="scale-x-[-1] com-swiper-prev cursor-pointer h-[3vh] w-[3vh]"
+            className="scale-x-[-1] com-swiper-prev cursor-pointer hover:bg-white/10 transition-all duration-200 rounded-full p-1 "
           />
-          <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm">
+          <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm hover:text-white transition-all duration-200">
             Learn More
           </h4>
           <img
             src="../GameList/arrow.svg"
             alt=""
-            className="com-swiper-next cursor-pointer h-[3vh] w-[3vh]"
+            className="com-swiper-next cursor-pointer hover:bg-white/10 transition-all duration-200 rounded-full p-1"
           />
         </div>
       </div>
@@ -118,23 +118,28 @@ const DetailsCommunity = ({ game }) => {
                 />
 
                 <div className="h-full w-full absolute z-50 top-0 left-0 flex flex-col justify-start items-center px-10">
-                  <div className="h-[70%] w-auto flex flex-col justify-start items-start gap-5">
+                  <div className="h-[70%] w-auto flex flex-col justify-start items-start gap-5 relative">
+                    <img
+                      src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game?.steam_appid}/logo.png`}
+                      alt=""
+                      className="h-[12vh] max-w-[15vw] object-contain absolute top-2 right-0"
+                    />
                     <h3 className="mt-10 font-[gilroy-bold] text-3xl">
-                      {game.name}
+                      {num.title}
                     </h3>
-                    <p className="w-[50%] text-xs font-[gilroy] font-[500] text-[#D7D7D7]">
+                    <p className="w-[50%] text-xs font-[gilroy] font-[500] text-[#D7D7D7] line-clamp-4">
                       {game.description}
                     </p>
                   </div>
                   <div className="h-[30%] w-full flex items-center justify-between">
-                    <button className="text-sm font-[gilroy-bold] px-4 py-3 rounded-lg bg-black/50 shadow-xl cursor-pointer">
+                    <button className="text-sm font-[gilroy-bold] px-6 py-3 rounded-full bg-[#A641FF]/50 hover:bg-[#A641FF]/70 backdrop-blur-md shadow-xl cursor-pointer transition-all duration-300">
                       Join Community
                     </button>
-                    <div className="text-sm font-[gilroy-bold] bg-black/50 px-4 py-1 rounded-lg flex justify-center items-center gap-2 shadow-xl cursor-pointer">
+                    <div className="text-sm font-[gilroy-bold] bg-black/50 px-2 py-2 rounded-full flex justify-center items-center gap-3 shadow-xl cursor-pointer backdrop-blur-md hover:scale-110 transition-all duration-300">
                       <div className="h-[5vh] w-[5vh] rounded-full bg-[#174AFF] overflow-hidden border border-[#A641FF]">
                         <img src={`${num.profile}`} alt="" />
                       </div>
-                      <div className="h-full w-auto">
+                      <div className="h-full min-w-[6vw]">
                         <h5 className="text-sm font-[gilroy-bold]">
                           {num.page}
                         </h5>

@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Rating from "@mui/material/Rating";
 import StarIcon from "@mui/icons-material/Star";
 import Likepercent from "../components/Likepercent";
+import GameList2 from "../components/GameList2";
 
 const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
@@ -202,21 +203,20 @@ const DetailsPage = () => {
             <img src="../Slider/Xbox.svg" alt="" />
           </div>
         </div>
-        <div className="absolute z-10 top-30 left-0 px-10 h-[30svh] w-auto flex flex-col items-start justify-center gap-2">
-          <h1 className="text-5xl font-[gilroy-ebold] text-white ">
+        <div className="absolute z-10 top-20 left-0 px-10 h-[43svh] w-[35vw] flex flex-col items-start justify-between gap-2">
+          <div className="h-[21svh] w-auto flex justify-center items-center overflow-hidden">
+            {/* image logo from steamgridDB */}
+            <img
+              src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game?.steam_appid}/logo.png`}
+              alt=""
+              className="h-full object-contain "
+            />
+          </div>
+          {/* <h1 className="text-5xl font-[gilroy-ebold] text-white ">
             {game.name}
-          </h1>
-          <div className="h-[3svh] w-[15vw] flex justify-between items-center">
-            <div className="h-[2svh] w-[5svw]"></div>
-            {game.genres.map((genre, idx) => (
-              <h4
-                key={idx}
-                className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]"
-              >
-                {genre}
-              </h4>
-            ))}
-
+          </h1> */}
+          <div className="h-[3svh] w-[25vw] flex justify-start items-center gap-2">
+            {/* <div className="h-[2svh] w-[5svw]"></div> */}
             <div className="h-[2svh] w-[5svw] flex items-center justify-center">
               <Rating
                 name="read-only"
@@ -232,36 +232,71 @@ const DetailsPage = () => {
                 icon={<StarIcon sx={{ fontSize: "2vh" }} />}
               />
             </div>
-            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
-              Dark fantasy{" "}
-            </h4>
-            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
-              RPG{" "}
-            </h4>
-            <h4 className="text-xs font-[gilroy-ebold] text-[#837F7F] cursor-pointer hover:text-[#A641FF]">
-              Difficult{" "}
-            </h4>
+            {game.genres.slice(0, 3).map((genre, idx) => (
+              <h4
+                key={idx}
+                className={`text-xs font-[gilroy-bold] text-white cursor-pointer hover:bg-[#A641FF]/70 bg-[#A641FF]/50 px-3 py-1 rounded-full backdrop-blur-sm ${
+                  idx === 2 ? "truncate max-w-[10vw]" : ""
+                }`}
+              >
+                {genre}
+              </h4>
+            ))}
           </div>
-          <div className="h-[30%] w-[20vw]">
-            <p className="text-xs font-[gilroy] text-[#C7C3C3]">
+          <div className="h-auto w-[25vw]">
+            <p className="text-xs font-[gilroy] text-zinc-300 line-clamp-3 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
               {game.description}
             </p>
           </div>
-          <div className="h-[20%] w-auto flex justify-between items-center gap-2 mt-2">
-            <button className="h-[6vh] w-[10vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg">
-              Buy now <i class="ri-arrow-down-wide-line ml-1"></i>
+          <div className="h-auto w-auto flex justify-between items-center gap-2 mt-2">
+            <button
+              onClick={handleAddToLibrary}
+              className="h-[6vh] w-[10vw] rounded-full bg-[#A641FF]/50 text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#A641FF]/70 flex justify-center items-center shadow-lg gap-2 backdrop-blur-sm"
+            >
+              <i class="ri-add-line ml-1"></i>Add Game
             </button>
-            <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
-              <img src="../HomePage/Heart.svg" alt="" className="p-2" />
-            </div>
-            <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg">
+            <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg backdrop-blur-sm">
               <img src="../HomePage/Shopping Cart.svg" alt="" className="p-2" />
             </div>
+            {/* Like button */}
             <div
-              onClick={handleAddToLibrary}
-              className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg"
+              onClick={() =>
+                setIsActive((prev) => (prev === "like" ? null : "like"))
+              }
+              className={`h-[6vh] w-[12vh] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors gap-2 backdrop-blur-sm ${
+                isActive === "like"
+                  ? "bg-[#B561FF]/50"
+                  : "bg-black/40 hover:bg-black"
+              }`}
             >
-              <i class="ri-add-line text-white"></i>
+              <i
+                className={`text-white text-lg ${
+                  isActive === "like" ? "ri-thumb-up-fill" : "ri-thumb-up-line"
+                }`}
+              ></i>
+              <span className="text-white text-sm font-[gilroy-bold]">
+                112k
+              </span>
+            </div>
+
+            {/* Dislike button */}
+            <div
+              onClick={() =>
+                setIsActive((prev) => (prev === "dislike" ? null : "dislike"))
+              }
+              className={`h-[6vh] w-[6vh] rounded-full flex items-center backdrop-blur-sm justify-center cursor-pointer shadow-lg transition-colors duration-300 ease-in-out ${
+                isActive === "dislike"
+                  ? "bg-[#B42323]/50"
+                  : "bg-black/40 hover:bg-black"
+              }`}
+            >
+              <i
+                className={`text-white text-lg ${
+                  isActive === "dislike"
+                    ? "ri-thumb-down-fill"
+                    : "ri-thumb-down-line"
+                }`}
+              ></i>
             </div>
           </div>
         </div>
@@ -406,14 +441,17 @@ const DetailsPage = () => {
                 Developer
               </h3>
             </div>
-            {game.developers.map((developer, idx) => (
-              <h3
-                key={idx}
-                className=" text-[#A641FF] font-[gilroy-ebold] text-sm truncate cursor-pointer"
-              >
-                {developer}
-              </h3>
-            ))}
+            <h3 className="font-[gilroy-ebold] text-sm cursor-pointer truncate max-w-[19vw] overflow-hidden whitespace-nowrap flex gap-1">
+              {game.developers.slice(0, 3).map((developer, idx) => (
+                <span
+                  key={idx}
+                  className="text-[#A641FF] hover:text-white transition-colors duration-200"
+                >
+                  {developer}
+                  {idx < game.developers.slice(0, 3).length - 1 ? "," : ""}
+                </span>
+              ))}
+            </h3>
           </div>
           <div className="h-[5svh] w-full flex justify-start items-center ">
             <div className="w-[7svw]">
@@ -424,7 +462,7 @@ const DetailsPage = () => {
             {game.publishers.map((publisher, idx) => (
               <h3
                 key={idx}
-                className="w-[18svw] text-[#A641FF] font-[gilroy-ebold] text-sm truncate cursor-pointer"
+                className="w-[6svw] mr-2 text-[#A641FF] hover:text-white transition-colors duration-200 font-[gilroy-ebold] text-sm truncate cursor-pointer"
               >
                 {publisher}
               </h3>
@@ -437,23 +475,17 @@ const DetailsPage = () => {
               </h3>
             </div>
             <div className="h-[5svh] w-full flex justify-start items-center gap-2">
-              <div className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-3 cursor-pointer">
-                <h3 className="text-white font-[gilroy-bold] text-xs">
-                  Souls-Like
-                </h3>
-              </div>
-              <div className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-3 cursor-pointer">
-                <h3 className="text-white font-[gilroy-bold] text-xs">RPG</h3>
-              </div>
-              <div className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-3 cursor-pointer">
-                <h3 className="text-white font-[gilroy-bold] text-xs">
-                  Dark Fantasy
-                </h3>
-              </div>
-              <div className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-3 cursor-pointer">
-                <h3 className="text-white font-[gilroy-bold] text-xs">
-                  Open-World
-                </h3>
+              <div className="h-[5svh] w-auto flex justify-start items-center gap-2">
+                {game.genres.map((tag, idx) => (
+                  <div
+                    key={idx}
+                    className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-3 cursor-pointer hover:bg-[#7a2ed1] transition-colors"
+                  >
+                    <h3 className="text-white font-[gilroy-bold] text-xs truncate max-w-[5vw] overflow-hidden whitespace-nowrap">
+                      {tag}
+                    </h3>
+                  </div>
+                ))}
               </div>
               <div className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-2 cursor-pointer">
                 <i class="ri-add-line text-white text-lg"></i>
@@ -465,19 +497,19 @@ const DetailsPage = () => {
       <div className="h-[50svh] w-full flex justify-start items-start mb-15">
         <DetailsCommunity game={game} />
       </div>
-      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer">
+      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer group">
         <div className="h-full w-full flex justify-center items-center bg-black relative">
           <img
             src={getGameImage(game, randomIndex2, 2)}
             alt=""
-            className="h-full w-full object-cover rounded-lg mix-blend-luminosity  "
+            className="h-full w-full object-cover rounded-lg mix-blend-luminosity group-hover:scale-110 transition-all duration-300"
           />
 
           <div className="h-full w-full absolute z-10 top-0 left-0 bg-black/40 shadow-[inset_0_4px_79.2px_0_rgba(255,41,195,0.50)] rounded-xl"></div>
           <div className="h-full w-full absolute z-10 top-0 left-0 flex justify-center items-center">
             <h1 className="text-white font-[gilroy] font-[600] text-3xl">
               Check out the entire {game.publishers[0]} collection on{" "}
-              <span className="bg-clip-text text-transparent bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)]">
+              <span className="bg-clip-text text-transparent bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)] group-hover:bg-[linear-gradient(270deg,#FF29C3_53.65%,#A641FF_100%)] transition-all duration-500 ease-in-out">
                 Xplode
               </span>
             </h1>
@@ -525,7 +557,7 @@ const DetailsPage = () => {
         <div className="h-[1px] w-full bg-[linear-gradient(90deg,#FF29C3_53.65%,#A641FF_100%)] opacity-50 "></div>
       </div>
 
-      <div className="h-[50vh] w-full flex flex-col justify-start items-start gap-5 mb-5">
+      <div className="h-auto w-full flex flex-col justify-start items-start gap-5 mb-5">
         <h4 className="font-[gilroy-bold] text-white text-md ">
           System Requirements
         </h4>
@@ -623,6 +655,15 @@ const DetailsPage = () => {
             title={GameListTitle[2]}
             nextClass="game-list-swiper-next-2"
             prevClass="game-list-swiper-prev-2"
+          />
+        )}
+        <GameList2 />
+        {topGames.length > 0 && (
+          <GameList
+            games={topGames}
+            title={GameListTitle[1]}
+            nextClass="game-list-swiper-next-1"
+            prevClass="game-list-swiper-prev-1"
           />
         )}
       </div>

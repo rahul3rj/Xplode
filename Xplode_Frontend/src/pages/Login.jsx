@@ -34,7 +34,7 @@ const Login = () => {
 
     if (token) {
       localStorage.setItem("token", token);
-      navigate("/home");
+      navigate("/store");
     }
   }, [navigate]);
 
@@ -96,7 +96,7 @@ const Login = () => {
 
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
-        navigate("/home");
+        navigate("/store");
       } else {
         alert(res.data.message || "Login failed. Please try again.");
       }

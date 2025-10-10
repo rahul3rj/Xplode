@@ -1,16 +1,11 @@
-import React, { useState, useEffect } from "react";
-import axios from "../utils/axios";
-import { useNavigate, Link } from "react-router-dom";
-import NavBar from "../components/NavBar";
-import SideNav from "../components/SideNav";
-import Store from "../pages/Store";
-import Library from "../pages/Library";
-import Community from "../pages/Community";
-import Settings from "../pages/Settings";
-import Profile from "./Profile";
-import SearchPage from "./SearchPage";
+import React from "react";
+import NavBar from "./components/NavBar";
+import SideNav from "./components/SideNav";
+import { Outlet, useNavigate } from "react-router-dom";
+import axios from "./utils/axios";
+import { useEffect, useState } from "react";
 
-const Home = () => {
+const MainLayout = () => {
   const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -105,20 +100,30 @@ const Home = () => {
     }
   }, [navigate]);
 
+  // This function will set the active page and navigate to the route
+  const handleSetActivePage = (page) => {
+    setActivePage(page);
+    navigate(`/${page}`);
+  };
+
   return (
-    <div className="h-screen w-full relative bg-transparent">
-        {/* <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
-          {renderPage()}
-        </div> */}
-      <div className="absolute bottom-0 left-0 w-full fixed z-0">
-        <img
-          src="../bg.svg"
-          alt=""
-          className="w-full h-auto pointer-events-none select-none saturate-140"
+    <div className="h-screen w-full bg-black flex relative">
+      <SideNav
+        handleLogout={handleLogout}
+        setActivePage={handleSetActivePage}
+        activePage={activePage}
+      />
+      <div className="flex-1 flex flex-col">
+        <NavBar
+          user={user}
+          onShowProfile={() => handleSetActivePage("profile")}
         />
+        <div className="flex-1">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
 };
 
-export default Home;
+export default MainLayout;

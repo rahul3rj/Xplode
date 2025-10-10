@@ -103,7 +103,7 @@ const Profile = () => {
   }, [navigate]);
  
   return (
-    <div className="h-screen w-full relative bg-transparent">
+    <div className="h-[88vh] w-[90vw] ml-[10vw] mt-[12vh]  gap-5 relative bg-transparent">
 
       {isLoading && (
         <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40">
@@ -111,9 +111,9 @@ const Profile = () => {
         </div>
       )}
       <div className="relative sticky z-10">
-        <NavBar user={user} />
-        <SideNav handleLogout={handleLogout} setActivePage={setActivePage} activePage={activePage}/>
-        <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
+        {/* <NavBar user={user} /> */}
+        {/* <SideNav handleLogout={handleLogout} setActivePage={setActivePage} activePage={activePage}/> */}
+        <div className="absolute  h-[88svh] w-[100%] z-30 overflow-y-auto hide-scrollbar">
           <ProfilePage user={user} setUser={setUser} />
           <CommunitySection />
           {topGames.length > 0 && (
