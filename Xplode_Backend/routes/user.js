@@ -38,8 +38,6 @@ catch(err){
   console.error(err);
   res.status(500).json({ success: false,   message: "Invalid Credentials" });
 }
-
-  
 });
 
 router.post("/send-otp", async (req, res) => {
@@ -119,8 +117,6 @@ router.post("/verify-otp", async (req, res) => {
 });
 
 
-
-
 router.post("/register", async (req, res) => {
   const { email , name ,password} = req.body;
 
@@ -132,8 +128,6 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    
-
     let user = await userModel.findOne({ email });
     if (user) {
       return res
@@ -156,6 +150,7 @@ router.post("/register", async (req, res) => {
       message: "User registered successfully!",
       token,
     });
+
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({ success: false, message: "Error registering user" });
