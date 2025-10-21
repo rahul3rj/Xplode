@@ -36,6 +36,16 @@ const steamAppids = {
     {  appid: 990080 },
     {  appid: 1245620 },
   ],
+  New_Releases: [
+  { appid: 2807960, name: "Battlefield 6" },
+  { appid: 1030300, name: "Hollow Knight: Silksong" },
+  { appid: 2947440, name: "Silent Hill f" },
+  { appid: 3405690, name: "FC 26" },
+  { appid: 1903340, name: "Expedition 33" },
+  { appid: 2277560, name: "Wuchang" },
+  { appid: 2358720, name: "Black Myth Wukong" },
+  { appid: 1145350, name: "Hades 2" }
+]
 };
 
 async function fetchSteamDetails(appid) {

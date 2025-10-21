@@ -18,6 +18,15 @@ export const getUserLibrary = async () => {
   }
 };
 
+export const removeFromLibrary = async (steamAppId) => {
+  try {
+    const response = await axios.post(`/library/remove/${steamAppId}`);
+    return response.data; // axios automatically parses JSON
+  } catch (error) {
+    console.error('Remove from library error:', error);
+    throw error.response?.data || error.message;
+  }
+};
 // Check if user is authenticated
 export const isAuthenticated = () => {
   return !!localStorage.getItem('token');

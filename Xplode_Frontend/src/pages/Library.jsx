@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import LibGames from "../components/LibGames";
 import LibDetails from "./LibDetails";
-import { getUserLibrary } from "../utils/addToLibrary";
+import { getUserLibrary, removeFromLibrary } from "../utils/addToLibrary";
 
 const Library = () => {
   const [gameList, setGameList] = useState(null);
   const [userGames, setUserGames] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const historyRef = useRef([]);
@@ -117,6 +118,40 @@ const Library = () => {
   //   },
   // ];
 
+  const filteredGames = userGames.filter((game) =>
+    game.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const handleDeleteGame = async (steamAppId, e) => {
+    e.stopPropagation();
+
+    if (
+      !window.confirm(
+        "Are you sure you want to remove this game from your library?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await removeFromLibrary(steamAppId);
+
+      // UI update
+      setUserGames((prev) =>
+        prev.filter((game) => game.steam_appid !== steamAppId)
+      );
+
+      // Close details if open
+      if (gameList === steamAppId) {
+        setGameList(null);
+      }
+
+      // Toast message ya koi better feedback (optional)
+      console.log("Game removed successfully!");
+    } catch (error) {
+      console.error("Failed to remove game:", error);
+      alert(error.message || "Failed to remove game from library");
+    }
+  };
   useEffect(() => {
     const fetchUserLibrary = async () => {
       try {
@@ -243,7 +278,7 @@ const Library = () => {
               My Games
             </h3>
             <p className="text-[#696969] text-sm font-[gilroy] px-2">
-              ({userGames.length})
+              ({filteredGames.length}) {/* ✅ Filtered count show karo */}
             </p>
             <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
             <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
@@ -251,7 +286,7 @@ const Library = () => {
 
           <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
             {gameList === null ? (
-              <LibGames games={userGames} onSelect={setGameList} />
+              <LibGames games={filteredGames} onSelect={setGameList} />
             ) : (
               <LibDetails
                 game={userGames.find((g) => g.steam_appid === gameList)}
@@ -265,6 +300,8 @@ const Library = () => {
             <div className="h-[10vh] w-full flex justify-center items-center px-5">
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)} 
                 placeholder="Search by name"
                 className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
               />
@@ -272,9 +309,9 @@ const Library = () => {
             </div>
             <div className="h-[69vh] w-full flex flex-col justify-start items-start px-5 overflow-y-auto hide-scrollbar">
               <h3 className="text-[#A641FF] text-sm font-[gilroy-bold] py-2">
-                All games
+                All games {searchTerm && `- Searching: "${searchTerm}"`}
               </h3>
-              {userGames.map((g) => (
+              {filteredGames.map((g) => (
                 <div
                   className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
                 ${
@@ -300,10 +337,29 @@ const Library = () => {
                       {g.name}
                     </h3>
                   </div>
-                  <i className="ri-delete-bin-fill text-white hover:text-red-400 text-md px-3 py-1"></i>
+                  <button
+                    onClick={(e) => {
+                      console.log(g.steam_appid);
+                      handleDeleteGame(g.steam_appid, e);
+                    }}
+                    className="px-3 py-1 hover:bg-red-500/20 rounded transition-colors"
+                  >
+                    <i className="ri-delete-bin-fill text-white hover:text-red-400 text-md"></i>
+                  </button>
                 </div>
               ))}
-              {userGames.length === 0 && (
+              {filteredGames.length === 0 && searchTerm && (
+                <div className="h-full w-full flex flex-col items-center justify-center">
+                  <i className="ri-search-line text-[#A641FF] text-4xl mb-3"></i>{" "}
+                  {/* Search icon better hai */}
+                  <p className="text-[#696969] text-sm text-center">
+                    No games found for "{searchTerm}"<br />
+                    Try a different search term
+                  </p>
+                </div>
+              )}
+
+              {filteredGames.length === 0 && !searchTerm && (
                 <div className="h-full w-full flex flex-col items-center justify-center">
                   <i className="ri-gamepad-line text-[#A641FF] text-4xl mb-3"></i>
                   <p className="text-[#696969] text-sm text-center">

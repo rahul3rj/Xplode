@@ -1,5 +1,10 @@
 import { React, useState } from "react";
-import { addToLibrary, requireAuth } from "../utils/addToLibrary";
+import {
+  addToLibrary,
+  requireAuth,
+  getUserLibrary,
+  removeFromLibrary,
+} from "../utils/addToLibrary";
 import SsSlider from "../components/SsSlider";
 import DetailsCommunity from "../components/DetailsCommunity";
 import axios from "../utils/axios";
@@ -12,12 +17,13 @@ import StarIcon from "@mui/icons-material/Star";
 import Likepercent from "../components/Likepercent";
 import GameList2 from "../components/GameList2";
 
-const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
+const GameListTitle = ["Trending Games", "Top Games", "Top Records", "New Releases"];
 
 const DetailsPage = () => {
   const { appid } = useParams(); // ✅ param name fix
   const [games, setGames] = useState([]);
   const navigate = useNavigate();
+  const [userLibrary, setUserLibrary] = useState([]);
   const [game, setGame] = useState(null);
   const [randomIndex1, setRandomIndex1] = useState(-1);
   const [randomIndex2, setRandomIndex2] = useState(-1);
@@ -42,35 +48,102 @@ const DetailsPage = () => {
     fetchGame();
   }, [appid]);
 
-  const handleAddToLibrary = async () => {
+  const handleAddToLibrary = async (e, game) => {
+    e.stopPropagation();
+    e.preventDefault();
+
     if (!requireAuth()) return;
+
     try {
       const gameData = {
-        steam_appid: game.steam_appid,
-        name: game.name,
-        portrait_image: game.portrait_image || game.capsule_image,
+        steam_appid: game.steam_appid || game.appid,
+        name: game.name || game.title,
+        portrait_image:
+          game.portrait_image || game.capsule_image || game.header_image,
         hero_image: {
           url:
-            game.hero_image[0].url ||
+            game.hero_image?.[0]?.url ||
             game.background_raw ||
             game.background ||
-            game.header_image,
+            game.header_image ||
+            game.image,
           thumb:
-            game.hero_image[0].thumb || game.background || game.header_image,
+            game.hero_image?.[0]?.thumb ||
+            game.background ||
+            game.header_image ||
+            game.image,
         },
-        developers: game.developers,
-        publishers: game.publishers,
+        developers: game.developers || game.developer,
+        publishers: game.publishers || [game.publisher],
         categories: game.categories || [],
         movies: game.movies || [],
       };
 
       const result = await addToLibrary(gameData);
-      // Show success message
+
+      // ✅ YEH LINE ADD KARO - Local state update karo
+      setUserLibrary((prev) => [...prev, result.game || gameData]);
+
       alert("Game added to your library!");
     } catch (error) {
       console.error("Failed to add game to library:", error);
       alert(error.message || "Failed to add game to library");
     }
+  };
+
+  const handleRemoveFromLibrary = async (e, game) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!requireAuth()) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to remove this game from your library?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await removeFromLibrary(game.steam_appid || game.appid);
+
+      // Update local state
+      setUserLibrary((prev) =>
+        prev.filter(
+          (libGame) => libGame.steam_appid !== (game.steam_appid || game.appid)
+        )
+      );
+    } catch (error) {
+      console.error("Failed to remove game from library:", error);
+      alert(error.message || "Failed to remove game from library");
+    }
+  };
+
+  const fetchUserLibrary = async () => {
+    try {
+      if (requireAuth()) {
+        const library = await getUserLibrary();
+        setUserLibrary(library);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user library:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserLibrary(); // Add this function call
+  }, [games]);
+  const isGameInLibrary = (gameAppId) => {
+    return userLibrary.some((game) => game.steam_appid === gameAppId);
+  };
+
+  const handleClick = (tag) => {
+    navigate("/search", {
+      state: {
+        initialTags: [tag],
+      },
+    });
   };
 
   function sanitizeAbout(html) {
@@ -151,6 +224,7 @@ const DetailsPage = () => {
   const sliderGames = games.filter((game) => game.category === "sliders");
   const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
+  const newReleases = games.filter((game) => game.category === "New_Releases");
   const topRecordGames = games.filter(
     (game) => game.category === "top_records"
   );
@@ -250,10 +324,27 @@ const DetailsPage = () => {
           </div>
           <div className="h-auto w-auto flex justify-between items-center gap-2 mt-2">
             <button
-              onClick={handleAddToLibrary}
-              className="h-[6vh] w-[10vw] rounded-full bg-[#A641FF]/50 text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#A641FF]/70 flex justify-center items-center shadow-lg gap-2 backdrop-blur-sm"
+              onClick={(e) =>
+                isGameInLibrary(game.steam_appid || game.appid)
+                  ? handleRemoveFromLibrary(e, game)
+                  : handleAddToLibrary(e, game)
+              }
+              className={`py-3 px-7 ${
+                isGameInLibrary(game.steam_appid || game.appid)
+                  ? "bg-red-500/50 hover:bg-red-500/70"
+                  : "bg-[#A641FF]/50 hover:bg-[#A641FF]/70"
+              } transition-all duration-200 font-[gilroy] text-white text-xs rounded-full cursor-pointer gap-2 flex shadow-xl`}
             >
-              <i class="ri-add-line ml-1"></i>Add Game
+              <i
+                className={`ri-${
+                  isGameInLibrary(game.steam_appid || game.appid)
+                    ? "delete-bin-line"
+                    : "add-line"
+                } text-white`}
+              ></i>
+              {isGameInLibrary(game.steam_appid || game.appid)
+                ? "Remove Game"
+                : "Add Game"}
             </button>
             <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg backdrop-blur-sm">
               <img src="../HomePage/Shopping Cart.svg" alt="" className="p-2" />
@@ -479,6 +570,7 @@ const DetailsPage = () => {
                 {game.genres.map((tag, idx) => (
                   <div
                     key={idx}
+                    onClick={() => handleClick(tag)}
                     className="h-[5svh] w-auto flex justify-center items-center bg-[#A641FF] rounded-sm px-3 cursor-pointer hover:bg-[#7a2ed1] transition-colors"
                   >
                     <h3 className="text-white font-[gilroy-bold] text-xs truncate max-w-[5vw] overflow-hidden whitespace-nowrap">
@@ -497,7 +589,11 @@ const DetailsPage = () => {
       <div className="h-[50svh] w-full flex justify-start items-start mb-15">
         <DetailsCommunity game={game} />
       </div>
-      <div className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer group">
+
+      <div
+        onClick={() => handleClick(game.publishers[0])}
+        className="h-[25svh] w-full flex justify-start items-start mb-15 rounded-xl overflow-hidden cursor-pointer group"
+      >
         <div className="h-full w-full flex justify-center items-center bg-black relative">
           <img
             src={getGameImage(game, randomIndex2, 2)}
@@ -516,6 +612,7 @@ const DetailsPage = () => {
           </div>
         </div>
       </div>
+
       <div className="h-auto w-full flex flex-col justify-center items-start gap-3 mb-15">
         <div className="h-[5vh] w-full flex justify-start items-center">
           <h4 className="font-[gilroy-bold] text-white ">About This Game</h4>
@@ -657,7 +754,7 @@ const DetailsPage = () => {
             prevClass="game-list-swiper-prev-2"
           />
         )}
-        <GameList2 />
+        <GameList2 games={newReleases} title={GameListTitle[3]} />
         {topGames.length > 0 && (
           <GameList
             games={topGames}

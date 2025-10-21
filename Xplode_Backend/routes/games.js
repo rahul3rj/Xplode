@@ -122,7 +122,7 @@ router.post("/fetch", async (req, res) => {
 
 // updateSearchGamesInDB();
 
-// updateGamesInDB();   //--------------> Use this if you want to update the database with new games
+updateGamesInDB();   //--------------> Use this if you want to update the database with new games
 
 router.get("/home", async (req, res) => {
   try {
@@ -226,6 +226,96 @@ router.get("/search/by-genres", async (req, res) => {
     res
       .status(500)
       .json({ message: "Genre search failed", error: err.message, games: [] });
+  }
+});
+
+ 
+router.get("/search/advanced" , async (req, res) => {
+   const tags = (req.query.tags || "").split(",").filter(Boolean);
+   const limit = parseInt(req.query.limit) || 20;
+
+  if (tags.length === 0) return res.status(200).json([]);
+   try {
+    const allResults = [];
+    
+    // Har tag ke liye multiple searches
+    for (const tag of tags) {
+      // Search by name/title
+      const nameResults = await SearchGames.find({
+        name: { $regex: tag, $options: "i" }
+      }).limit(10).lean();
+
+      // Search by genre
+      const genreResults = await SearchGames.find({
+        genres: { $regex: tag, $options: "i" }
+      }).limit(10).lean();
+
+      // Search by publisher
+      const publisherResults = await SearchGames.find({
+        publishers: { $regex: tag, $options: "i" }
+      }).limit(10).lean();
+
+      // Combine with match type
+      allResults.push(
+        ...nameResults.map(g => ({...g, matchType: "Title Match", matchedTag: tag})),
+        ...genreResults.map(g => ({...g, matchType: "Genre Match", matchedTag: tag})),
+        ...publisherResults.map(g => ({...g, matchType: "Publisher Match", matchedTag: tag}))
+      );
+    }
+
+    // Remove duplicates and sort by relevance
+    const uniqueResults = [];
+    const seenAppIds = new Set();
+
+    allResults.forEach(game => {
+      if (!seenAppIds.has(game.steam_appid)) {
+        seenAppIds.add(game.steam_appid);
+        
+        // Count how many tags this game matches
+        const tagMatches = tags.filter(tag => 
+          game.name?.toLowerCase().includes(tag.toLowerCase()) ||
+          game.genres?.some(genre => genre.toLowerCase().includes(tag.toLowerCase())) ||
+          game.publishers?.some(pub => pub.toLowerCase().includes(tag.toLowerCase()))
+        ).length;
+
+        uniqueResults.push({
+          ...game,
+          relevanceScore: tagMatches,
+          matchedTags: tags.filter(tag => 
+            game.name?.toLowerCase().includes(tag.toLowerCase()) ||
+            game.genres?.some(genre => genre.toLowerCase().includes(tag.toLowerCase())) ||
+            game.publishers?.some(pub => pub.toLowerCase().includes(tag.toLowerCase()))
+          )
+        });
+      }
+    });
+
+    // Sort by relevance (more tag matches = higher)
+    uniqueResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    
+    const finalResults = uniqueResults.slice(0, limit).map(d => ({
+      appid: d.steam_appid,
+      name: d.name,
+      portrait_image: d.portrait_image || "/default-game-cover.jpg",
+      hero_image: d.hero_image || "/default-game-cover.jpg",
+      release_date: d.release_date || "Unknown",
+      categories: d.categories || [],
+      publisher: d.publishers?.[0] || "Unknown",
+      developer: d.developers?.[0] || "Unknown",
+      price: d.price || "Free",
+      genres: d.genres || ["No genre"],
+      header_image: d.header_image || "/default-game-cover.jpg",
+      capsule_image: d.capsule_image || d.header_image || "/default-game-cover.jpg",
+      website: d.website || "No website available",
+      matchType: d.matchType,
+      relevanceScore: d.relevanceScore,
+      matchedTags: d.matchedTags
+    }));
+
+    res.status(200).json(finalResults);
+  } catch (err) {
+    console.error("Advanced search error:", err.message);
+    res.status(500).json({ message: "Advanced search failed", error: err.message });
   }
 });
 

@@ -6,6 +6,7 @@ import "swiper/css/navigation";
 
 const squares = [
   {
+    
     title: "Hollow Knight: Silksong",
     logo: "https://cdn2.steamgriddb.com/logo/f10de28ee8e81e49938b0e7e45e369fb.png",
     image:

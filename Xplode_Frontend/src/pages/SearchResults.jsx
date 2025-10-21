@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import GameResult from "../components/GameResult";
+import { useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import axios from "../utils/axios";
 
@@ -10,10 +11,18 @@ const SearchResults = ({ query }) => {
   const [showGenre, setshowGenre] = useState(true);
   const [showPublisher, setshowPublisher] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearchingByTags, setIsSearchingByTags] = useState(false);
   const [exactMatches, setExactMatches] = useState([]); // ✅ Exact matches ko alag se store karo
   const [isLoading, setIsLoading] = useState(false);
 
-  
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.initialTags) {
+      setTags(location.state.initialTags);
+    }
+  }, [location]);
+
   const GAMES_PER_PAGE = 10;
 
   // Sample game data
@@ -110,67 +119,100 @@ const SearchResults = ({ query }) => {
   //   },
   // ];
 
-useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (!query) return;
+  const fetchSearchResults = async () => {
+    if (!query) return;
 
-      setIsLoading(true);
-      try {
-        // First fetch exact matches
-        const exactResponse = await axios.get(
-          `/games/search?q=${encodeURIComponent(query)}`
-        );
-        const exactMatchesData = exactResponse.data.map((game) => ({
-          ...game,
-          matchType: "Exact match",
-        }));
-        
-        setExactMatches(exactMatchesData); // ✅ Exact matches alag se store karo
+    setIsLoading(true);
+    try {
+      // First fetch exact matches
+      const exactResponse = await axios.get(
+        `/games/search?q=${encodeURIComponent(query)}`
+      );
+      const exactMatchesData = exactResponse.data.map((game) => ({
+        ...game,
+        matchType: "Exact match",
+      }));
 
-        // Then fetch related games based on genres of exact matches
-        let relatedGames = [];
-        if (exactMatchesData.length > 0) {
-          // Get all unique genres from exact matches
-          const allGenres = [
-            ...new Set(exactMatchesData.flatMap((game) => game.genres || [])),
-          ];
+      setExactMatches(exactMatchesData); // ✅ Exact matches alag se store karo
 
-          if (allGenres.length > 0) {
-            // Fetch games with similar genres (excluding exact matches)
-            const genreQuery = allGenres.slice(0, 3).join(",");
-            const relatedResponse = await axios.get(
-              `/games/search/by-genres?genres=${genreQuery}&limit=20`
-            );
+      // Then fetch related games based on genres of exact matches
+      let relatedGames = [];
+      if (exactMatchesData.length > 0) {
+        // Get all unique genres from exact matches
+        const allGenres = [
+          ...new Set(exactMatchesData.flatMap((game) => game.genres || [])),
+        ];
 
-            // Filter out exact matches and add match type
-            relatedGames = relatedResponse.data
-              .filter(
-                (relatedGame) =>
-                  !exactMatchesData.some(
-                    (exactGame) => exactGame.appid === relatedGame.appid
-                  ) 
-              )
-              .map((game) => ({
-                ...game,
-                matchType: "Related",
-              }));
-          }
+        if (allGenres.length > 0) {
+          // Fetch games with similar genres (excluding exact matches)
+          const genreQuery = allGenres.slice(0, 3).join(",");
+          const relatedResponse = await axios.get(
+            `/games/search/by-genres?genres=${genreQuery}&limit=20`
+          );
+
+          // Filter out exact matches and add match type
+          relatedGames = relatedResponse.data
+            .filter(
+              (relatedGame) =>
+                !exactMatchesData.some(
+                  (exactGame) => exactGame.appid === relatedGame.appid
+                )
+            )
+            .map((game) => ({
+              ...game,
+              matchType: "Related",
+            }));
         }
-
-        // Combine exact matches and related games
-        const allResults = [...exactMatchesData, ...relatedGames];
-        setSearchResults(allResults);
-      } catch (error) {
-        console.error("Error fetching search results:", error);
-        setSearchResults([]);
-        setExactMatches([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
+      // Combine exact matches and related games
+      const allResults = [...exactMatchesData, ...relatedGames];
+      setSearchResults(allResults);
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+      setSearchResults([]);
+      setExactMatches([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchSearchResults();
   }, [query]);
+
+  useEffect(() => {
+    if (tags.length > 0) {
+      searchByTags();
+    } else {
+      setIsSearchingByTags(false);
+      // Original search restore karo agar tags empty hain
+      if (query) {
+        fetchSearchResults(query);
+      }
+    }
+  }, [tags]);
+
+  const searchByTags = async () => {
+    if (tags.length === 0) return;
+
+    setIsLoading(true);
+    setIsSearchingByTags(true);
+
+    try {
+      const tagQuery = tags.join(",");
+      const response = await axios.get(
+        `/games/search/advanced?tags=${tagQuery}&limit=30`
+      );
+
+      setSearchResults(response.data);
+      setActivePage(1); // Reset to first page
+    } catch (error) {
+      console.error("Error searching by tags:", error);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const totalPages = Math.ceil(searchResults.length / GAMES_PER_PAGE);
   const startIndex = (activePage - 1) * GAMES_PER_PAGE;
@@ -228,7 +270,7 @@ useEffect(() => {
     return pages;
   };
 
-const genreCounts = useMemo(() => {
+  const genreCounts = useMemo(() => {
     const counts = {};
 
     exactMatches.forEach((game) => {
@@ -242,8 +284,7 @@ const genreCounts = useMemo(() => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [exactMatches]); 
-  
+  }, [exactMatches]);
 
   const publisherCounts = useMemo(() => {
     const counts = {};
@@ -261,7 +302,7 @@ const genreCounts = useMemo(() => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [exactMatches]); 
+  }, [exactMatches]);
 
   // tag functions
   const addTag = () => {
@@ -295,7 +336,17 @@ const genreCounts = useMemo(() => {
             </div>
           </div> */}
           <h2 className="text-white font-[gilroy-bold] text-lg mx-3">
-            Search results for "<span className="text-[#A641FF]">{query}</span>"
+            {isSearchingByTags ? (
+              <>
+                Searching by tags:{" "}
+                <span className="text-[#A641FF]">{tags.join(", ")}</span>
+              </>
+            ) : (
+              <>
+                Search results for "
+                <span className="text-[#A641FF]">{query}</span>"
+              </>
+            )}
           </h2>
         </div>
         <div className="h-auto w-full absolute z-30 overflow-y-auto hide-scrollbar">
@@ -312,63 +363,87 @@ const genreCounts = useMemo(() => {
       </div>
       {/* Right section */}
       <div className="h-[85vh] w-[28%] sticky top-0 z-10 right-7">
-        {/* Pagination */}
+        {/* Pagination with ellipsis */}
         <div className="h-[6vh] w-full flex flex-col items-center justify-center">
           <div className="h-[4vh] w-full flex items-center justify-between">
             <button
               onClick={() => setActivePage((prev) => Math.max(1, prev - 1))}
-              className="text-white font-[gilroy-bold] px-4 py-0.5 rounded-sm bg-[#1E1E1E] cursor-pointer hover:bg-[#A641FF] "
+              disabled={activePage === 1}
+              className={`text-white font-[gilroy-bold] px-4 py-0.5 rounded-sm cursor-pointer ${
+                activePage === 1
+                  ? "bg-[#1E1E1E] cursor-not-allowed opacity-50"
+                  : "bg-[#A641FF] hover:bg-[#A641FF]/80"
+              }`}
             >
               Prev
             </button>
-            <div className="h-[4vh] w-[60%] flex justify-center items-center gap-2">
 
-              {/* isse disable type karna hai matlab data jisme nhi aarhe to disable rahega page  */}
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="text-white font-[gilroy-bold]"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setActivePage(page)}
-                    className={`text-white font-[gilroy-bold] h-[4vh] w-[4vh] rounded-full cursor-pointer transition-colors ${
-                      activePage === page
-                        ? "bg-[#A641FF]"
-                        : "bg-[#1E1E1E] hover:bg-[#A641FF]/50"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
+            <div className="h-[4vh] w-[70%] flex justify-center items-center gap-2">
+              {/* First 5 pages */}
+              {[1, 2, 3, 4, 5].map((page) => (
+                <button
+                  key={page}
+                  onClick={() => {
+                    if (page <= totalPages) {
+                      setActivePage(page);
+                    }
+                  }}
+                  disabled={page > totalPages}
+                  className={`text-white font-[gilroy-bold] h-[4vh] w-[4vh] rounded-full cursor-pointer transition-colors flex items-center justify-center ${
+                    activePage === page
+                      ? "bg-[#A641FF]"
+                      : page > totalPages
+                      ? "bg-[#1E1E1E] cursor-not-allowed opacity-30"
+                      : "bg-[#1E1E1E] hover:bg-[#A641FF]/50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Ellipsis */}
+              <span className="text-white font-[gilroy-bold]">...</span>
+
+              {/* Last page (10) */}
+              <button
+                onClick={() => {
+                  if (10 <= totalPages) {
+                    setActivePage(10);
+                  }
+                }}
+                disabled={10 > totalPages}
+                className={`text-white font-[gilroy-bold] h-[4vh] w-[4vh] rounded-full cursor-pointer transition-colors flex items-center justify-center ${
+                  activePage === 10
+                    ? "bg-[#A641FF]"
+                    : 10 > totalPages
+                    ? "bg-[#1E1E1E] cursor-not-allowed opacity-30"
+                    : "bg-[#1E1E1E] hover:bg-[#A641FF]/50"
+                }`}
+              >
+                10
+              </button>
             </div>
+
             <button
               onClick={() =>
                 setActivePage((prev) => Math.min(totalPages, prev + 1))
               }
-              disabled={activePage === totalPages}
+              disabled={activePage === totalPages || totalPages === 0}
               className={`text-white font-[gilroy-bold] px-4 py-0.5 rounded-sm cursor-pointer ${
-                activePage === totalPages
-                  ? "bg-[#A641FF]/50 cursor-not-allowed"
+                activePage === totalPages || totalPages === 0
+                  ? "bg-[#1E1E1E] cursor-not-allowed opacity-50"
                   : "bg-[#A641FF] hover:bg-[#A641FF]/80"
               }`}
             >
               Next
             </button>
-
-            
           </div>
         </div>
         {/* Tag search */}
         <div className="h-[76vh] w-full flex flex-col items-center justify-start bg-[#8800FF]/20 rounded-lg mt-5 overflow-auto hide-scrollbar ">
           <div className="h-[27vh] w-full px-5 py-4 relative">
             <input
-              placeholder="Search for a tag..."
+              placeholder="Search by genre, publisher, platform..."
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -382,34 +457,48 @@ const genreCounts = useMemo(() => {
               <i className="ri-search-2-line text-[#A641FF] text-xl"></i>
             </div>
 
-            {/* Tags display */}
-            <div className="mt-4 h-[15vh] flex  gap-3 overflow-auto hide-scrollbar">
-              {tags.length === 0 ? (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <img
-                    src="/Logo_short.svg"
-                    alt="Nothing here"
-                    className="w-16 h-16 opacity-50 mb-2"
-                  />
-                  <p className="text-white/60 text-sm font-[gilroy-bold]">
-                    Nothing here yet
-                  </p>
-                </div>
-              ) : (
-                tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="h-[6vh] flex items-center gap-2 bg-[#A641FF]/20 px-4 py-2 rounded-full"
+            <div className="mt-4 h-[15vh] flex flex-col gap-3 overflow-auto hide-scrollbar">
+              {/* Clear button top pe rahega */}
+              {tags.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setTags([])}
+                    className="text-[#A641FF] text-sm font-[gilroy] hover:text-white px-3 py-1 rounded"
                   >
-                    <span className="text-white font-[gilroy-bold] text-sm">
-                      {tag}
-                    </span>
-                    <button onClick={() => removeTag(tag)}>
-                      <i className="ri-close-line w-4 h-4 text-zinc-400 hover:scale-125 transition-transform duration-300 ease-in-out hover:text-white cursor-pointer"></i>
-                    </button>
-                  </div>
-                ))
+                    Clear all tags
+                  </button>
+                </div>
               )}
+
+              {/* Tags display */}
+              <div className="flex flex-wrap gap-2">
+                {tags.length === 0 ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center">
+                    <img
+                      src="/Logo_short.svg"
+                      alt="Nothing here"
+                      className="w-16 h-16 opacity-50 mb-2"
+                    />
+                    <p className="text-white/60 text-sm font-[gilroy-bold]">
+                      Nothing here yet
+                    </p>
+                  </div>
+                ) : (
+                  tags.map((tag, index) => (
+                    <div
+                      key={index}
+                      className="h-[6vh] flex items-center gap-2 bg-[#A641FF]/20 px-4 py-2 rounded-full"
+                    >
+                      <span className="text-white font-[gilroy-bold] text-sm">
+                        {tag}
+                      </span>
+                      <button onClick={() => removeTag(tag)}>
+                        <i className="ri-close-line w-4 h-4 text-zinc-400 hover:scale-125 transition-transform duration-300 ease-in-out hover:text-white cursor-pointer"></i>
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
             {/* <div className="h-[2px] w-full bg-[#A641FF] mt-3"></div> */}
           </div>
@@ -428,7 +517,9 @@ const genreCounts = useMemo(() => {
 
             <div
               className={`${
-                showGenre ? "max-h-[25vh] opacity-100 mt-3" : "max-h-0 opacity-0"
+                showGenre
+                  ? "max-h-[25vh] opacity-100 mt-3"
+                  : "max-h-0 opacity-0"
               } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-hidden`}
             >
               {genreCounts.slice(0, 4).map((genre, index) => (
@@ -492,7 +583,9 @@ const genreCounts = useMemo(() => {
 
             <div
               className={`${
-                showPublisher ? "max-h-[25vh] opacity-100 mt-3" : "max-h-0 opacity-0"
+                showPublisher
+                  ? "max-h-[25vh] opacity-100 mt-3"
+                  : "max-h-0 opacity-0"
               } w-full  flex flex-col items-center gap-2 transition-all duration-300 overflow-hidden cursor-pointer`}
             >
               {publisherCounts.slice(0, 4).map((publisher, index) => (

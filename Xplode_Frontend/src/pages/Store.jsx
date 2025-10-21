@@ -17,6 +17,7 @@ const Store = () => {
     try {
       const response = await axios.get("/games/home"); // assuming it's a GET now
       setGames(response.data);
+   
     } catch (err) {
       console.error("Failed to fetch games:", err);
     }
@@ -28,6 +29,7 @@ const Store = () => {
   const sliderGames = games.filter((game) => game.category === "sliders");
   const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
+  const newReleases = games.filter((game) => game.category === "New_Releases");
   const topRecordGames = games.filter(
     (game) => game.category === "top_records"
   );
@@ -76,7 +78,13 @@ const Store = () => {
           />
         )}
 
-        <GameList2 />
+        <GameList2 
+          games={newReleases}
+          title="New Releases"
+           nextClass="game-list-swiper-next-1"
+            prevClass="game-list-swiper-prev-1"
+        />
+
         {topGames.length > 0 && (
           <GameList
             games={topGames}

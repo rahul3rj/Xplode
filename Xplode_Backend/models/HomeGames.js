@@ -48,6 +48,7 @@ const HomeGameSchema = new mongoose.Schema({
       "trending",
       "top_games",
       "top_records",
+      "New_Releases",
     ],
     required: true,
   },
