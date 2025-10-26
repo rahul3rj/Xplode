@@ -1,14 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom"; // Import useLocation
 import LibGames from "../components/LibGames";
 import LibDetails from "./LibDetails";
 import { getUserLibrary, removeFromLibrary } from "../utils/addToLibrary";
 
 const Library = () => {
+  const location = useLocation(); // Get the current location
   const [gameList, setGameList] = useState(null);
   const [userGames, setUserGames] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all"); // Added filter state
   const historyRef = useRef([]);
   // const games = [
   //   {
@@ -118,9 +121,22 @@ const Library = () => {
   //   },
   // ];
 
-  const filteredGames = userGames.filter((game) =>
-    game.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredGames = userGames
+    .filter((game) => {
+      console.log("Filtering game:", game); // Debugging log
+      if (activeFilter === "all") return true; // Show all games
+      if (activeFilter === "installed") return game.verified; // Show only verified games
+      if (activeFilter === "wishlist") return !game.verified; // Show only unverified games
+      return true;
+    })
+    .filter((game) => {
+      const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
+      console.log("Game matches search:", game.name, matchesSearch); // Debugging log
+      return matchesSearch;
+    });
+
+  console.log("Filtered games:", filteredGames); // Debugging log
+
   const handleDeleteGame = async (steamAppId, e) => {
     e.stopPropagation();
 
@@ -156,6 +172,7 @@ const Library = () => {
     const fetchUserLibrary = async () => {
       try {
         const games = await getUserLibrary();
+        console.log("Fetched user library:", games);
         setUserGames(games);
       } catch (err) {
         console.error("Failed to fetch user library:", err);
@@ -168,13 +185,19 @@ const Library = () => {
     fetchUserLibrary();
   }, []);
 
-  const [activeFilter, setActiveFilter] = useState("all");
-
   useEffect(() => {
     if (gameList && !historyRef.current.includes(gameList)) {
       historyRef.current.push(gameList);
     }
   }, [gameList]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const filter = params.get("filter");
+    if (filter) {
+      setActiveFilter(filter); // Set the active filter based on the query parameter
+    }
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -262,7 +285,7 @@ const Library = () => {
                 onClick={() => setActiveFilter("wishlist")}
               >
                 <h3 className="text-white text-sm font-[gilroy-bold]">
-                  Whishlist
+                  Wishlist
                 </h3>
               </button>
             </div>
@@ -301,7 +324,7 @@ const Library = () => {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name"
                 className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
               />
@@ -353,7 +376,8 @@ const Library = () => {
                   <i className="ri-search-line text-[#A641FF] text-4xl mb-3"></i>{" "}
                   {/* Search icon better hai */}
                   <p className="text-[#696969] text-sm text-center">
-                    No games found for "{searchTerm}"<br />
+                    No games found for "{searchTerm}"
+                    <br />
                     Try a different search term
                   </p>
                 </div>

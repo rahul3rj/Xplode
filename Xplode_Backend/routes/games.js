@@ -4,6 +4,7 @@ const axios = require("axios");
 const HomeGame = require("../models/HomeGames");
 const { updateGamesInDB } = require("../scripts/updateHomeGames");
 const { updateSearchGamesInDB } = require("../scripts/updateSearchGames");
+const { updateCommunityGamesInDB } = require("../scripts/updateCommunityGames");
 const SearchGames = require("../models/SearchGames");
 require("dotenv").config();
 
@@ -120,9 +121,7 @@ router.post("/fetch", async (req, res) => {
   }
 });
 
-// updateSearchGamesInDB();
-
-updateGamesInDB();   //--------------> Use this if you want to update the database with new games
+// updateCommunityGamesInDB();
 
 router.get("/home", async (req, res) => {
   try {

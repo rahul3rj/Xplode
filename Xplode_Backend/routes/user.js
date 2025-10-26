@@ -117,45 +117,45 @@ router.post("/verify-otp", async (req, res) => {
 });
 
 
-router.post("/register", async (req, res) => {
-  const { email , name ,password} = req.body;
+// router.post("/register", async (req, res) => {
+//   const { email , name ,password} = req.body;
 
-  if (!email ||!name || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Email and name required!",
-    });
-  }
+//   if (!email ||!name || !password) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Email and name required!",
+//     });
+//   }
 
-  try {
-    let user = await userModel.findOne({ email });
-    if (user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already registered!" });
-    }
+//   try {
+//     let user = await userModel.findOne({ email });
+//     if (user) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "User already registered!" });
+//     }
 
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
+//     const salt = await bcrypt.genSalt(10)
+//     const hashedPassword = await bcrypt.hash(password, salt)
 
-    user = new userModel({ email ,name , password:hashedPassword});
-    await user.save();
-
-
-    const token = jwt.sign({ id: user._id, email: user.email ,name: user.name }, process.env.JWT_KEY, { expiresIn: "1h" });
+//     user = new userModel({ email ,name , password:hashedPassword});
+//     await user.save();
 
 
-    res.json({
-      success: true,
-      message: "User registered successfully!",
-      token,
-    });
+//     const token = jwt.sign({ id: user._id, email: user.email ,name: user.name }, process.env.JWT_KEY, { expiresIn: "1h" });
 
-  } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ success: false, message: "Error registering user" });
-  }
-});
+
+//     res.json({
+//       success: true,
+//       message: "User registered successfully!",
+//       token,
+//     });
+
+//   } catch (error) {
+//     console.error("Registration error:", error);
+//     res.status(500).json({ success: false, message: "Error registering user" });
+//   }
+// });
 
 router.get("/logout", (req, res) => {
   res.clearCookie("token");

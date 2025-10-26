@@ -79,5 +79,44 @@ router.post("/remove/:steamAppId", verifyToken, async (req, res) => {
   }
 });
 
+// Verify game route - POST method
+router.post("/verify/:steamAppId", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { steamAppId } = req.params;
+
+    console.log("Verifying game:", steamAppId, "for user:", userId);
+
+    // Update verified status to true
+    const updatedGame = await librarys.findOneAndUpdate(
+      { steam_appid: steamAppId, user: userId },
+      { verified: true },
+      { new: true }
+    );
+
+    if (!updatedGame) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Game not found in your library" 
+      });
+    }
+
+    console.log("Game verified successfully:", updatedGame.name);
+    
+    res.status(200).json({ 
+      message: "Game verified successfully", 
+      game: updatedGame,
+      success: true
+    });
+  } catch (err) {
+    console.error("Error verifying game:", err.message);
+    res.status(500).json({ 
+      message: "Failed to verify game", 
+      error: err.message,
+      success: false
+    });
+  }
+});
+
 
 module.exports = router;

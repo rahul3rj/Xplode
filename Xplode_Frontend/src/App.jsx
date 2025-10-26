@@ -1,7 +1,7 @@
 import React from "react";
 import Login from "./pages/Login";
 import ErrorBoundary from "./components/ErrorBoundary";
-import {Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -18,11 +18,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "./MainLayout";
 
-
-
 const App = () => {
-
-   const [user, setUser] = useState({ username: "", profilePic: null });
+  const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [games, setGames] = useState([]);
@@ -75,7 +72,6 @@ const App = () => {
       console.error("Logout failed:", error);
     }
   };
-
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -138,6 +134,8 @@ const App = () => {
             <Route path="/home" element={<Home />} />
             <Route path="/store" element={<Store />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/community/trigger" element={<Community />} />
+            <Route path="/community/:name" element={<Community />} />
             <Route path="/community" element={<Community />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />

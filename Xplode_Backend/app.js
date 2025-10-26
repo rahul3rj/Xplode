@@ -7,6 +7,7 @@ const gamesRouter = require("./routes/games");
 const vaultRouter = require("./routes/vault");
 const profileRouter = require("./routes/profile");
 const libraryRouter = require("./routes/Library");
+const communityRouter = require("./routes/community");
 const passport = require("passport");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
@@ -49,7 +50,8 @@ app.use("/games" , gamesRouter)
 app.use("/vault", vaultRouter);
 app.use("/library", libraryRouter);
 
-// app.use("/recent", recentRouter);
+app.use("/community", communityRouter);
+
 
 
 

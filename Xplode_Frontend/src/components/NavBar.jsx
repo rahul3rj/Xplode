@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import Wallet from "./Wallet";
 import Notification from "./Notification";
@@ -11,6 +11,7 @@ const NavBar = ({ user, onShowProfile }) => {
   const { query, setQuery, filteredGames, isLoading } = useSearch();
   const [showWallet, setShowWallet] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const navigate = useNavigate();
   
 
   const walletRef = useRef(null);
@@ -107,10 +108,15 @@ const NavBar = ({ user, onShowProfile }) => {
             <Wallet ref={walletRef} />
           )}
           
-          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer">
+          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
+          onClick={() => {
+            console.log("Navigating to wishlist..."); // Debugging log
+            navigate("/library?filter=wishlist"); // Navigate to Library with wishlist filter
+          }}
+          >
             <img
               src="../HomePage/Heart.svg"
-              alt=""
+              alt="Wishlist"
               className="h-[3svh] w-[3svh]"
             />
           </div>

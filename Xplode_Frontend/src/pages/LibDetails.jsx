@@ -1,10 +1,53 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "../utils/axios";
 
 const LibDetails = ({ game, onClose }) => {
+  const [isVerified, setIsVerified] = useState(game.verified);
+  const [verifying, setVerifying] = useState(false);
   const navigate = useNavigate();
 
-  console.log(game);
+   const handleVerify = async () => {
+    setVerifying(true);
+    try {
+      const response = await axios.post(
+        `/library/verify/${game.steam_appid}`,
+        {}, // empty body since we're using params
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setIsVerified(true);
+        alert("Game verified successfully!");
+      } else {
+        alert(`Verification failed: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error("Error verifying game:", error);
+      
+      // Better error handling with axios
+      if (error.response) {
+        // Server responded with error status
+        alert(`Verification failed: ${error.response.data.message || error.response.statusText}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        alert("Network error. Please check your connection.");
+      } else {
+        // Something else happened
+        alert("Error verifying game. Please try again.");
+      }
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handlePlay = () => {
+    window.location.href = `steam://rungameid/${game.steam_appid}`;
+  };
 
   if (!game) {
     return (
@@ -34,13 +77,19 @@ const LibDetails = ({ game, onClose }) => {
       <div className="h-[10vh] w-full flex items-center justify-between">
         {/* verify game files logic dalna hai yaha par */}
         <button
-          onClick={() => {
-            window.location.href = `steam://rungameid/${game.steam_appid}`;
-          }}
-          className="px-12 py-2 cursor-pointer rounded-sm bg-[#A641FF] text-white"
+          onClick={isVerified ? handlePlay : handleVerify}
+          disabled={verifying}
+          className="px-12 py-2 cursor-pointer rounded-sm bg-[#A641FF] text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {" "}
-          <i className="ri-play-fill text-white text-xl"></i> Play
+          {verifying ? (
+            "Verifying..."
+          ) : isVerified ? (
+            <>
+              <i className="ri-play-fill text-white text-xl"></i> Play
+            </>
+          ) : (
+            <>Verify Now</>
+          )}
         </button>
         <div className="flex items-center justify-center gap-2">
           <button
@@ -48,7 +97,7 @@ const LibDetails = ({ game, onClose }) => {
             onClick={() => navigate(`/game/${game.steam_appid}`)}
           >
             {" "}
-            <i class="ri-store-2-fill text-white text-xl"></i> Store Page
+            <i class="ri-store-2-fill text-white text-xl"></i> Stor e Page
           </button>
           <button className="px-8 py-2 cursor-pointer rounded-sm hover:bg-[#8800FF]/40 bg-[#8800FF]/20 text-white flex items-center justify-center gap-1 transition-all duration-200 ease-in-out">
             {" "}
