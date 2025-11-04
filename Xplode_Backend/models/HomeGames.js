@@ -49,6 +49,10 @@ const HomeGameSchema = new mongoose.Schema({
       "top_games",
       "top_records",
       "New_Releases",
+      "Try_these_also",
+      "RPG_Games",
+      "Online_Multiplayer_Games"
+
     ],
     required: true,
   },

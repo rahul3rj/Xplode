@@ -14,6 +14,8 @@ const SearchResults = ({ query }) => {
   const [isSearchingByTags, setIsSearchingByTags] = useState(false);
   const [exactMatches, setExactMatches] = useState([]); // ✅ Exact matches ko alag se store karo
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedGenres, setExpandedGenres] = useState(false);
+  const [expandedPublishers, setExpandedPublishers] = useState(false);
 
   const location = useLocation();
 
@@ -273,7 +275,11 @@ const SearchResults = ({ query }) => {
   const genreCounts = useMemo(() => {
     const counts = {};
 
-    exactMatches.forEach((game) => {
+    // ✅ Agar tags search ho raha hai to searchResults se calculate karo
+    // ✅ Agar normal search hai to exactMatches se calculate karo
+    const sourceData = isSearchingByTags ? searchResults : exactMatches;
+
+    sourceData.forEach((game) => {
       if (game.genres && Array.isArray(game.genres)) {
         game.genres.forEach((genre) => {
           counts[genre] = (counts[genre] || 0) + 1;
@@ -284,12 +290,15 @@ const SearchResults = ({ query }) => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [exactMatches]);
+  }, [isSearchingByTags ? searchResults : exactMatches]); // ✅ Dependency change
 
   const publisherCounts = useMemo(() => {
     const counts = {};
 
-    exactMatches.forEach((game) => {
+    // ✅ Same logic for publishers
+    const sourceData = isSearchingByTags ? searchResults : exactMatches;
+
+    sourceData.forEach((game) => {
       if (game.publishers && Array.isArray(game.publishers)) {
         game.publishers.forEach((publisher) => {
           counts[publisher] = (counts[publisher] || 0) + 1;
@@ -302,7 +311,7 @@ const SearchResults = ({ query }) => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [exactMatches]);
+  }, [isSearchingByTags ? searchResults : exactMatches]);
 
   // tag functions
   const addTag = () => {
@@ -518,23 +527,28 @@ const SearchResults = ({ query }) => {
             <div
               className={`${
                 showGenre
-                  ? "max-h-[25vh] opacity-100 mt-3"
+                  ? expandedGenres
+                    ? "max-h-[50vh] opacity-100 mt-3" // ✅ Expanded height
+                    : "max-h-[25vh] opacity-100 mt-3" // ✅ Collapsed height
                   : "max-h-0 opacity-0"
-              } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-hidden`}
+              } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-y-auto hide-scrollbar`}
             >
-              {genreCounts.slice(0, 4).map((genre, index) => (
-                <div
-                  key={genre.name}
-                  className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer`}
-                >
-                  <p className="text-white text-xs font-[gilroy]">
-                    {genre.name}
-                  </p>
-                  <p className="text-white text-xs font-[gilroy]">
-                    {genre.count}
-                  </p>
-                </div>
-              ))}
+              {genreCounts
+                .slice(0, expandedGenres ? genreCounts.length : 4) // ✅ Expand/collapse logic
+                .map((genre, index) => (
+                  <div
+                    key={genre.name}
+                    onClick={() => setTags([genre.name])}
+                    className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer`}
+                  >
+                    <p className="text-white text-xs font-[gilroy]">
+                      {genre.name}
+                    </p>
+                    <p className="text-white text-xs font-[gilroy]">
+                      {genre.count}
+                    </p>
+                  </div>
+                ))}
 
               {genreCounts.length > 4 && (
                 <div
@@ -543,9 +557,11 @@ const SearchResults = ({ query }) => {
                   } w-full flex justify-end items-center`}
                 >
                   <p
-                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer`}
+                    onClick={() => setExpandedGenres(!expandedGenres)} // ✅ Toggle expand/collapse
+                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer hover:text-white`}
                   >
-                    see more...
+                    {expandedGenres ? "see less..." : "see more..."}{" "}
+                    {/* ✅ Text change */}
                   </p>
                 </div>
               )}
@@ -584,23 +600,28 @@ const SearchResults = ({ query }) => {
             <div
               className={`${
                 showPublisher
-                  ? "max-h-[25vh] opacity-100 mt-3"
+                  ? expandedPublishers
+                    ? "max-h-[50vh] opacity-100 mt-3" // ✅ Expanded height
+                    : "max-h-[25vh] opacity-100 mt-3" // ✅ Collapsed height
                   : "max-h-0 opacity-0"
-              } w-full  flex flex-col items-center gap-2 transition-all duration-300 overflow-hidden cursor-pointer`}
+              } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-y-auto hide-scrollbar`}
             >
-              {publisherCounts.slice(0, 4).map((publisher, index) => (
-                <div
-                  key={publisher.name}
-                  className="h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer"
-                >
-                  <p className="text-white text-xs font-[gilroy]">
-                    {publisher.name}
-                  </p>
-                  <p className="text-white text-xs font-[gilroy]">
-                    {publisher.count}
-                  </p>
-                </div>
-              ))}
+              {publisherCounts
+                .slice(0, expandedPublishers ? publisherCounts.length : 4) // ✅ Expand/collapse logic
+                .map((publisher, index) => (
+                  <div
+                    key={publisher.name}
+                    onClick={() => setTags([publisher.name])}
+                    className="h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer"
+                  >
+                    <p className="text-white text-xs font-[gilroy]">
+                      {publisher.name}
+                    </p>
+                    <p className="text-white text-xs font-[gilroy]">
+                      {publisher.count}
+                    </p>
+                  </div>
+                ))}
 
               {publisherCounts.length > 4 && (
                 <div
@@ -609,9 +630,11 @@ const SearchResults = ({ query }) => {
                   } w-full flex justify-end items-center`}
                 >
                   <p
-                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer`}
+                    onClick={() => setExpandedPublishers(!expandedPublishers)} // ✅ Toggle expand/collapse
+                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer hover:text-white`}
                   >
-                    see more...
+                    {expandedPublishers ? "see less..." : "see more..."}{" "}
+                    {/* ✅ Text change */}
                   </p>
                 </div>
               )}

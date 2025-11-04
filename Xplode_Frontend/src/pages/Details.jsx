@@ -33,16 +33,6 @@ const Details = () => {
     }
   }, [navigate]);
 
-  const handleLogout = async () => {
-    try {
-      await axios.get("/user/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -83,7 +73,6 @@ const Details = () => {
     }
   }, [navigate]);
 
-  const { appid } = useParams();
   return (
     <div className="h-screen w-full relative bg-transparent">
       <div className="relative sticky z-10">

@@ -71,7 +71,7 @@ import { Link, useNavigate } from "react-router-dom";
 // ];
 
 const CommunitySection = () => {
-    const [communityGames, setCommunityGames] = useState([]);
+  const [communityGames, setCommunityGames] = useState([]);
   const [userLibrary, setUserLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -88,7 +88,14 @@ const CommunitySection = () => {
     }
   };
 
-    const handleClick = (tag) => {
+  const handleCardClick = (game) => {
+    // Game name ko URL-friendly format mein convert karo
+    const gameName = encodeURIComponent(game.title || game.name);
+    navigate(`/community/${gameName}`);
+  };
+
+  const handleTagClick = (e, tag) => {
+    e.stopPropagation();
     navigate("/search", {
       state: {
         initialTags: [tag],
@@ -102,34 +109,39 @@ const CommunitySection = () => {
 
     if (!requireAuth()) return;
 
-      try {
-    const gameData = {
-      steam_appid: game.steam_appid,
-      name: game.title || game.name,
-      
-      // ✅ portrait_image ko array of objects banao
-      portrait_image: [{
-        url: game.logo || game.header_image || game.capsule_image,
-        thumb: game.logo || game.header_image || game.capsule_image,
-      }],
-      
-      // ✅ hero_image object hai - sahi hai
-      hero_image: {
-        url: game.image || game.background_raw || game.background || game.header_image,
-        thumb: game.image || game.background || game.header_image,
-      },
-      
-      developers: game.developers || [],
-      publishers: game.publishers || [],
-      categories: game.categories || [],
-      movies: game.movies || [],
-    };
+    try {
+      const gameData = {
+        steam_appid: game.steam_appid,
+        name: game.title || game.name,
 
-    const result = await addToLibrary(gameData);
-    setUserLibrary((prev) => [...prev, result.game || gameData]);
-    alert("Game added to your library!");
-    
-  } catch (error) {
+        // ✅ portrait_image ko array of objects banao
+        portrait_image: [
+          {
+            url: game.logo || game.header_image || game.capsule_image,
+            thumb: game.logo || game.header_image || game.capsule_image,
+          },
+        ],
+
+        // ✅ hero_image object hai - sahi hai
+        hero_image: {
+          url:
+            game.image ||
+            game.background_raw ||
+            game.background ||
+            game.header_image,
+          thumb: game.image || game.background || game.header_image,
+        },
+
+        developers: game.developers || [],
+        publishers: game.publishers || [],
+        categories: game.categories || [],
+        movies: game.movies || [],
+      };
+
+      const result = await addToLibrary(gameData);
+      setUserLibrary((prev) => [...prev, result.game || gameData]);
+      alert("Game added to your library!");
+    } catch (error) {
       console.error("Failed to add game to library:", error);
       alert(error.message || "Failed to add game to library");
     }
@@ -175,7 +187,6 @@ const CommunitySection = () => {
   };
 
   const handleCommunityMedia = (e, gameTitle) => {
-    e.preventDefault();
     e.stopPropagation();
     navigate("/community/trigger");
   };
@@ -189,7 +200,7 @@ const CommunitySection = () => {
     fetchUserLibrary();
   }, []);
 
- const stripHtml = (html) => {
+  const stripHtml = (html) => {
     const div = document.createElement("div");
     div.innerHTML = html || "";
     return div.textContent || div.innerText || "";
@@ -211,7 +222,7 @@ const CommunitySection = () => {
     return (
       <div className="py-8 h-[65svh] flex items-center justify-center">
         <h1 className="text-white text-xl">No Community Games Found</h1>
-        <button 
+        <button
           onClick={fetchCommunityGames}
           className="ml-4 px-4 py-2 bg-[#A641FF] text-white rounded-lg"
         >
@@ -231,9 +242,12 @@ const CommunitySection = () => {
             alt=""
             className="scale-x-[-1] com-swiper-prev cursor-pointer hover:bg-white/10 transition-all duration-200 rounded-full p-1"
           />
-          <h4 className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm hover:text-zinc-400 transition-all duration-200">
+          <Link
+            to={"/community"}
+            className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm hover:text-zinc-400 transition-all duration-200"
+          >
             Learn More
-          </h4>
+          </Link>
           <img
             src="../GameList/arrow.svg"
             alt=""
@@ -255,8 +269,8 @@ const CommunitySection = () => {
         {communityGames.map((num, idx) => (
           <SwiperSlide key={idx}>
             <div
-        
-              className="h-[53svh] w-[43svw] flex items-center justify-between rounded-lg text-white text-2xl overflow-hidden relative "
+              onClick={() => handleCardClick(num)}
+              className="h-[53svh] w-[43svw] flex items-center cursor-pointer justify-between rounded-lg text-white text-2xl overflow-hidden relative "
             >
               <img
                 src={num.image}
@@ -293,13 +307,15 @@ const CommunitySection = () => {
                   </div>
                   <div className="h-[10vh] w-[19vw]">
                     <p className="text-white text-xs font-[gilroy]">
-                      {num.description ? truncateWords(stripHtml(num.description), 18) : ""}
+                      {num.description
+                        ? truncateWords(stripHtml(num.description), 18)
+                        : ""}
                     </p>
                   </div>
                   <div className="h-[4vh] w-[15vw] flex items-center ">
                     {num.tags.map((tag, tagIdx) => (
                       <h2
-                       onClick={() => handleClick(tag)}
+                        onClick={(e) => handleTagClick(e, tag)}
                         key={tagIdx}
                         className={`text-white text-xs font-[gilroy] cursor-pointer px-4 py-1 rounded-full transition-all duration-600 ${
                           tagIdx === 0
@@ -337,6 +353,7 @@ const CommunitySection = () => {
                 <div className="h-[6vh] w-[90%] absolute left-7 bottom-7 flex items-center justify-between">
                   <Link
                     to={`/community/trigger`}
+                    onClick={(e) => e.stopPropagation()}
                     className="text-white text-xs font-[gilroy] bg-[#A641FF]/50 hover:bg-[#A641FF]/70 transition-all duration-200 px-6 py-3 rounded-full gap-2 flex items-center justify-center cursor-pointer shadow-[0px_4px_30.600000381469727px_0px_rgba(0,0,0,0.25)] backdrop-blur-xs"
                   >
                     <i class="ri-play-fill text-white"></i>Community Media

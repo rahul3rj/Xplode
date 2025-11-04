@@ -6,7 +6,9 @@ const userRouter = require("./routes/user");
 const gamesRouter = require("./routes/games");
 const vaultRouter = require("./routes/vault");
 const profileRouter = require("./routes/profile");
-const libraryRouter = require("./routes/Library");
+const libraryRouter = require("./routes/library");
+const favoriteRouter = require("./routes/favorites");
+const likeDislikeRouter = require("./routes/likeDislikeRoutes");
 const communityRouter = require("./routes/community");
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -49,7 +51,8 @@ app.use("/profile" , profileRouter)
 app.use("/games" , gamesRouter)
 app.use("/vault", vaultRouter);
 app.use("/library", libraryRouter);
-
+app.use("/favorite", favoriteRouter);
+app.use("/reaction", likeDislikeRouter);
 app.use("/community", communityRouter);
 
 

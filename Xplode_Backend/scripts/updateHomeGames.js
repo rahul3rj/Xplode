@@ -9,43 +9,85 @@ const steamAppids = {
     { appid: 2322010, name: "God of War Ragnarok" },
   ],
   trending: [
-    { appid: 570 },
-     { appid: 3595270, name: "Modern Warfare 3" },
-    { appid: 1172470 },
-    { appid: 1203220 },
+    { appid: 1943950 },
+    { appid: 381210 },
+    { appid: 367520 },
     { appid: 252490 },
     { appid: 578080 },
-    { appid: 	2507950 },
-    { appid: 730},
+    { appid: 413150 },
+    { appid: 570 },
+    { appid: 1903340 },
+    { appid: 2958130 },
+    { appid: 730 },
+    { appid: 2807960 },
+    { appid: 1808500 },
   ],
   top_games: [
-    {  appid: 431960 },
-    {  appid: 2622380 },
-    {  appid: 2001120 },
-    {  appid: 1203220 },
-    {  appid: 3017860 },
-    {  appid: 2246340 },
-    {  appid: 3159330 },
+    { appid: 2767030 },
+    { appid: 238960 },
+    { appid: 230410 },
+    { appid: 252490 },
+    { appid: 271590 },
+    { appid: 1172470 },
+    { appid: 2507950 },
+    { appid: 1808500 },
+    { appid: 2807960 },
+    { appid: 578080 },
+    { appid: 570 },
+    { appid: 730 },
   ],
   top_records: [
-    {  appid: 271590 },
-    {  appid: 1091500 },
-    {  appid: 1593500},
-    {  appid: 3595270 },
-    {  appid: 814380 },
-    {  appid: 990080 },
-    {  appid: 1245620 },
+    { appid: 374320 },
+    { appid: 1938090 },
+    { appid: 814380 },
+    { appid: 2322010 },
+    { appid: 1030300 },
+    { appid: 2124490 },
+    { appid: 2358720 },
+    { appid: 1091500 },
+    { appid: 271590 },
+    { appid: 2215430 },
+    { appid: 1903340 },
+    { appid: 1245620 },
   ],
-  New_Releases: [
-  { appid: 2807960, name: "Battlefield 6" },
-  { appid: 1030300, name: "Hollow Knight: Silksong" },
-  { appid: 2947440, name: "Silent Hill f" },
-  { appid: 3405690, name: "FC 26" },
-  { appid: 1903340, name: "Expedition 33" },
-  { appid: 2277560, name: "Wuchang" },
-  { appid: 2358720, name: "Black Myth Wukong" },
-  { appid: 1145350, name: "Hades 2" }
-]
+  Try_these_also: [
+    { appid: 2807960, name: "Battlefield 6" },
+    { appid: 1030300, name: "Hollow Knight: Silksong" },
+    { appid: 2947440, name: "Silent Hill f" },
+    { appid: 3405690, name: "FC 26" },
+    { appid: 1903340, name: "Expedition 33" },
+    { appid: 2277560, name: "Wuchang" },
+    { appid: 2358720, name: "Black Myth Wukong" },
+    { appid: 1145350, name: "Hades 2" },
+  ],
+  RPG_Games: [
+    { appid: 2208920 },
+    { appid: 306130 },
+    { appid: 582010 },
+    { appid: 1222690 },
+    { appid: 435150 },
+    { appid: 374320 },
+    { appid: 1328670 },
+    { appid: 1091500 },
+    { appid: 377160 },
+    { appid: 489830 },
+    { appid: 292030 },
+    { appid: 1086940 },
+  ],
+  Online_Multiplayer_Games: [
+    { appid: 550 },
+    { appid: 444090 },
+    { appid: 945360 },
+    { appid: 1172620 },
+    { appid: 346110 },
+    { appid: 271590 },
+    { appid: 1085660 },
+    { appid: 440 },
+    { appid: 230410 },
+    { appid: 578080 },
+    { appid: 730 },
+    { appid: 570 },
+  ],
 };
 
 async function fetchSteamDetails(appid) {
@@ -54,26 +96,40 @@ async function fetchSteamDetails(appid) {
   const details = data[appid]?.data;
   return details;
 }
-
 async function getPortrait(appid) {
+  if (!appid) return "/default-game-cover.jpg";
+
+  // First try Steam's image
+  const steamUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
   try {
-    const res = await axios.get(
-      `https://www.steamgriddb.com/api/v2/grids/steam/${appid}?types=static`,
+    await axios.head(steamUrl);
+    // If the HEAD request succeeds, return the Steam URL wrapped in the same format
+    return [
       {
-        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
-      }
-    );
-    if (res.data.success) {
-      // sirf url & thumb return karo
-      return res.data.data.map((img) => ({
-        url: img.url,
-        thumb: img.thumb,
-      }));
-    }
-    return [];
+        url: steamUrl,
+        thumb: steamUrl,
+      },
+    ];
   } catch (err) {
-    console.error(`Portrait fetch failed for ${appid}:`, err.message);
-    return [];
+    // If Steam image fails, try SteamGridDB
+    try {
+      const res = await axios.get(
+        `https://www.steamgriddb.com/api/v2/grids/steam/${appid}?types=static`,
+        {
+          headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
+        }
+      );
+      if (res.data.success) {
+        return res.data.data.map((img) => ({
+          url: img.url,
+          thumb: img.thumb,
+        }));
+      }
+      return [];
+    } catch (err) {
+      console.error(`Portrait fetch failed for ${appid}:`, err.message);
+      return [];
+    }
   }
 }
 
@@ -89,10 +145,6 @@ async function getValidCapsuleImage(appid, headerImage) {
     return headerImage || "/default-game-cover.jpg";
   }
 }
-// function getPortrait(appid) {
-//   if (!appid) return "/default-game-cover.jpg";
-//   return `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/library_600x900.jpg`;
-// }
 
 async function fetchHeroImage(appid) {
   try {

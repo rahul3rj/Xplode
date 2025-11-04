@@ -26,23 +26,23 @@ const App = () => {
   const [activePage, setActivePage] = useState("store");
   const navigate = useNavigate();
 
-  const fetchGames = async (page = 1) => {
-    try {
-      setIsLoading(true);
-      const response = await axios.post(`/games/fetch?page=${page}&limit=200`);
-      console.log(response.data);
-      setGames(response.data);
-    } catch (err) {
-      console.error("Failed to fetch games:", err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchGames = async (page = 1) => {
+  //   try {
+  //     setIsLoading(true);
+  //     const response = await axios.post(`/games/fetch?page=${page}&limit=200`);
+  //     console.log(response.data);
+  //     setGames(response.data);
+  //   } catch (err) {
+  //     console.error("Failed to fetch games:", err);
+  //     setError(err.message);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchGames();
-  }, []);
+  // useEffect(() => {
+  //   fetchGames();
+  // }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");

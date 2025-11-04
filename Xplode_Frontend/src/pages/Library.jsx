@@ -2,12 +2,18 @@ import React, { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom"; // Import useLocation
 import LibGames from "../components/LibGames";
 import LibDetails from "./LibDetails";
-import { getUserLibrary, removeFromLibrary } from "../utils/addToLibrary";
+import {
+  getUserLibrary,
+  removeFromLibrary,
+  getUserFavorite,
+  removeFromFavorite,
+} from "../utils/addToLibrary";
 
 const Library = () => {
   const location = useLocation(); // Get the current location
   const [gameList, setGameList] = useState(null);
   const [userGames, setUserGames] = useState([]);
+  const [userFavorites, setUserFavorites] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -121,51 +127,75 @@ const Library = () => {
   //   },
   // ];
 
-  const filteredGames = userGames
+  // create a combined list from library + favorites (keep info about both sources)
+  const combinedMap = new Map();
+  // add favorites first and mark as favorite
+  userFavorites.forEach((g) =>
+    combinedMap.set(g.steam_appid, { ...g, _isFavorite: true, _isLibrary: false })
+  );
+
+  // then add/merge library entries; if an entry exists in favorites, mark both
+  userGames.forEach((g) => {
+    const existing = combinedMap.get(g.steam_appid);
+    if (existing) {
+      // merge: library fields take precedence, but keep favorite flag
+      combinedMap.set(g.steam_appid, {
+        ...existing,
+        ...g,
+        _isLibrary: true,
+        _isFavorite: !!existing._isFavorite,
+      });
+    } else {
+      combinedMap.set(g.steam_appid, { ...g, _isLibrary: true, _isFavorite: false });
+    }
+  });
+
+  const combinedGames = Array.from(combinedMap.values());
+
+  const filteredGames = combinedGames
     .filter((game) => {
-      console.log("Filtering game:", game); // Debugging log
-      if (activeFilter === "all") return true; // Show all games
-      if (activeFilter === "installed") return game.verified; // Show only verified games
-      if (activeFilter === "wishlist") return !game.verified; // Show only unverified games
+      if (activeFilter === "all") return true;
+      if (activeFilter === "installed") return !!game.verified;
+      if (activeFilter === "favorite") return !!game._isFavorite; // show favorites even if also in library
       return true;
     })
-    .filter((game) => {
-      const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
-      console.log("Game matches search:", game.name, matchesSearch); // Debugging log
-      return matchesSearch;
-    });
-
-  console.log("Filtered games:", filteredGames); // Debugging log
+    .filter((game) => game.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleDeleteGame = async (steamAppId, e) => {
     e.stopPropagation();
+    // Determine whether the game exists in library or favorites
+    const inLibrary = userGames.some((g) => g.steam_appid === steamAppId);
+    const inFavorite = userFavorites.some((g) => g.steam_appid === steamAppId);
 
-    if (
-      !window.confirm(
-        "Are you sure you want to remove this game from your library?"
-      )
-    ) {
+    if (!inLibrary && !inFavorite) {
+      alert("Game not found in your lists");
       return;
     }
 
-    try {
-      await removeFromLibrary(steamAppId);
+    const confirmMsg = inLibrary
+      ? "Are you sure you want to remove this game from your library?"
+      : "Are you sure you want to remove this game from your favorites?";
 
-      // UI update
-      setUserGames((prev) =>
-        prev.filter((game) => game.steam_appid !== steamAppId)
-      );
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      if (inLibrary) {
+        await removeFromLibrary(steamAppId);
+        setUserGames((prev) => prev.filter((g) => g.steam_appid !== steamAppId));
+      } else if (inFavorite) {
+        await removeFromFavorite(steamAppId);
+        setUserFavorites((prev) => prev.filter((g) => g.steam_appid !== steamAppId));
+      }
 
       // Close details if open
       if (gameList === steamAppId) {
         setGameList(null);
       }
 
-      // Toast message ya koi better feedback (optional)
       console.log("Game removed successfully!");
     } catch (error) {
       console.error("Failed to remove game:", error);
-      alert(error.message || "Failed to remove game from library");
+      alert(error.message || "Failed to remove game");
     }
   };
   useEffect(() => {
@@ -182,7 +212,23 @@ const Library = () => {
       }
     };
 
-    fetchUserLibrary();
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
+        const [games, favorites] = await Promise.all([getUserLibrary(), getUserFavorite()]);
+        console.log("Fetched user library:", games);
+        console.log("Fetched user favorites:", favorites);
+        setUserGames(games || []);
+        setUserFavorites(favorites || []);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+        setError(err.message || "Failed to load your library/favorites");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
   }, []);
 
   useEffect(() => {
@@ -195,7 +241,9 @@ const Library = () => {
     const params = new URLSearchParams(location.search);
     const filter = params.get("filter");
     if (filter) {
-      setActiveFilter(filter); // Set the active filter based on the query parameter
+      // normalize common names
+      if (filter === "wishlist" || filter === "favorites") setActiveFilter("favorite");
+      else setActiveFilter(filter);
     }
   }, [location.search]);
 
@@ -278,14 +326,14 @@ const Library = () => {
               </div>
               <button
                 className={`h-[6vh] w-[10vw] flex items-center justify-center rounded-md cursor-pointer transition-colors ${
-                  activeFilter === "wishlist"
+                  activeFilter === "favorite"
                     ? "bg-[#8800FF]/40"
                     : "bg-transparent hover:bg-[#8800FF]/20"
                 }`}
-                onClick={() => setActiveFilter("wishlist")}
+                onClick={() => setActiveFilter("favorite")}
               >
                 <h3 className="text-white text-sm font-[gilroy-bold]">
-                  Wishlist
+                  Favorites
                 </h3>
               </button>
             </div>
@@ -312,7 +360,7 @@ const Library = () => {
               <LibGames games={filteredGames} onSelect={setGameList} />
             ) : (
               <LibDetails
-                game={userGames.find((g) => g.steam_appid === gameList)}
+                game={combinedGames.find((g) => g.steam_appid === gameList)}
                 onClose={() => setGameList(null)}
               />
             )}

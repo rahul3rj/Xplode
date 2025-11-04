@@ -149,7 +149,7 @@ async function updateCommunityGamesInDB() {
           steam_appid: game.appid,
           title: gameDetails.name || "Unknown Title",
           logo: logo || gameDetails.header_image || "/default-logo.png",
-          image: heroImage || gridImage || gameDetails.background || "/default-hero.jpg",
+          image:  heroImage || gameDetails.header_image ||gridImage || gameDetails.background ||"/default-hero.jpg",
           description: gameDetails.short_description || "No description available",
           plays: stats.plays,
           rating: stats.rating,

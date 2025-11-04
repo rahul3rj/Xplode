@@ -10,7 +10,7 @@ import {
   getUserLibrary,
   removeFromLibrary,
 } from "../utils/addToLibrary";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const gamesArr = [
   {
@@ -265,7 +265,11 @@ const GameList2 = ({ games, title, nextClass, prevClass }) => {
       >
         {games.map((game, idx) => (
           <SwiperSlide key={idx}>
-            <div className="w-full h-full flex flex-col justify-start items-center rounded-lg overflow-hidden relative group cursor-pointer">
+            <Link
+              key={`${game.steam_appid}`}
+              to={`/game/${game.steam_appid}`}
+              className="w-full h-full flex flex-col justify-start items-center rounded-lg overflow-hidden relative group cursor-pointer"
+            >
               <div
                 className="absolute h-[40vh] w-[50vh] bottom-7 -z-20 rounded-full bg-[#A641FF] blur-[52px]"
                 style={{
@@ -347,7 +351,7 @@ const GameList2 = ({ games, title, nextClass, prevClass }) => {
                   ></i>
                 </button>
               </div>
-            </div>
+            </Link>
           </SwiperSlide>
         ))}
       </Swiper>

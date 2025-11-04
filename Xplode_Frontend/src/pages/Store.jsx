@@ -17,7 +17,6 @@ const Store = () => {
     try {
       const response = await axios.get("/games/home"); // assuming it's a GET now
       setGames(response.data);
-   
     } catch (err) {
       console.error("Failed to fetch games:", err);
     }
@@ -30,6 +29,13 @@ const Store = () => {
   const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
   const newReleases = games.filter((game) => game.category === "New_Releases");
+  const Online_Multiplayer_Games = games.filter(
+    (game) => game.category === "Online_Multiplayer_Games"
+  );
+  const RPG_Games = games.filter((game) => game.category === "RPG_Games");
+  const Try_these_also = games.filter(
+    (game) => game.category === " Try_these_also"
+  );
   const topRecordGames = games.filter(
     (game) => game.category === "top_records"
   );
@@ -44,67 +50,98 @@ const Store = () => {
           style={{ zIndex: -10 }}
         />
         <div className="h-[88vh] w-[90vw]  ml-[10vw] gap-5 absolute top-[12svh] overflow-y-auto hide-scrollbar">
+          {sliderGames.length > 0 && <GameSlider games={sliderGames} />}
 
-        {sliderGames.length > 0 && <GameSlider games={sliderGames} />}
+          {trendingGames.length > 0 && (
+            <GameList
+              games={trendingGames}
+              title={GameListTitle[0]}
+              nextClass="game-list-swiper-next-0"
+              prevClass="game-list-swiper-prev-0"
+            />
+          )}
 
-        {trendingGames.length > 0 && (
-          <GameList
-            games={trendingGames}
-            title={GameListTitle[0]}
-            nextClass="game-list-swiper-next-0"
-            prevClass="game-list-swiper-prev-0"
-          />
-        )}
+          <Category />
 
-        <Category />
+          {topGames.length > 0 && (
+            <GameList
+              games={topGames}
+              title={GameListTitle[1]}
+              nextClass="game-list-swiper-next-1"
+              prevClass="game-list-swiper-prev-1"
+            />
+          )}
 
-        {topGames.length > 0 && (
-          <GameList
-            games={topGames}
-            title={GameListTitle[1]}
-            nextClass="game-list-swiper-next-1"
-            prevClass="game-list-swiper-prev-1"
-          />
-        )}
+          <CommunitySection />
 
-        <CommunitySection />
+          {topRecordGames.length > 0 && (
+            <GameList
+              games={topRecordGames}
+              title={GameListTitle[2]}
+              nextClass="game-list-swiper-next-2"
+              prevClass="game-list-swiper-prev-2"
+            />
+          )}
+          {newReleases.length > 0 && (
+            <GameList2
+              games={newReleases}
+              title="New Releases"
+              nextClass="game-list-swiper-next-1"
+              prevClass="game-list-swiper-prev-1"
+            />
+          )}
 
-        {topRecordGames.length > 0 && (
-          <GameList
-            games={topRecordGames}
-            title={GameListTitle[2]}
-            nextClass="game-list-swiper-next-2"
-            prevClass="game-list-swiper-prev-2"
-          />
-        )}
+          {topGames.length > 0 && (
+            <GameList
+              games={topGames}
+              title={GameListTitle[1]}
+              nextClass="game-list-swiper-next-1"
+              prevClass="game-list-swiper-prev-1"
+            />
+          )}
+          {topRecordGames.length > 0 && (
+            <GameList
+              games={topRecordGames}
+              title={GameListTitle[2]}
+              nextClass="game-list-swiper-next-2"
+              prevClass="game-list-swiper-prev-2"
+            />
+          )}
+          {Online_Multiplayer_Games.length > 0 && (
+            <GameList
+              games={Online_Multiplayer_Games}
+              title="Online Multiplayer Games"
+              nextClass="game-list-swiper-next-2"
+              prevClass="game-list-swiper-prev-2"
+            />
+          )}
+          {Online_Multiplayer_Games.length > 0 && (
+            <GameList
+              games={Online_Multiplayer_Games}
+              title="Online Multiplayer Games"
+              nextClass="game-list-swiper-next-2"
+              prevClass="game-list-swiper-prev-2"
+            />
+          )}
+          {RPG_Games.length > 0 && (
+            <GameList
+              games={RPG_Games}
+              title="RPG Games"
+              nextClass="game-list-swiper-next-2"
+              prevClass="game-list-swiper-prev-2"
+            />
+          )}
+          {Try_these_also.length > 0 && (
+            <GameList
+              games={Try_these_also}
+              title=" Try these also"
+              nextClass="game-list-swiper-next-2"
+              prevClass="game-list-swiper-prev-2"
+            />
+          )}
 
-        <GameList2 
-          games={newReleases}
-          title="New Releases"
-           nextClass="game-list-swiper-next-1"
-            prevClass="game-list-swiper-prev-1"
-        />
-
-        {topGames.length > 0 && (
-          <GameList
-            games={topGames}
-            title={GameListTitle[1]}
-            nextClass="game-list-swiper-next-1"
-            prevClass="game-list-swiper-prev-1"
-          />
-        )}
-        {topRecordGames.length > 0 && (
-          <GameList
-            games={topRecordGames}
-            title={GameListTitle[2]}
-            nextClass="game-list-swiper-next-2"
-            prevClass="game-list-swiper-prev-2"
-          />
-        )}
-
-        <Footer />
+          <Footer />
         </div>
-
       </div>
     </>
   );

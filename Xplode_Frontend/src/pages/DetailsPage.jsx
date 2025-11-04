@@ -17,7 +17,12 @@ import StarIcon from "@mui/icons-material/Star";
 import Likepercent from "../components/Likepercent";
 import GameList2 from "../components/GameList2";
 
-const GameListTitle = ["Trending Games", "Top Games", "Top Records", "New Releases"];
+const GameListTitle = [
+  "Trending Games",
+  "Top Games",
+  "Top Records",
+  "New Releases",
+];
 
 const DetailsPage = () => {
   const { appid } = useParams(); // ✅ param name fix
@@ -31,12 +36,15 @@ const DetailsPage = () => {
   const [randomIndex4, setRandomIndex4] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [userReaction, setUserReaction] = useState(null);
+  const [likeStats, setLikeStats] = useState({ likes: 0, dislikes: 0 });
+  const [loadingReaction, setLoadingReaction] = useState(false);
 
   useEffect(() => {
     const fetchGame = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`/games/game/${appid}`); // ✅ hits backend
+        const res = await axios.get(`/games/game/${appid}`);
         console.log(res.data);
         setGame(res.data); // ✅ single object
       } catch (e) {
@@ -47,6 +55,113 @@ const DetailsPage = () => {
     };
     fetchGame();
   }, [appid]);
+
+  const handleReaction = async (reactionType) => {
+    if (!requireAuth()) return;
+
+    setLoadingReaction(true);
+    try {
+      const response = await axios.post(
+        `/reaction/${appid}/reaction`,
+        {
+          reaction: reactionType,
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+
+      setUserReaction(response.data.reaction);
+
+      // Update stats
+      const statsResponse = await axios.get(`reaction/${appid}/stats`);
+      setLikeStats(statsResponse.data);
+    } catch (error) {
+      console.error("Reaction error:", error);
+      alert("Failed to update reaction");
+    } finally {
+      setLoadingReaction(false);
+    }
+  };
+
+  const fetchReactionData = async () => {
+    try {
+      // Fetch stats (public)
+      const statsResponse = await axios.get(`/reaction/${appid}/stats`);
+      setLikeStats(statsResponse.data);
+
+      // Fetch user reaction (if logged in)
+      if (requireAuth()) {
+        const reactionResponse = await axios.get(
+          `/reaction/${appid}/my-reaction`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setUserReaction(reactionResponse.data.reaction);
+      }
+    } catch (error) {
+      console.error("Error fetching reaction data:", error);
+    }
+  };
+
+  // const fetchComments = async () => {
+  //   try {
+  //     const response = await axios.get(`/reaction/${appid}/comments`);
+  //     setComments(response.data.comments);
+  //   } catch (error) {
+  //     console.error("Error fetching comments:", error);
+  //   }
+  // };
+
+  // const handleAddComment = async () => {
+  //   if (!requireAuth()) return;
+  //   if (!newComment.trim()) {
+  //     alert("Please enter a comment");
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await axios.post(
+  //       `/reaction/${appid}/comments`,
+  //       {
+  //         comment: newComment,
+  //         rating: commentRating,
+  //       },
+  //       {
+  //         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  //       }
+  //     );
+
+  //     setComments((prev) => [response.data.comment, ...prev]);
+  //     setNewComment("");
+  //     setCommentRating(5);
+  //     alert("Comment added successfully!");
+  //   } catch (error) {
+  //     console.error("Error adding comment:", error);
+  //     alert("Failed to add comment");
+  //   }
+  // };
+
+  // UseEffects
+  useEffect(() => {
+    fetchReactionData();
+  }, [appid]);
+
+  const calculateLikePercentages = () => {
+    const totalReactions = likeStats.likes + likeStats.dislikes;
+
+    if (totalReactions === 0) {
+      return { likePercentage: 0, dislikePercentage: 0 };
+    }
+
+    const likePercentage = Math.round((likeStats.likes / totalReactions) * 100);
+    const dislikePercentage = 100 - likePercentage;
+
+    return { likePercentage, dislikePercentage };
+  };
 
   const handleAddToLibrary = async (e, game) => {
     e.stopPropagation();
@@ -137,6 +252,34 @@ const DetailsPage = () => {
   const isGameInLibrary = (gameAppId) => {
     return userLibrary.some((game) => game.steam_appid === gameAppId);
   };
+  const calculateRating = () => {
+    // Priority order: steam, esrb, pegi, etc.
+    if (game?.ratings?.steam?.rating) {
+      const steamRating = parseInt(game.ratings.steam.rating);
+      // Convert to 5-star scale (assuming steam rating is out of 10)
+      return steamRating / 2;
+    }
+
+    if (game?.ratings?.esrb?.rating) {
+      const esrbRatings = {
+        e: 5, // Everyone
+        e10: 4, // Everyone 10+
+        t: 3, // Teen
+        m: 2, // Mature
+        a: 1, // Adult
+      };
+      return esrbRatings[game.ratings.esrb.rating.toLowerCase()] || 3;
+    }
+
+    if (game?.ratings?.pegi?.rating) {
+      const pegiRating = parseInt(game.ratings.pegi.rating);
+      // Convert PEGI (3,7,12,16,18) to 5-star scale
+      return Math.min(5, Math.max(1, pegiRating / 4));
+    }
+
+    // Default rating agar koi data na mile
+    return 4;
+  };
 
   const handleClick = (tag) => {
     navigate("/search", {
@@ -182,11 +325,21 @@ const DetailsPage = () => {
   }
 
   useEffect(() => {
-    if (game?.hero_image?.length > 0) {
-      setRandomIndex1(getRandomIndex(game.hero_image.length));
-      setRandomIndex2(getRandomIndex(game.hero_image.length));
-      setRandomIndex3(getRandomIndex(game.hero_image.length));
-      setRandomIndex4(getRandomIndex(game.hero_image.length));
+    // Use deterministic image indices for each slot instead of random picks.
+    // This ensures each placement shows a different image (0..3) when available
+    // and falls back using modulo when hero_image length is smaller.
+    const len = game?.hero_image?.length || 0;
+    if (len > 0) {
+      const idxFor = (slot) => (len > slot ? slot : slot % len);
+      setRandomIndex1(idxFor(4));
+      setRandomIndex2(idxFor(1));
+      setRandomIndex3(idxFor(2));
+      setRandomIndex4(idxFor(3));
+    } else {
+      setRandomIndex1(-1);
+      setRandomIndex2(-1);
+      setRandomIndex3(-1);
+      setRandomIndex4(-1);
     }
   }, [game?.steam_appid]);
 
@@ -221,8 +374,6 @@ const DetailsPage = () => {
     fetchGames();
   }, []);
 
-  const sliderGames = games.filter((game) => game.category === "sliders");
-  const trendingGames = games.filter((game) => game.category === "trending");
   const topGames = games.filter((game) => game.category === "top_games");
   const newReleases = games.filter((game) => game.category === "New_Releases");
   const topRecordGames = games.filter(
@@ -294,7 +445,7 @@ const DetailsPage = () => {
             <div className="h-[2svh] w-[5svw] flex items-center justify-center">
               <Rating
                 name="read-only"
-                value={4} // Set to 5 for a 5-star rating
+                value={calculateRating()} // Set to 5 for a 5-star rating
                 readOnly
                 precision={0.5}
                 emptyIcon={
@@ -309,6 +460,7 @@ const DetailsPage = () => {
             {game.genres.slice(0, 3).map((genre, idx) => (
               <h4
                 key={idx}
+                onClick={() => handleClick(genre)}
                 className={`text-xs font-[gilroy-bold] text-white cursor-pointer hover:bg-[#A641FF]/70 bg-[#A641FF]/50 px-3 py-1 rounded-full backdrop-blur-sm ${
                   idx === 2 ? "truncate max-w-[10vw]" : ""
                 }`}
@@ -349,41 +501,38 @@ const DetailsPage = () => {
             <div className="h-[6vh] w-[6vh] rounded-full bg-black/40 flex items-center justify-center hover:bg-black cursor-pointer shadow-lg backdrop-blur-sm">
               <img src="../HomePage/Shopping Cart.svg" alt="" className="p-2" />
             </div>
-            {/* Like button */}
             <div
-              onClick={() =>
-                setIsActive((prev) => (prev === "like" ? null : "like"))
-              }
+              onClick={() => !loadingReaction && handleReaction("like")}
               className={`h-[6vh] w-[12vh] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors gap-2 backdrop-blur-sm ${
-                isActive === "like"
+                userReaction === "like"
                   ? "bg-[#B561FF]/50"
                   : "bg-black/40 hover:bg-black"
-              }`}
+              } ${loadingReaction ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <i
                 className={`text-white text-lg ${
-                  isActive === "like" ? "ri-thumb-up-fill" : "ri-thumb-up-line"
+                  userReaction === "like"
+                    ? "ri-thumb-up-fill"
+                    : "ri-thumb-up-line"
                 }`}
               ></i>
               <span className="text-white text-sm font-[gilroy-bold]">
-                112k
+                {likeStats.likes || 0}
               </span>
             </div>
 
-            {/* Dislike button */}
+            {/* Dislike button - UPDATED WITH REAL FUNCTIONALITY */}
             <div
-              onClick={() =>
-                setIsActive((prev) => (prev === "dislike" ? null : "dislike"))
-              }
+              onClick={() => !loadingReaction && handleReaction("dislike")}
               className={`h-[6vh] w-[6vh] rounded-full flex items-center backdrop-blur-sm justify-center cursor-pointer shadow-lg transition-colors duration-300 ease-in-out ${
-                isActive === "dislike"
+                userReaction === "dislike"
                   ? "bg-[#B42323]/50"
                   : "bg-black/40 hover:bg-black"
-              }`}
+              } ${loadingReaction ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <i
                 className={`text-white text-lg ${
-                  isActive === "dislike"
+                  userReaction === "dislike"
                     ? "ri-thumb-down-fill"
                     : "ri-thumb-down-line"
                 }`}
@@ -436,7 +585,12 @@ const DetailsPage = () => {
               <button
                 onClick={() =>
                   window.open(
-                    `https://store.epicgames.com/en-US/p/grand-theft-auto-v`
+                    `${
+                      game.website ||
+                      `https://www.epicgames.com/store/en-US/p/${game.name
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")}`
+                    }`
                   )
                 }
                 className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
@@ -461,7 +615,9 @@ const DetailsPage = () => {
               <button
                 onClick={() =>
                   window.open(
-                    `https://www.playstation.com/en-us/games/dark-souls-iii/`
+                    `https://store.playstation.com/en-us/search/${encodeURIComponent(
+                      game.name
+                    )}`
                   )
                 }
                 className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
@@ -486,7 +642,9 @@ const DetailsPage = () => {
               <button
                 onClick={() =>
                   window.open(
-                    `https://www.xbox.com/en-US/games/store/dark-souls-iii-deluxe-edition/C23CWXL81H3L/0001`
+                    `https://www.xbox.com/en-us/search?q=${encodeURIComponent(
+                      game.name
+                    )}`
                   )
                 }
                 className="h-[5svh] w-[9vw] rounded-sm bg-[#A641FF] text-white font-[gilroy-bold] text-sm cursor-pointer hover:bg-[#7a2ed1] flex justify-center items-center shadow-lg gap-2"
@@ -508,11 +666,14 @@ const DetailsPage = () => {
               </h3>
             </div>
             <div className="h-full w-[12svw] flex justify-between items-center">
-              <Likepercent />
+              <Likepercent
+                likePercentage={calculateLikePercentages().likePercentage}
+                dislikePercentage={calculateLikePercentages().dislikePercentage}
+              />
             </div>
             <div className="flex justify-end items-center h-full w-auto">
               <h4 className="text-[#A641FF] font-[gilroy-ebold] text-sm ">
-                534,170 Reviews
+                {likeStats.likes + likeStats.dislikes} Reviews
               </h4>
             </div>
           </div>

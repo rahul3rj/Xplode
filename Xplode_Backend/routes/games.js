@@ -122,6 +122,9 @@ router.post("/fetch", async (req, res) => {
 });
 
 // updateCommunityGamesInDB();
+// updateGamesInDB();
+// updateSearchGamesInDB();
+
 
 router.get("/home", async (req, res) => {
   try {
