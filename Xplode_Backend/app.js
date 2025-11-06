@@ -17,7 +17,7 @@ const path = require("path");
 const app = express();
 
 const corsOptions = {
-  origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  origin: process.env.CLIENT_ORIGIN ,
   methods: "GET,POST,PUT,DELETE",
   credentials: true,
 };
