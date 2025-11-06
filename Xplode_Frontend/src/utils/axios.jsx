@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000', // Your backend URL
+  baseURL: import.meta.env.VITE_SERVER_ORIGIN || 'http://localhost:5000', // Uses env or falls back to localhost
 });
 
 // Add a request interceptor to include the token
