@@ -131,7 +131,7 @@ Xplode/
 
 ## 🔏 Development Roadmap
 
-### **Phase One: Core Storefront (In Progress)**
+### **Phase One: Core Storefront (Completed)**
 
 > Building the visual identity and functional backbone of Xplode.
 
@@ -219,3 +219,4 @@ Licensed under the **MIT License**.
 Massive thanks to the developers, gamers, and designers shaping **Xplode** into the **future of digital gaming**.
 
 > Xplode isn’t just software — it’s a revolution. 💥
+
