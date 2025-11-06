@@ -115,11 +115,13 @@ const SideNav = ({ activePage, setActivePage, handleLogout }) => {
           className="h-full w-full cursor-pointer flex justify-end items-center group"
           onClick={handleLogout}
         >
-          <img
-            src="../SidenavPage/Log.svg"
-            alt=""
-            className="mx-5 h-[2.5svh] w-[2.5svh] group-hover:hidden"
-          />
+          <div className="ml-1 h-[6svh] w-[6svh] flex justify-center items-center group-hover:hidden">
+            <img
+              src="../SidenavPage/Log.svg"
+              alt=""
+              className="mx-6 h-[2.3svh] w-[2.3svh] "
+            />
+          </div>
           <img
             src="../SidenavPage/Log-g.svg"
             alt=""

@@ -67,7 +67,7 @@ const EditProfile = ({ onClose, user, setUser }) => {
                 <img
                   src={profilePic ? URL.createObjectURL(profilePic) : user.profilePic}
                   alt=""
-                  className="rounded-full h-32 w-32 object-cover"
+                  className="rounded-full h-[30svh] w-[30svh] object-cover"
                 />
                 <input
                   type="file"
@@ -91,7 +91,7 @@ const EditProfile = ({ onClose, user, setUser }) => {
               <div className="h-[15svh] w-full rounded-lg overflow-hidden flex items-center justify-center">
                 <div className="h-full w-full">
                   <img
-                    src={bannerPic ? URL.createObjectURL(bannerPic) : user.bannerPic}
+                    src={bannerPic ? URL.createObjectURL(bannerPic) : user.bannerPic }
                     alt=""
                     className="rounded-lg w-full h-full object-cover"
                   />

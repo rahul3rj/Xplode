@@ -31,7 +31,7 @@ async function getLogo(appid) {
     const res = await axios.get(
       `https://www.steamgriddb.com/api/v2/logos/steam/${appid}`,
       {
-        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` },
+        headers: { Authorization: `Bearer ${process.env.STEAMGRIDDB_KEY}` }
       }
     );
     if (res.data.success && res.data.data.length > 0) {

@@ -413,9 +413,9 @@ const Library = () => {
                       console.log(g.steam_appid);
                       handleDeleteGame(g.steam_appid, e);
                     }}
-                    className="px-3 py-1 hover:bg-red-500/20 rounded transition-colors"
+                    className="px-3 py-1 hover:bg-red-500/20 rounded-full transition-colors group cursor-pointer"
                   >
-                    <i className="ri-delete-bin-fill text-white hover:text-red-400 text-md"></i>
+                    <i className="ri-delete-bin-fill text-white group-hover:text-red-400 text-md"></i>
                   </button>
                 </div>
               ))}

@@ -37,7 +37,7 @@ const PasswordInput = ({ password, setPassword }) => {
         placeholder="Enter Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="h-[5vh] w-[80%] lg:w-[100%] rounded-lg bg-black mb-5 text-white px-4 py-1 outline-none border border-gray-700 focus:border-white transition-all"
+        className="h-[5vh] w-[80%] lg:w-[100%] rounded-lg bg-black mb-5 text-white px-4 py-1 outline-none border border-gray-700 transition-all"
       />
       <button
         type="button"

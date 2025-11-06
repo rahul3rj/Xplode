@@ -244,7 +244,7 @@ const CommunitySection = () => {
           />
           <Link
             to={"/community"}
-            className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm hover:text-zinc-400 transition-all duration-200"
+            className=" h-[3vh] flex cursor-pointer font-[gilroy-bold] text-zinc-600 text-sm hover:text-zinc-400 transition-all duration-200" onClick={() => window.location.reload()}
           >
             Learn More
           </Link>
@@ -283,11 +283,11 @@ const CommunitySection = () => {
               <div className="h-full w-full absolute top-0 left-0 z-40 rounded-lg bg-[linear-gradient(345deg,rgba(255,41,195,0.62)_-4.44%,rgba(0,0,0,0)_55.12%)]"></div>
 
               <div className="absolute w-full h-full flex items-center justify-start z-50">
-                <div className="h-[7vw]  top-5 left-7 absolute">
+                <div className="h-[7vw] w-[21vw] top-5 left-7 absolute flex items-center justify-start">
                   <img
                     src={num.logo}
                     alt=""
-                    className="h-[6.7vw] object-cover"
+                    className="h-[6.7vw] object-contain"
                   />
                 </div>
                 <div className="h-[20vh] w-[19vw] flex flex-col justify-between items-start absolute left-7 top-35">

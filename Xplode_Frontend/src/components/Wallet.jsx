@@ -24,7 +24,7 @@ const Wallet = forwardRef((props, ref) => {
         <div className="h-[12vh] w-[20vw] rounded-3xl bg-[#23152F] gap-1 flex flex-col items-center justify-center">
           <h4 className="text-white text-xs font-[gilroy] text-center">{activeTab === "balance" ? "Current Wallet Balance" : "Total Spend"}</h4>
 
-          <h1 className="text-white text-3xl font-[gilroy-bold]">{activeTab === "balance" ? "₹1500" : "₹2340"}</h1>
+          <h1 className="text-white text-3xl font-[gilroy-bold]">{activeTab === "balance" ? "1500 XP" : "2340 XP"}</h1>
         </div>
         <div className="h-[10vh] w-[20vw] flex justify-between items-center">
           <div className="h-[10vh] w-[10vh] flex flex-col items-center justify-between">

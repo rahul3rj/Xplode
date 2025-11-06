@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ColorThief from "colorthief";
 
-const GameCard = ({ image, bg, name, price, genres, isActive }) => {
+const GameCard = ({ image, bg, name, price, genres, isActive, appid }) => {
   const [colorPalette, setColorPalette] = useState(null);
   const imageRef = useRef(null);
 
@@ -55,14 +55,14 @@ const GameCard = ({ image, bg, name, price, genres, isActive }) => {
         >
           <img
             ref={imageRef}
-            src={image}
+            src={appid === 2807960 ? "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2807960/9aa0e12a58caa5b90fc3f9d4d11085a35b1a65e4/library_capsule.jpg" : image}
             alt={name}
-            className={`w-full h-full object-cover transition-opacity duration-500 ease-in-out transform absolute z-10 ${
+            className={`w-full h-full object-cover transition-opacity duration-400 ease-in-out transform absolute z-10 ${
               isActive ? "opacity-0" : "opacity-100"
             }`}
           />
           <img
-            src={bg}
+            src={appid === 2807960 ? "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2807960/a9052c33c3bc80dc8f55fbfb3d18a62d6d762b2a/capsule_616x353.jpg?t=1762193857" : bg}
             alt={name}
             className={`w-full h-full object-cover transition-opacity duration-500 ease-in-out absolute`}
           />
@@ -70,28 +70,30 @@ const GameCard = ({ image, bg, name, price, genres, isActive }) => {
 
         {/* Bottom bar - synced transition */}
         <div
-          className="h-[11svh] w-full px-5 flex justify-between items-center cursor-pointer relative rounded-b-lg transition-all duration-500 ease-in-out"
+          className="h-[11svh] w-full px-5 flex justify-between items-center cursor-pointer relative rounded-b-lg transition-all duration-600 ease-in-out"
           style={{
             background: gradientBackground,
           }}
         >
           <div
             className={`h-[8svh] ${
-              isActive ? "w-full" : "w-[8vw]"
-            } flex flex-col justify-between items-start transition-all duration-500 ease-in-out`}
+              isActive ? "w-[80%]" : "w-[8vw]"
+            } flex flex-col justify-end items-start transition-all duration-300 ease-in-out relative`}
           >
             <h1
-              className={`text-white text-[1rem] w-full font-bold font-[gilroy-bold] truncate`}
+              className={`text-white top-0 absolute text-[1rem] font-bold font-[gilroy-bold] truncate duration-300 ease-in-out ${
+                isActive ? "w-full" : "w-[8vw]"
+              }`}
             >
               {name}
             </h1>
-            <div className="w-full flex flex-row justify-start items-center gap-2 truncate">
+            <div className="w-full absolute bottom-0 flex flex-row justify-start items-center gap-2 truncate">
               {genres
                 .slice(0, isActive ? 4 : 2)
                 .map((genre, idx, arr) => (
                   <h3
                     key={idx}
-                    className={`text-white text-[10px] font-[gilroy] px-3 py-1 rounded-full transition-all duration-500 ease-in-out ${
+                    className={`text-white text-[10px] font-[gilroy] px-3 py-1 rounded-full transition-all duration-200 ease-in-out ${
                       isActive
                         ? idx === arr.length - 1
                           ? "truncate"

@@ -43,6 +43,7 @@ const GameBanner = ({ games }) => {
               price={game.price || "Free"}
               genres={game.genres}
               isActive={activeIndex === idx}
+              appid={game.steam_appid}
             />
           </Link>
         );

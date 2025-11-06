@@ -95,7 +95,7 @@ const NavBar = ({ user, onShowProfile }) => {
               alt=""
               className="ml-4 h-[3svh]"
             />
-            <h4 className="font-[Gilroy-Bold] text-white">₹1500</h4>
+            <h4 className="font-[Gilroy-Bold] text-white">1500 XP</h4>
             <img
               src="../HomePage/Polygon 6.svg"
               alt=""

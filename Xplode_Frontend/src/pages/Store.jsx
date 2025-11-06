@@ -86,57 +86,34 @@ const Store = () => {
             <GameList2
               games={newReleases}
               title="New Releases"
-              nextClass="game-list-swiper-next-1"
-              prevClass="game-list-swiper-prev-1"
+              nextClass="game-list-swiper-next-3"
+              prevClass="game-list-swiper-prev-3"
             />
           )}
 
-          {topGames.length > 0 && (
-            <GameList
-              games={topGames}
-              title={GameListTitle[1]}
-              nextClass="game-list-swiper-next-1"
-              prevClass="game-list-swiper-prev-1"
-            />
-          )}
-          {topRecordGames.length > 0 && (
-            <GameList
-              games={topRecordGames}
-              title={GameListTitle[2]}
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
-            />
-          )}
           {Online_Multiplayer_Games.length > 0 && (
             <GameList
               games={Online_Multiplayer_Games}
               title="Online Multiplayer Games"
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
+              nextClass="game-list-swiper-next-4"
+              prevClass="game-list-swiper-prev-4"
             />
           )}
-          {Online_Multiplayer_Games.length > 0 && (
-            <GameList
-              games={Online_Multiplayer_Games}
-              title="Online Multiplayer Games"
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
-            />
-          )}
+          
           {RPG_Games.length > 0 && (
             <GameList
               games={RPG_Games}
               title="RPG Games"
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
+              nextClass="game-list-swiper-next-5"
+              prevClass="game-list-swiper-prev-5"
             />
           )}
           {Try_these_also.length > 0 && (
             <GameList
               games={Try_these_also}
               title=" Try these also"
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
+              nextClass="game-list-swiper-next-6"
+              prevClass="game-list-swiper-prev-6"
             />
           )}
 

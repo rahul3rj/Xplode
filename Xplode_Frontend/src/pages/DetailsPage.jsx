@@ -393,7 +393,7 @@ const DetailsPage = () => {
   if (err || !game) {
     return (
       <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3">
-        <p className="text-white/80">Kuch gadbad: {err || "Game not found"}</p>
+        <p className="text-white/80">This game is not available right now. {err || "Game not found"}</p>
         <button
           onClick={() => navigate(-1)}
           className="px-4 py-2 bg-[#A641FF] rounded text-white"
@@ -408,19 +408,23 @@ const DetailsPage = () => {
     <div className="h-auto w-full px-5 ">
       <div className="h-[85svh] w-full flex justify-center items-center rounded-xl relative overflow-hidden mb-15">
         <img
-          src={getGameImage(game, randomIndex1, 1)}
+          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game?.steam_appid}/library_hero_2x.jpg`}
+          onError={(e) => {
+            e.currentTarget.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game?.steam_appid}/library_hero.jpg`;
+            e.currentTarget.onerror = null; // Prevent infinite loops
+          }}
           className="h-full w-full object-cover"
           alt=""
         />
         <div className=" absolute z-5 h-full w-[40%] left-0 rounded-l-[13px] bg-[linear-gradient(292deg,_rgba(28,0,0,0)_25.78%,_rgba(42,20,72,0.60)_76.18%)] "></div>
         <div className="absolute z-10 h-[10svh] w-full top-0 flex justify-between items-end px-10">
           <div className="h-[6vh] w-[14vh] flex justify-between items-center">
-            <div className="h-[6vh] w-[6vh] rounded-full bg-black/30 hover:bg-black flex items-center justify-center">
+            {/* <div className="h-[6vh] w-[6vh] rounded-full bg-black/30 hover:bg-black flex items-center justify-center">
               <i class="ri-arrow-left-s-line text-white text-xl"></i>
             </div>
             <div className="h-[6vh] w-[6vh] rounded-full bg-black/30 hover:bg-black flex items-center justify-center">
               <i class="ri-arrow-right-s-line text-white text-xl"></i>
-            </div>
+            </div> */}
           </div>
           <div className="h-[6vh] w-[18vh] flex justify-between items-center">
             <img src="../Slider/win.svg" alt="" />
@@ -432,7 +436,13 @@ const DetailsPage = () => {
           <div className="h-[21svh] w-auto flex justify-center items-center overflow-hidden">
             {/* image logo from steamgridDB */}
             <img
-              src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game?.steam_appid}/logo.png`}
+              src={
+                appid === "2807960"
+                  ? "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2807960/65db0d8229b34cd5f3c17b4ec6c0d94724ea1b30/logo.png"
+                  : appid === "1808500"
+                  ? "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1808500/fba0705a67bb6e1a51bdb1d87102a3be18d024c0/logo.png"
+                  : `https://cdn.cloudflare.steamstatic.com/steam/apps/${game?.steam_appid}/logo.png`
+              }
               alt=""
               className="h-full object-contain "
             />
@@ -567,9 +577,9 @@ const DetailsPage = () => {
               >
                 <i class="ri-download-line"></i> Download
               </button>
-              <div className="cursor-pointer flex justify-center items-center">
+              {/* <div className="cursor-pointer flex justify-center items-center">
                 <i class="ri-arrow-down-s-fill text-white text-2xl"></i>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="h-[10svh] w-full rounded-sm flex justify-between items-center bg-[#A641FF]/20 px-5">
@@ -597,9 +607,9 @@ const DetailsPage = () => {
               >
                 <i class="ri-download-line"></i> Download
               </button>
-              <div className="cursor-pointer flex justify-center items-center">
+              {/* <div className="cursor-pointer flex justify-center items-center">
                 <i class="ri-arrow-down-s-fill text-white text-2xl"></i>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="h-[10svh] w-full rounded-sm flex justify-between items-center bg-[#A641FF]/20 px-5">
@@ -624,9 +634,9 @@ const DetailsPage = () => {
               >
                 <i class="ri-download-line"></i> Download
               </button>
-              <div className="cursor-pointer flex justify-center items-center">
+              {/* <div className="cursor-pointer flex justify-center items-center">
                 <i class="ri-arrow-down-s-fill text-white text-2xl"></i>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="h-[10svh] w-full rounded-sm flex justify-between items-center bg-[#A641FF]/20 px-5">
@@ -651,9 +661,9 @@ const DetailsPage = () => {
               >
                 <i class="ri-download-line"></i> Download
               </button>
-              <div className="cursor-pointer flex justify-center items-center">
+              {/* <div className="cursor-pointer flex justify-center items-center">
                 <i class="ri-arrow-down-s-fill text-white text-2xl"></i>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -748,7 +758,7 @@ const DetailsPage = () => {
         </div>
       </div>
       <div className="h-[50svh] w-full flex justify-start items-start mb-15">
-        <DetailsCommunity game={game} />
+        <DetailsCommunity game={game} appid={game.steam_appid} />
       </div>
 
       <div

@@ -112,7 +112,7 @@ const Login = () => {
     <div className="h-screen w-full bg-black flex relative overflow-hidden">
       <div>
         <div className="flex justify-center items-center absolute z-100 bottom-10 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <button
+          {/* <button
             onClick={() => setActiveDiv("signin")}
             className={`text-white pt-3 pr-6 pl-6 rounded-full mx-3 backdrop-blur-md shadow-lg ${
               activeDiv === "signin"
@@ -141,7 +141,7 @@ const Login = () => {
                 <div className="w-4 h-0.5 bg-white mt-2 rounded"></div>
               )}
             </div>
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -178,7 +178,7 @@ const Login = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-[5%] w-[80%] lg:w-[45%] py-1 rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+              className="h-[5%] w-[80%] lg:w-[45%] py-1 rounded-lg bg-black text-white px-4 outline-none border border-gray-700  transition-all mb-5"
             />
 
             <PasswordInput password={password} setPassword={setPassword} />
@@ -238,7 +238,7 @@ const Login = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={step === 2}
-                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700  transition-all mb-5"
               />
               <input
                 type="email"
@@ -246,7 +246,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={step === 2}
-                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700  transition-all mb-5"
               />
               <PasswordInput password={password} setPassword={setPassword} />
 
