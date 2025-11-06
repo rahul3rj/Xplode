@@ -16,13 +16,20 @@ const cookieParser = require("cookie-parser");
 const path = require("path");
 const app = express();
 
+const allowedOrigins = process.env.CLIENT_ORIGIN.split(",");
 const corsOptions = {
-  origin: "https://xplode-kappa.vercel.app", // <--- NO trailing slash!
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
-  // ...other options
+   methods: "GET,POST,PUT,DELETE",
 };
-app.use(cors(corsOptions));
-
 app.use(cors(corsOptions));
 
 
@@ -59,5 +66,4 @@ app.use("/community", communityRouter);
 
 
 
-app.listen(process.env.PORT || 5000);
-app.use("/community", communityRouter);
+app.listen(5000 || process.env.PORT);
