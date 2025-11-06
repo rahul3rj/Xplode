@@ -19,8 +19,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "./MainLayout";
 
 
-require("dotenv").config();
-
 const App = () => {
   const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
