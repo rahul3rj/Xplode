@@ -17,9 +17,9 @@ const path = require("path");
 const app = express();
 
 const corsOptions = {
-  origin: "http://localhost:5173", 
+  origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
   methods: "GET,POST,PUT,DELETE",
-  credentials: true, 
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
@@ -58,4 +58,4 @@ app.use("/community", communityRouter);
 
 
 
-app.listen(5000 || process.env.PORT);
+app.listen(process.env.PORT || 5000);

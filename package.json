@@ -2,5 +2,11 @@
   "dependencies": {
     "express-rate-limit": "^8.0.1",
     "fuse.js": "^7.1.0"
+  },
+  "main": "Xplode_Backend/app.js",
+  "scripts": {
+    "start": "node Xplode_Backend/app.js",
+    "backend": "npm start --prefix Xplode_Backend",
+    "frontend": "npm run preview --prefix Xplode_Frontend"
   }
 }
