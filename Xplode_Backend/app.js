@@ -59,3 +59,4 @@ app.use("/community", communityRouter);
 
 
 app.listen(process.env.PORT || 5000);
+app.use("/community", communityRouter);
