@@ -38,7 +38,7 @@ router.get(
       );
       
       // Redirect to React frontend with token
-      res.redirect(`http://localhost:5173/login?token=${token}`);
+      res.redirect(`${process.env.CLIENT_ORIGIN}/login?token=${token}` || `http://localhost:5173/login?token=${token}`);
     } catch (err) {
       console.error("Error during Google OAuth:", err);
       res.redirect("/login");
