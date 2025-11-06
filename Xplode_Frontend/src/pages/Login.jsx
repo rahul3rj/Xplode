@@ -46,7 +46,7 @@ const Login = () => {
       }
       try {
         const res = await axios.post("/user/send-otp", { email });
-        console.log("Response from backend:", res.data);
+
         if (res.data.success) {
           alert(res.data.message);
           setStep(2);

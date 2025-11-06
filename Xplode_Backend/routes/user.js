@@ -59,7 +59,7 @@ router.post("/send-otp", async (req, res) => {
   try {
     const existingUser = await userModel.findOne({email})
     if(existingUser){
-      console.log(existingUser)
+      // console.log(existingUser)
       return res.status(400).json({ success: false, message: "User already registered" });
     }
     await OTP.findOneAndUpdate(

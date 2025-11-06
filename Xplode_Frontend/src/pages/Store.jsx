@@ -12,6 +12,7 @@ const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
 
 const Store = () => {
   const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchGames = async () => {
     try {
@@ -19,6 +20,8 @@ const Store = () => {
       setGames(response.data);
     } catch (err) {
       console.error("Failed to fetch games:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,6 +43,13 @@ const Store = () => {
     (game) => game.category === "top_records"
   );
 
+  if (loading) {
+    return (
+      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10vw] flex justify-center items-center gap-5">
+        <img src="../Preloader.svg" alt="loading" className="h-10" />
+      </div>
+    );
+  }
   return (
     <>
       <div className="absolute h-screen w-full z-30 overflow-y-auto hide-scrollbar">
@@ -99,7 +109,7 @@ const Store = () => {
               prevClass="game-list-swiper-prev-4"
             />
           )}
-          
+
           {RPG_Games.length > 0 && (
             <GameList
               games={RPG_Games}

@@ -28,6 +28,7 @@ const avatars = [
 const ProfilePage = ({ user, setUser }) => {
   const [showEdit, setShowEdit] = useState(false);
 
+
   return (
     <>
       <div className="h-auto w-full">
@@ -45,7 +46,7 @@ const ProfilePage = ({ user, setUser }) => {
                 <div className="h-[27svh] w-[27svh] overflow-hidden rounded-full flex items-center justify-center">
                   <img
                     className="w-full h-full object-cover"
-                    src={user.profilePic}
+                    src={user.profilePic }
                     alt=""
                   />
                 </div>

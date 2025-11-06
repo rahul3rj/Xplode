@@ -38,7 +38,6 @@ const Profile = () => {
   const fetchGames = async () => {
     try {
       const response = await axios.get("/games/home"); // assuming it's a GET now
-      console.log(response.data);
       setGames(response.data);
     } catch (err) {
       console.error("Failed to fetch games:", err);
@@ -70,10 +69,10 @@ const Profile = () => {
 
         const profilePic = res.data.profilePic
           ? `data:${res.data.profilePic.contentType};base64,${res.data.profilePic.data}`
-          : "/default.png";
+          : "/defaultprofile.jpg";
         const bannerPic = res.data.bannerPic
           ? `data:${res.data.bannerPic.contentType};base64,${res.data.bannerPic.data}`
-          : "/default.png";
+          : "/defaultbanner.jpg";
 
         setUser({
           name: res.data.name,

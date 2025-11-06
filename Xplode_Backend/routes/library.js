@@ -53,12 +53,11 @@ router.post("/add", verifyToken, async (req, res) => {
 
 router.post("/remove/:steamAppId", verifyToken, async (req, res) => {
 
-  console.log("route hit")
+
 
   try {
     const userId = req.user.id;
     const { steamAppId } = req.params;
-    console.log(steamAppId)
 
     // Delete the game
     const result = await librarys.findOneAndDelete({ 
@@ -85,7 +84,7 @@ router.post("/verify/:steamAppId", verifyToken, async (req, res) => {
     const userId = req.user.id;
     const { steamAppId } = req.params;
 
-    console.log("Verifying game:", steamAppId, "for user:", userId);
+
 
     // Update verified status to true
     const updatedGame = await librarys.findOneAndUpdate(
@@ -101,7 +100,6 @@ router.post("/verify/:steamAppId", verifyToken, async (req, res) => {
       });
     }
 
-    console.log("Game verified successfully:", updatedGame.name);
     
     res.status(200).json({ 
       message: "Game verified successfully", 
