@@ -17,10 +17,11 @@ const path = require("path");
 const app = express();
 
 const corsOptions = {
-  origin: process.env.CLIENT_ORIGIN ,
-  methods: "GET,POST,PUT,DELETE",
+  origin: "https://xplode-kappa.vercel.app", // <--- NO trailing slash!
   credentials: true,
+  // ...other options
 };
+app.use(cors(corsOptions));
 
 app.use(cors(corsOptions));
 
