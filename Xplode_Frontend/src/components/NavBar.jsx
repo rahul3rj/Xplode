@@ -12,7 +12,7 @@ const NavBar = ({ user, onShowProfile }) => {
   const [showWallet, setShowWallet] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
-  
+  console.log(user)
 
   const walletRef = useRef(null);
   const notificationRef = useRef(null);
