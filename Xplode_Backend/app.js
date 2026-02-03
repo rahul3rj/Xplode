@@ -16,12 +16,20 @@ const cookieParser = require("cookie-parser");
 const path = require("path");
 const app = express();
 
+const allowedOrigins = process.env.CLIENT_ORIGIN.split(",");
 const corsOptions = {
-  origin: "http://localhost:5173", 
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true, 
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+   methods: "GET,POST,PUT,DELETE",
 };
-
 app.use(cors(corsOptions));
 
 

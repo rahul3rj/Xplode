@@ -43,7 +43,7 @@ const MainLayout = () => {
           // console.log(res.data);
           const profilePic = res.data.profilePic
             ? `data:${res.data.profilePic.contentType};base64,${res.data.profilePic.data}`
-            : "/default.png";
+            : "/defaultprofile.jpg";
           setUser({ username: res.data.username || res.data.name, profilePic });
         })
         .catch((err) => console.error("Failed to fetch user data:", err));

@@ -12,14 +12,12 @@ const NavBar = ({ user, onShowProfile }) => {
   const [showWallet, setShowWallet] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
-  console.log(user)
-
+  
   const walletRef = useRef(null);
   const notificationRef = useRef(null);
 
   const walletButtonRef = useRef(null);
   const notificationButtonRef = useRef(null);
-
 
   const handleClickOutside = (event) => {
     if (
@@ -46,7 +44,7 @@ const NavBar = ({ user, onShowProfile }) => {
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside); 
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -62,15 +60,17 @@ const NavBar = ({ user, onShowProfile }) => {
       {/* Navbar */}
       <div className="h-[12svh] w-full bg-transparent flex justify-between items-center fixed top-0 left-0 z-50">
         <div className="h-[10svh] w-[50%] flex justify-between items-center">
-          <Link to={"/store"}
-          className=" flex justify-start items-center cursor-pointer">
+          <Link
+            to={"/store"}
+            className=" flex justify-start items-center cursor-pointer"
+          >
             <img
-            src="/LoginPage/Complete logo.png"
-            alt=""
-            className="ml-[1.8vw] "
-          />
+              src="/LoginPage/Complete logo.png"
+              alt=""
+              className="ml-[1.8vw] "
+            />
           </Link>
-          
+
           <div className="w-full h-[6svh] ml-[1.7vw]">
             <SearchBar
               query={query}
@@ -88,7 +88,6 @@ const NavBar = ({ user, onShowProfile }) => {
               setShowWallet(!showWallet); // Toggle between true/false
             }}
             ref={walletButtonRef}
-
           >
             <img
               src="../HomePage/Wallet.svg"
@@ -100,19 +99,16 @@ const NavBar = ({ user, onShowProfile }) => {
               src="../HomePage/Polygon 6.svg"
               alt=""
               className={`mr-4 h-[1.2svh] ${showWallet ? "rotate-180" : ""}`}
-
             />
           </div>
 
-          {showWallet && (
-            <Wallet ref={walletRef} />
-          )}
-          
-          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
-          onClick={() => {
-        
-            navigate("/library?filter=wishlist"); 
-          }}
+          {showWallet && <Wallet ref={walletRef} />}
+
+          <div
+            className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
+            onClick={() => {
+              navigate("/library?filter=wishlist");
+            }}
           >
             <img
               src="../HomePage/Heart.svg"
@@ -120,11 +116,12 @@ const NavBar = ({ user, onShowProfile }) => {
               className="h-[3svh] w-[3svh]"
             />
           </div>
-          <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
-          onClick={() => {
-            setShowNotification(!showNotification); // Toggle between true/false
-          }}
-          ref={notificationButtonRef}
+          <div
+            className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
+            onClick={() => {
+              setShowNotification(!showNotification); // Toggle between true/false
+            }}
+            ref={notificationButtonRef}
           >
             <img
               src="../HomePage/Doorbell.svg"
@@ -132,9 +129,7 @@ const NavBar = ({ user, onShowProfile }) => {
               className="h-[3svh] w-[3svh]"
             />
           </div>
-          {showNotification && (
-            <Notification ref={notificationRef} />
-          )}
+          {showNotification && <Notification ref={notificationRef} />}
 
           <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer">
             <img
@@ -143,10 +138,11 @@ const NavBar = ({ user, onShowProfile }) => {
               className="h-[3svh] w-[3svh]"
             />
           </div>
-          <div onClick={onShowProfile}
+          <div
+            onClick={onShowProfile}
             className="h-[5svh] w-[27%] flex justify-between items-center cursor-pointer"
           >
-            <div className="h-[5svh] w-[5svh] object-cover rounded-full border-2 border-[#A641FF] " >
+            <div className="h-[5svh] w-[5svh] object-cover rounded-full border-2 border-[#A641FF] ">
               <img
                 src={user.profilePic || "/defaultprofile.jpg"}
                 alt=""

@@ -14,7 +14,7 @@ const Login = () => {
 
   const handleGoogleRegister = () => {
     try {
-      window.location.href = "http://localhost:5000/auth/google";
+      window.location.href = `${import.meta.env.VITE_SERVER_ORIGIN}/auth/google` || "http://localhost:5000/auth/google";
     } catch (err) {
       console.error("Error registering with Google:", err);
     }
@@ -22,7 +22,7 @@ const Login = () => {
 
   const handleGoogle = () => {
     try {
-      window.location.href = "http://localhost:5000/auth/google";
+      window.location.href = `${import.meta.env.VITE_SERVER_ORIGIN}/auth/google` || "http://localhost:5000/auth/google";
     } catch (err) {
       console.error("Error logging in with Google:", err);
     }
@@ -183,7 +183,6 @@ const Login = () => {
 
             <PasswordInput password={password} setPassword={setPassword} />
 
-          
             <div className="h-[2%] w-[80%] lg:w-[45%] flex justify-center items-center mb-5">
               <div className="h-[1px] w-[10%] bg-[#8F8F8F]"></div>
               <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F] cursor-pointer mx-5">
@@ -214,7 +213,10 @@ const Login = () => {
               <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F]">
                 Don’t have an account ? &nbsp;
               </h4>
-              <h4  onClick={() => setActiveDiv("reg")} className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
+              <h4
+                onClick={() => setActiveDiv("reg")}
+                className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer"
+              >
                 Create Account!
               </h4>
             </div>
@@ -286,7 +288,10 @@ const Login = () => {
                 <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F]">
                   Already have an account ? &nbsp;
                 </h4>
-                <h4 onClick={() => setActiveDiv("signin")} className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
+                <h4
+                  onClick={() => setActiveDiv("signin")}
+                  className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer"
+                >
                   Login!
                 </h4>
               </div>
