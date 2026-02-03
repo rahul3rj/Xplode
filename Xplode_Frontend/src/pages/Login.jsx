@@ -14,7 +14,11 @@ const Login = () => {
 
   const handleGoogleRegister = () => {
     try {
-      window.location.href = `${import.meta.env.VITE_SERVER_ORIGIN}/auth/google` || "http://localhost:5000/auth/google";
+      const server =
+  import.meta.env.VITE_SERVER_ORIGIN || "http://localhost:5000";
+
+window.location.href = `${server}/auth/google`;
+
     } catch (err) {
       console.error("Error registering with Google:", err);
     }
@@ -22,7 +26,11 @@ const Login = () => {
 
   const handleGoogle = () => {
     try {
-      window.location.href = `${import.meta.env.VITE_SERVER_ORIGIN}/auth/google` || "http://localhost:5000/auth/google";
+    const server =
+  import.meta.env.VITE_SERVER_ORIGIN || "http://localhost:5000";
+
+window.location.href = `${server}/auth/google`;
+
     } catch (err) {
       console.error("Error logging in with Google:", err);
     }
