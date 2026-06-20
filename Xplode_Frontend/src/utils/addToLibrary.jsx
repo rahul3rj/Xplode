@@ -43,7 +43,7 @@ export const requireAuth = () => {
 
 export const addToFavorite = async (gameData) => {
   try {
-    const response = await axios.post("/favorite/add", gameData);
+    const response = await axios.post("/favorites/add", gameData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -52,7 +52,7 @@ export const addToFavorite = async (gameData) => {
 
 export const getUserFavorite = async () => {
   try {
-    const response = await axios.get("/favorite");
+    const response = await axios.get("/favorites");
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -61,7 +61,7 @@ export const getUserFavorite = async () => {
 
 export const removeFromFavorite = async (steamAppId) => {
   try {
-    const response = await axios.post(`/favorite/remove/${steamAppId}`);
+    const response = await axios.post(`/favorites/remove/${steamAppId}`);
     return response.data; // axios automatically parses JSON
   } catch (error) {
     console.error('Remove from Favorite error:', error);

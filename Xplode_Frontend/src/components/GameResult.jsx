@@ -24,7 +24,7 @@ const GameResult = ({ game }) => {
   const fetchReactionData = async () => {
     try {
       const gameAppId = game.steam_appid || appid;
-      const response = await axios.get(`/reaction/${gameAppId}/stats`);
+      const response = await axios.get(`/reactions/${gameAppId}/stats`);
       setLikeStats(response.data);
     } catch (error) {
       console.error("Error fetching reaction stats:", error);

@@ -62,7 +62,7 @@ const DetailsPage = () => {
     setLoadingReaction(true);
     try {
       const response = await axios.post(
-        `/reaction/${appid}/reaction`,
+        `/reactions/${appid}/reaction`,
         {
           reaction: reactionType,
         },
@@ -74,7 +74,7 @@ const DetailsPage = () => {
       setUserReaction(response.data.reaction);
 
       // Update stats
-      const statsResponse = await axios.get(`reaction/${appid}/stats`);
+      const statsResponse = await axios.get(`/reactions/${appid}/stats`);
       setLikeStats(statsResponse.data);
     } catch (error) {
       console.error("Reaction error:", error);
@@ -87,13 +87,13 @@ const DetailsPage = () => {
   const fetchReactionData = async () => {
     try {
       // Fetch stats (public)
-      const statsResponse = await axios.get(`/reaction/${appid}/stats`);
+      const statsResponse = await axios.get(`/reactions/${appid}/stats`);
       setLikeStats(statsResponse.data);
 
       // Fetch user reaction (if logged in)
       if (requireAuth()) {
         const reactionResponse = await axios.get(
-          `/reaction/${appid}/my-reaction`,
+          `/reactions/${appid}/my-reaction`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,

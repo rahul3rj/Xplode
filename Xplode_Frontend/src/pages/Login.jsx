@@ -17,7 +17,7 @@ const Login = () => {
       const server =
   import.meta.env.VITE_SERVER_ORIGIN || "http://localhost:5000";
 
-window.location.href = `${server}/auth/google`;
+window.location.href = `${server}/api/auth/google`;
 
     } catch (err) {
       console.error("Error registering with Google:", err);
@@ -29,7 +29,7 @@ window.location.href = `${server}/auth/google`;
     const server =
   import.meta.env.VITE_SERVER_ORIGIN || "http://localhost:5000";
 
-window.location.href = `${server}/auth/google`;
+window.location.href = `${server}/api/auth/google`;
 
     } catch (err) {
       console.error("Error logging in with Google:", err);
@@ -53,7 +53,7 @@ window.location.href = `${server}/auth/google`;
         return;
       }
       try {
-        const res = await axios.post("/user/send-otp", { email });
+        const res = await axios.post("/users/send-otp", { email });
 
         if (res.data.success) {
           alert(res.data.message);
@@ -74,7 +74,7 @@ window.location.href = `${server}/auth/google`;
         return;
       }
       try {
-        const res = await axios.post("/user/verify-otp", {
+        const res = await axios.post("/users/verify-otp", {
           email,
           otp,
           name,
@@ -100,7 +100,7 @@ window.location.href = `${server}/auth/google`;
     }
 
     try {
-      const res = await axios.post("/user/login", { email, password });
+      const res = await axios.post("/users/login", { email, password });
 
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);

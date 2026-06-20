@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { userModel, validateUser } = require("../models/user");
+const { userModel} = require("../models/user");
 const OTP = require("../models/otp");
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
@@ -86,6 +86,7 @@ router.post("/send-otp", async (req, res) => {
 
 router.post("/verify-otp", async (req, res) => {
   const { email, otp, name, password } = req.body;
+
 
   try {
     const otpEntry = await OTP.findOne({ email });

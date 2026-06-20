@@ -13,7 +13,7 @@ import Library from "./pages/Library";
 import Community from "./pages/Community";
 import Settings from "./pages/Settings";
 import SideNav from "./components/SideNav";
-import axios from "axios";
+import axios from "./utils/axios";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "./MainLayout";
@@ -66,7 +66,7 @@ const App = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.get("/user/logout", { withCredentials: true });
+      await axios.get("/users/logout", { withCredentials: true });
       localStorage.removeItem("token");
       navigate("/");
     } catch (error) {

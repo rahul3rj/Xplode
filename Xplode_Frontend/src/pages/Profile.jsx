@@ -27,7 +27,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const handleLogout = async () => {
     try {
-      await axios.get("/user/logout", { withCredentials: true });
+      await axios.get("/users/logout", { withCredentials: true });
       localStorage.removeItem("token");
       navigate("/");
     } catch (error) {

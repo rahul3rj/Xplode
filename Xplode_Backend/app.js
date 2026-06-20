@@ -53,15 +53,15 @@ app.use(cookieParser());
 
 
 app.use("/" , indexRouter)
-app.use("/auth" , authRouter)
-app.use("/user" , userRouter)
-app.use("/profile" , profileRouter)
-app.use("/games" , gamesRouter)
-app.use("/vault", vaultRouter);
-app.use("/library", libraryRouter);
-app.use("/favorite", favoriteRouter);
-app.use("/reaction", likeDislikeRouter);
-app.use("/community", communityRouter);
+app.use("/api/auth" , authRouter)
+app.use("/api/users" , userRouter)
+app.use("/api/profile" , profileRouter)
+app.use("/api/games" , gamesRouter)
+app.use("/api/vault", vaultRouter);
+app.use("/api/library", libraryRouter);
+app.use("/api/favorites", favoriteRouter);
+app.use("/api/reactions", likeDislikeRouter);
+app.use("/api/community", communityRouter);
 
 
 
