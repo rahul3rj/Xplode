@@ -1,26 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "../utils/axios";
 import { useNavigate, Link } from "react-router-dom";
-import NavBar from "../components/NavBar";
-import SideNav from "../components/SideNav";
-import Store from "../pages/Store";
-import Library from "../pages/Library";
-import Community from "../pages/Community";
-import Settings from "../pages/Settings";
 
 const Home = () => {
-  const [user, setUser] = useState({ username: "", profilePic: null });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [games, setGames] = useState([]);
-  const [activePage, setActivePage] = useState("store");
   const navigate = useNavigate();
 
   const fetchGames = async (page = 1) => {
     try {
       setIsLoading(true);
       const response = await axios.post(`/games/fetch?page=${page}&limit=200`);
-      console.log(response.data);
       setGames(response.data);
     } catch (err) {
       console.error("Failed to fetch games:", err);
@@ -52,31 +40,6 @@ const Home = () => {
         .catch((err) => console.error("Failed to fetch user data:", err));
     }
   }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await axios.get("/user/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  const renderPage = () => {
-    switch (activePage) {
-      case "store":
-        return <Store games={games} />;
-      case "library":
-        return <Library />;
-      case "community":
-        return <Community />;
-      case "settings":
-        return <Settings />;
-      default:
-        return <Store games={games} />;
-    }
-  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -120,13 +83,9 @@ const Home = () => {
 
   return (
     <div className="h-screen w-full relative bg-transparent">
-      <div className="relative sticky z-10">
-        <NavBar user={user} />
-        <SideNav handleLogout={handleLogout} setActivePage={setActivePage} activePage={activePage}  />
-        <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
+      {/* <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           {renderPage()}
-        </div>
-      </div>
+        </div> */}
       <div className="absolute bottom-0 left-0 w-full fixed z-0">
         <img
           src="../bg.svg"

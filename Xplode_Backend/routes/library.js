@@ -16,6 +16,7 @@ router.get("/", verifyToken, async (req, res) => {
 
 // routes/Library.js (continued from your existing code)
 router.post("/add", verifyToken, async (req, res) => {
+
   try {
     const userId = req.user.id;
     const { steam_appid, name, portrait_image, hero_image, developers, publishers, categories, movies } = req.body;
@@ -49,5 +50,71 @@ router.post("/add", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Failed to add game to library", error: err.message });
   }
 });
+
+router.post("/remove/:steamAppId", verifyToken, async (req, res) => {
+
+
+
+  try {
+    const userId = req.user.id;
+    const { steamAppId } = req.params;
+
+    // Delete the game
+    const result = await librarys.findOneAndDelete({ 
+      steam_appid: steamAppId, 
+      user: userId 
+    });
+    
+    if (!result) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+
+    // Explicitly JSON response bhejo
+    res.status(200).json({ message: "Game removed from library", success: true });
+  } catch (err) {
+    console.error("Error removing game:", err.message);
+    // Error mein bhi JSON response bhejo
+    res.status(500).json({ message: "Failed to remove game", error: err.message });
+  }
+});
+
+// Verify game route - POST method
+router.post("/verify/:steamAppId", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { steamAppId } = req.params;
+
+
+
+    // Update verified status to true
+    const updatedGame = await librarys.findOneAndUpdate(
+      { steam_appid: steamAppId, user: userId },
+      { verified: true },
+      { new: true }
+    );
+
+    if (!updatedGame) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Game not found in your library" 
+      });
+    }
+
+    
+    res.status(200).json({ 
+      message: "Game verified successfully", 
+      game: updatedGame,
+      success: true
+    });
+  } catch (err) {
+    console.error("Error verifying game:", err.message);
+    res.status(500).json({ 
+      message: "Failed to verify game", 
+      error: err.message,
+      success: false
+    });
+  }
+});
+
 
 module.exports = router;

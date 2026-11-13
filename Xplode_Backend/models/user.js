@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const Joi = require("joi");
 
 const userSchema = mongoose.Schema(
   {
@@ -53,24 +52,6 @@ const userSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-const validateUser = (data) => {
-  const schema = Joi.object({
-    name: Joi.string().min(3).max(50).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string()
-      .min(6)
-      .pattern(new RegExp("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{6,}$"))
-      .required(),
-    phone: Joi.string()
-      .length(10)
-      .pattern(/^[0-9]+$/)
-      .required(),
-  });
-
-  return schema.validate(data);
-};
-
 module.exports = {
   userModel: mongoose.model("user", userSchema),
-  validateUser,
 };

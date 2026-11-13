@@ -1,4 +1,13 @@
 {
+  "name": "xplode-monorepo",
+  "private": true,
+  "workspaces": ["Xplode_Backend", "Xplode_Frontend"],
+  "main": "Xplode_Backend/app.js",
+  "scripts": {
+    "start": "node Xplode_Backend/app.js",
+    "backend": "npm start --prefix Xplode_Backend",
+    "frontend": "npm run start --prefix Xplode_Frontend"
+  },
   "dependencies": {
     "express-rate-limit": "^8.0.1",
     "fuse.js": "^7.1.0"

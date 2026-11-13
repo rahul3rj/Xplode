@@ -56,20 +56,23 @@ const SsSlider = ({ screenshots, movies }) => {
       const isLeft = position === combinedItems.length - 1;
 
       if (isCenter || isLeft || isRight) {
-        let xPosition, scale, opacity, zIndex;
+        let xPosition, yPosition, scale, opacity, zIndex;
 
         if (isCenter) {
           xPosition = 0;
+          yPosition = 0;
           scale = 1;
           opacity = 1;
         } else if (isRight) {
-          xPosition = 275; // right side
+          xPosition = 270; // right side
+          yPosition = 40;
           scale = 0.6;
-          opacity = 0.8;
+          opacity = 1;
         } else if (isLeft) {
-          xPosition = -275; // left side
+          xPosition = -270; // left side
+          yPosition = 40;
           scale = 0.6;
-          opacity = 0.8;
+          opacity = 1;
         }
 
         // Create timeline for this item
@@ -78,6 +81,7 @@ const SsSlider = ({ screenshots, movies }) => {
         // Position and scale animations
         tl.to(item, {
           x: xPosition,
+          y: yPosition,
           scale: scale,
           opacity: opacity,
           zIndex: isCenter ? 10 : 1,
@@ -123,17 +127,17 @@ const SsSlider = ({ screenshots, movies }) => {
             <div
               key={index}
               ref={(el) => (itemsRef.current[index] = el)}
-              className="absolute h-[35vh] w-[28vw] transition-all duration-300"
+              className="absolute h-[20vh] w-[23vw] transition-all duration-300"
               style={{
                 pointerEvents: position === 0 ? "auto" : "none",
                 display: isVisible ? "block" : "none",
               }}
             >
-              <div className="absolute inset-0 [clip-path:polygon(0%_0%,75%_0%,100%_25%,100%_100%,25%_100%,0%_75%)] bg-black/50 relative">
+              <div className="absolute inset-0 rounded-lg overflow-hidden bg-black/50 relative">
                 {/* Screenshot */}
                 {item.type === "screenshot" && (
                   <img
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover "
                     src={item.thumbnail}
                     alt={`Screenshot ${index + 1}`}
                   />
@@ -150,20 +154,13 @@ const SsSlider = ({ screenshots, movies }) => {
                     <div className="absolute inset-0 flex items-center justify-center">
                       <button
                         onClick={() => setActiveVideo(item)}
-                        className="bg-black/60 p-4 rounded-full text-white hover:scale-110 transition"
+                        className="bg-black/50 h-15 w-15 rounded-full text-white hover:scale-110 transition duration-300 ease-in-out cursor-pointer"
                       >
                         <i className="ri-play-fill text-3xl"></i>
                       </button>
                     </div>
                   </div>
                 )}
-                {/* Color bar */}
-                <div
-                  className="absolute w-[1vw] h-[15vh] bottom-0 right-0"
-                  style={{
-                    backgroundColor: position === 0 ? "#56179dff" : "#808080",
-                  }}
-                />
               </div>
             </div>
           );
@@ -171,8 +168,8 @@ const SsSlider = ({ screenshots, movies }) => {
       </div>
 
       {activeVideo && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-          <div className="relative w-[80%] h-[80%]">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative w-auto h-[60%]">
             <video className="w-full h-full object-contain" controls autoPlay>
               {activeVideo.webm && (
                 <source src={activeVideo.webm480} type="video/webm" />
@@ -182,7 +179,7 @@ const SsSlider = ({ screenshots, movies }) => {
             {/* Close button */}
             <button
               onClick={() => setActiveVideo(null)}
-              className="absolute top-2 right-2 bg-black/70 text-white rounded-full p-2 hover:bg-red-600"
+              className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-[#A641FF]/50 cursor-pointer transition-colors duration-300 ease-in-out"
             >
               ✕
             </button>
@@ -193,13 +190,13 @@ const SsSlider = ({ screenshots, movies }) => {
       {/* Navigation buttons */}
       <button
         onClick={() => goToSlide(-1)}
-        className="absolute left-2 md:left-10 cursor-pointer text-[#9D2117] scale-[150%] top-1/2 z-20 -translate-y-1/2 duration-300 p-2 rounded-full hover:scale-[200%] transition-transform w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-black"
+        className="absolute left-15 cursor-pointer text-white  top-2/3 z-20 -translate-y-1/2 duration-300 p-2 rounded-full hover:scale-[140%] transition-transform w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-black/50"
       >
         <i className="ri-arrow-left-s-line"></i>
       </button>
       <button
         onClick={() => goToSlide(1)}
-        className="absolute right-2 md:right-10 cursor-pointer text-[#9D2117] scale-[150%] top-1/2 z-20 -translate-y-1/2 duration-300 p-2 rounded-full hover:scale-[200%] transition-transform w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-black"
+        className="absolute right-15 cursor-pointer text-white  top-2/3 z-20 -translate-y-1/2 duration-300 p-2 rounded-full hover:scale-[140%] transition-transform w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-black/50"
       >
         <i className="ri-arrow-right-s-line"></i>
       </button>

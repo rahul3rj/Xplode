@@ -23,7 +23,6 @@ const HomeGameSchema = new mongoose.Schema({
       url: { type: String },
       thumb: { type: String },
     },],
-  // portrait_image: [{type: String, default: "/default-game-cover.jpg" }],
   hero_image: [
     {
       url: { type: String },
@@ -49,6 +48,11 @@ const HomeGameSchema = new mongoose.Schema({
       "trending",
       "top_games",
       "top_records",
+      "New_Releases",
+      "Try_these_also",
+      "RPG_Games",
+      "Online_Multiplayer_Games"
+
     ],
     required: true,
   },

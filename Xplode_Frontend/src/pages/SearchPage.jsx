@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import axios from "../utils/axios"
+import axios from "../utils/axios";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
@@ -12,17 +12,10 @@ import Footer from "../components/Footer";
 const SearchPage = () => {
   const [user, setUser] = useState({ username: "", profilePic: null });
   const [isLoading, setIsLoading] = useState(true);
+  const [activePage, setActivePage] = useState("store"); // <-- Add this line
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    try {
-      await axios.get("/user/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+  
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -72,8 +65,7 @@ const SearchPage = () => {
     <div className="">
       <div className="h-screen w-full relative bg-transparent">
         <div className="relative sticky z-10">
-          <NavBar user={user} />
-          <SideNav handleLogout={handleLogout} />
+          
           <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
             <SearchResults query={query} />
             <Footer />

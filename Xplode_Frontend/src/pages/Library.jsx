@@ -1,13 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom"; // Import useLocation
 import LibGames from "../components/LibGames";
 import LibDetails from "./LibDetails";
-import { getUserLibrary } from "../utils/addToLibrary";
+import {
+  getUserLibrary,
+  removeFromLibrary,
+  getUserFavorite,
+  removeFromFavorite,
+} from "../utils/addToLibrary";
 
 const Library = () => {
+  const location = useLocation(); // Get the current location
   const [gameList, setGameList] = useState(null);
   const [userGames, setUserGames] = useState([]);
+  const [userFavorites, setUserFavorites] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all"); // Added filter state
   const historyRef = useRef([]);
   // const games = [
   //   {
@@ -117,10 +127,82 @@ const Library = () => {
   //   },
   // ];
 
+  // create a combined list from library + favorites (keep info about both sources)
+  const combinedMap = new Map();
+  // add favorites first and mark as favorite
+  userFavorites.forEach((g) =>
+    combinedMap.set(g.steam_appid, { ...g, _isFavorite: true, _isLibrary: false })
+  );
+
+  // then add/merge library entries; if an entry exists in favorites, mark both
+  userGames.forEach((g) => {
+    const existing = combinedMap.get(g.steam_appid);
+    if (existing) {
+      // merge: library fields take precedence, but keep favorite flag
+      combinedMap.set(g.steam_appid, {
+        ...existing,
+        ...g,
+        _isLibrary: true,
+        _isFavorite: !!existing._isFavorite,
+      });
+    } else {
+      combinedMap.set(g.steam_appid, { ...g, _isLibrary: true, _isFavorite: false });
+    }
+  });
+
+  const combinedGames = Array.from(combinedMap.values());
+
+  const filteredGames = combinedGames
+    .filter((game) => {
+      if (activeFilter === "all") return true;
+      if (activeFilter === "installed") return !!game.verified;
+      if (activeFilter === "favorite") return !!game._isFavorite; // show favorites even if also in library
+      return true;
+    })
+    .filter((game) => game.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const handleDeleteGame = async (steamAppId, e) => {
+    e.stopPropagation();
+    // Determine whether the game exists in library or favorites
+    const inLibrary = userGames.some((g) => g.steam_appid === steamAppId);
+    const inFavorite = userFavorites.some((g) => g.steam_appid === steamAppId);
+
+    if (!inLibrary && !inFavorite) {
+      alert("Game not found in your lists");
+      return;
+    }
+
+    const confirmMsg = inLibrary
+      ? "Are you sure you want to remove this game from your library?"
+      : "Are you sure you want to remove this game from your favorites?";
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      if (inLibrary) {
+        await removeFromLibrary(steamAppId);
+        setUserGames((prev) => prev.filter((g) => g.steam_appid !== steamAppId));
+      } else if (inFavorite) {
+        await removeFromFavorite(steamAppId);
+        setUserFavorites((prev) => prev.filter((g) => g.steam_appid !== steamAppId));
+      }
+
+      // Close details if open
+      if (gameList === steamAppId) {
+        setGameList(null);
+      }
+
+      console.log("Game removed successfully!");
+    } catch (error) {
+      console.error("Failed to remove game:", error);
+      alert(error.message || "Failed to remove game");
+    }
+  };
   useEffect(() => {
     const fetchUserLibrary = async () => {
       try {
         const games = await getUserLibrary();
+        console.log("Fetched user library:", games);
         setUserGames(games);
       } catch (err) {
         console.error("Failed to fetch user library:", err);
@@ -130,7 +212,23 @@ const Library = () => {
       }
     };
 
-    fetchUserLibrary();
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
+        const [games, favorites] = await Promise.all([getUserLibrary(), getUserFavorite()]);
+        console.log("Fetched user library:", games);
+        console.log("Fetched user favorites:", favorites);
+        setUserGames(games || []);
+        setUserFavorites(favorites || []);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+        setError(err.message || "Failed to load your library/favorites");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
   }, []);
 
   useEffect(() => {
@@ -139,9 +237,19 @@ const Library = () => {
     }
   }, [gameList]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const filter = params.get("filter");
+    if (filter) {
+      // normalize common names
+      if (filter === "wishlist" || filter === "favorites") setActiveFilter("favorite");
+      else setActiveFilter(filter);
+    }
+  }, [location.search]);
+
   if (loading) {
     return (
-      <div className="h-[85vh] w-full flex items-center justify-center">
+      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10vw] flex justify-center items-center gap-5">
         <img src="../Preloader.svg" alt="loading" className="h-10" />
       </div>
     );
@@ -162,127 +270,177 @@ const Library = () => {
   }
 
   return (
-    <div className="h-auto w-full flex justify-center items-center gap-5">
-      <div className="h-[85vh] w-[70%] ">
-        <div className="h-[6vh] w-full flex justify-start items-center px-5">
-          <div className="h-[6vh] w-[14vh] flex items-center justify-center gap-2">
-            <div
-              className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-              onClick={() => setGameList(null)}
-            >
-              <i className="ri-arrow-left-s-line text-white text-xl"></i>
-            </div>
-            <div
-              className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-              onClick={() => {
-                if (historyRef.current.length > 0) {
-                  const lastGame = historyRef.current.pop();
-                  setGameList(lastGame);
-                }
-              }}
-            >
-              <i className="ri-arrow-right-s-line text-white text-xl"></i>
-            </div>
-          </div>
-          <div className="h-[6vh] w-[20vw] flex items-center justify-between ">
-            <div className="h-[6vh] w-auto flex items-center justify-center px-10">
-              <h3 className="text-white text-sm font-[gilroy-bold]">Library</h3>
-            </div>
-            <div className="h-[6vh] w-auto flex items-center justify-center px-10">
-              <h3 className="text-white text-sm font-[gilroy-bold]">
-                Whishlist
-              </h3>
-            </div>
-          </div>
-          <button className="h-[6vh] w-[10vw] flex items-center justify-center rounded-md bg-[#8800FF]/20 hover:bg-[#8800FF]/40 cursor-pointer gap-2 ml-10">
-            <i className="ri-add-line text-[#A641FF] text-xl"></i>
-            <h3 className="text-[#A641FF] text-sm font-[gilroy-bold]">
-              Add Game
-            </h3>
-          </button>
-        </div>
-        <div
-          className={`h-[5vh] w-full flex justify-between items-center transition-opacity duration-300 ${
-            gameList !== null ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          <h3 className="text-white text-sm font-[gilroy-bold] pl-10">
-            My Games
-          </h3>
-          <p className="text-[#696969] text-sm font-[gilroy] px-2">
-            ({userGames.length})
-          </p>
-          <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
-          <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
-        </div>
-
-        <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
-          {gameList === null ? (
-            <LibGames games={userGames} onSelect={setGameList} />
-          ) : (
-            <LibDetails
-              game={userGames.find((g) => g.steam_appid === gameList)}
-              onClose={() => setGameList(null)}
-            />
-          )}
-        </div>
-      </div>
-      <div className="h-[85vh] w-[25vw] mr-7 pt-10">
-        <div className="h-full w-full bg-[#8800FF]/20 rounded-lg">
-          <div className="h-[10vh] w-full flex justify-center items-center px-5">
-            <input
-              type="text"
-              placeholder="Search by name"
-              className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
-            />
-            <i className="ri-search-line text-[#A641FF] text-xl absolute right-15 z-10"></i>
-          </div>
-          <div className="h-[69vh] w-full flex flex-col justify-start items-start px-5 overflow-y-auto hide-scrollbar">
-            <h3 className="text-[#A641FF] text-sm font-[gilroy-bold] py-2">
-              All games
-            </h3>
-            {userGames.map((g) => (
+    <div className="absolute h-screen w-full z-30 overflow-y-auto hide-scrollbar">
+      <img
+        src="../bg.svg"
+        alt=""
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none saturate-140 -z-10"
+        style={{ zIndex: -10 }}
+      />
+      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10.5vw] flex justify-center items-center gap-5">
+        <div className="h-[85vh] w-[70%] ">
+          <div className="h-[6vh] w-full flex justify-start items-center px-5">
+            <div className="h-[6vh] w-[14vh] flex items-center justify-center gap-2">
               <div
-                className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
+                className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
+                onClick={() => setGameList(null)}
+              >
+                <i className="ri-arrow-left-s-line text-white text-xl"></i>
+              </div>
+              <div
+                className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
+                onClick={() => {
+                  if (historyRef.current.length > 0) {
+                    const lastGame = historyRef.current.pop();
+                    setGameList(lastGame);
+                  }
+                }}
+              >
+                <i className="ri-arrow-right-s-line text-white text-xl"></i>
+              </div>
+            </div>
+            <div className="h-[6vh] w-[30vw] flex items-center justify-between ml-5">
+              <div
+                className={`h-[6vh] w-auto flex items-center justify-center px-10 rounded-md cursor-pointer transition-colors ${
+                  activeFilter === "all"
+                    ? "bg-[#8800FF]/40"
+                    : "bg-transparent hover:bg-[#8800FF]/20"
+                }`}
+                onClick={() => setActiveFilter("all")}
+              >
+                <h3 className="text-white text-sm font-[gilroy-bold]">
+                  All Games
+                </h3>
+              </div>
+              <div
+                className={`h-[6vh] w-auto flex items-center justify-center px-10 rounded-md cursor-pointer transition-colors ${
+                  activeFilter === "installed"
+                    ? "bg-[#8800FF]/40"
+                    : "bg-transparent hover:bg-[#8800FF]/20"
+                }`}
+                onClick={() => setActiveFilter("installed")}
+              >
+                <h3 className="text-white text-sm font-[gilroy-bold]">
+                  Installed
+                </h3>
+              </div>
+              <button
+                className={`h-[6vh] w-[10vw] flex items-center justify-center rounded-md cursor-pointer transition-colors ${
+                  activeFilter === "favorite"
+                    ? "bg-[#8800FF]/40"
+                    : "bg-transparent hover:bg-[#8800FF]/20"
+                }`}
+                onClick={() => setActiveFilter("favorite")}
+              >
+                <h3 className="text-white text-sm font-[gilroy-bold]">
+                  Favorites
+                </h3>
+              </button>
+            </div>
+          </div>
+          <div
+            className={`h-[5vh] w-full flex justify-between items-center transition-opacity duration-300 ${
+              gameList !== null
+                ? "opacity-0 pointer-events-none"
+                : "opacity-100"
+            }`}
+          >
+            <h3 className="text-white text-sm font-[gilroy-bold] pl-10">
+              My Games
+            </h3>
+            <p className="text-[#696969] text-sm font-[gilroy] px-2">
+              ({filteredGames.length}) {/* ✅ Filtered count show karo */}
+            </p>
+            <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
+            <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
+          </div>
+
+          <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
+            {gameList === null ? (
+              <LibGames games={filteredGames} onSelect={setGameList} />
+            ) : (
+              <LibDetails
+                game={combinedGames.find((g) => g.steam_appid === gameList)}
+                onClose={() => setGameList(null)}
+              />
+            )}
+          </div>
+        </div>
+        <div className="h-[85vh] w-[25vw] mr-7 pt-10">
+          <div className="h-full w-full bg-[#8800FF]/20 rounded-lg">
+            <div className="h-[10vh] w-full flex justify-center items-center px-5">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name"
+                className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
+              />
+              <i className="ri-search-line text-[#A641FF] text-xl absolute right-15 z-10"></i>
+            </div>
+            <div className="h-[69vh] w-full flex flex-col justify-start items-start px-5 overflow-y-auto hide-scrollbar">
+              <h3 className="text-[#A641FF] text-sm font-[gilroy-bold] py-2">
+                All games {searchTerm && `- Searching: "${searchTerm}"`}
+              </h3>
+              {filteredGames.map((g) => (
+                <div
+                  className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
                 ${
                   gameList === g.steam_appid
                     ? "bg-[#A641FF]/30"
                     : "hover:bg-[#A641FF]/10"
                 }`}
-                onClick={() =>
-                  setGameList((prev) =>
-                    prev === g.steam_appid ? null : g.steam_appid
-                  )
-                }
-              >
-                <div className="h-[6vh] w-[80%] flex justify-start items-center gap-5 px-5">
-                  <div className="h-[5vh] w-[5vh]  rounded-full overflow-hidden flex justify-center items-center ">
-                    <img
-                      className="w-full h-full object-cover"
-                      src={
-                        g.portrait_image?.[0].thumb
-                          ? g.portrait_image[0].thumb
-                          : g.hero_image?.thumb
-                      }
-                      alt=""
-                    />
+                  onClick={() =>
+                    setGameList((prev) =>
+                      prev === g.steam_appid ? null : g.steam_appid
+                    )
+                  }
+                >
+                  <div className="h-[6vh] w-[80%] flex justify-start items-center gap-5 px-5">
+                    <div className="h-[5vh] w-[5vh]  rounded-full overflow-hidden flex justify-center items-center ">
+                      <img
+                        className="w-full h-full object-cover"
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.steam_appid}/library_600x900.jpg`}
+                        alt=""
+                      />
+                    </div>
+                    <h3 className="text-white text-xs font-[gilroy-bold] truncate">
+                      {g.name}
+                    </h3>
                   </div>
-                  <h3 className="text-white text-xs font-[gilroy-bold] truncate">
-                    {g.name}
-                  </h3>
+                  <button
+                    onClick={(e) => {
+                      console.log(g.steam_appid);
+                      handleDeleteGame(g.steam_appid, e);
+                    }}
+                    className="px-3 py-1 hover:bg-red-500/20 rounded-full transition-colors group cursor-pointer"
+                  >
+                    <i className="ri-delete-bin-fill text-white group-hover:text-red-400 text-md"></i>
+                  </button>
                 </div>
-                <i className="ri-play-fill text-white hover:text-[#A641FF] text-xl px-3 py-1"></i>
-              </div>
-            ))}
-            {userGames.length === 0 && (
-              <div className="h-full w-full flex flex-col items-center justify-center">
-                <i className="ri-gamepad-line text-[#A641FF] text-4xl mb-3"></i>
-                <p className="text-[#696969] text-sm text-center">
-                  Your library is empty. <br />
-                  Add games from the store to get started!
-                </p>
-              </div>
-            )}
+              ))}
+              {filteredGames.length === 0 && searchTerm && (
+                <div className="h-full w-full flex flex-col items-center justify-center">
+                  <i className="ri-search-line text-[#A641FF] text-4xl mb-3"></i>{" "}
+                  {/* Search icon better hai */}
+                  <p className="text-[#696969] text-sm text-center">
+                    No games found for "{searchTerm}"
+                    <br />
+                    Try a different search term
+                  </p>
+                </div>
+              )}
+
+              {filteredGames.length === 0 && !searchTerm && (
+                <div className="h-full w-full flex flex-col items-center justify-center">
+                  <i className="ri-gamepad-line text-[#A641FF] text-4xl mb-3"></i>
+                  <p className="text-[#696969] text-sm text-center">
+                    Your library is empty. <br />
+                    Add games from the store to get started!
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

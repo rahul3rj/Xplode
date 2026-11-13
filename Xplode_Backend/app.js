@@ -6,19 +6,30 @@ const userRouter = require("./routes/user");
 const gamesRouter = require("./routes/games");
 const vaultRouter = require("./routes/vault");
 const profileRouter = require("./routes/profile");
-const libraryRouter = require("./routes/Library");
+const libraryRouter = require("./routes/library");
+const favoriteRouter = require("./routes/favorites");
+const likeDislikeRouter = require("./routes/likeDislikeRoutes");
+const communityRouter = require("./routes/community");
 const passport = require("passport");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 const app = express();
 
+const allowedOrigins = process.env.CLIENT_ORIGIN.split(",");
 const corsOptions = {
-  origin: "http://localhost:5173", 
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true, 
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+   methods: "GET,POST,PUT,DELETE",
 };
-
 app.use(cors(corsOptions));
 
 
@@ -42,14 +53,16 @@ app.use(cookieParser());
 
 
 app.use("/" , indexRouter)
-app.use("/auth" , authRouter)
-app.use("/user" , userRouter)
-app.use("/profile" , profileRouter)
-app.use("/games" , gamesRouter)
-app.use("/vault", vaultRouter);
-app.use("/library", libraryRouter);
+app.use("/api/auth" , authRouter)
+app.use("/api/users" , userRouter)
+app.use("/api/profile" , profileRouter)
+app.use("/api/games" , gamesRouter)
+app.use("/api/vault", vaultRouter);
+app.use("/api/library", libraryRouter);
+app.use("/api/favorites", favoriteRouter);
+app.use("/api/reactions", likeDislikeRouter);
+app.use("/api/community", communityRouter);
 
-// app.use("/recent", recentRouter);
 
 
 

@@ -14,7 +14,11 @@ const Login = () => {
 
   const handleGoogleRegister = () => {
     try {
-      window.location.href = "http://localhost:5000/auth/google";
+      const server =
+  import.meta.env.VITE_SERVER_ORIGIN || "http://localhost:5000";
+
+window.location.href = `${server}/api/auth/google`;
+
     } catch (err) {
       console.error("Error registering with Google:", err);
     }
@@ -22,7 +26,11 @@ const Login = () => {
 
   const handleGoogle = () => {
     try {
-      window.location.href = "http://localhost:5000/auth/google";
+    const server =
+  import.meta.env.VITE_SERVER_ORIGIN || "http://localhost:5000";
+
+window.location.href = `${server}/api/auth/google`;
+
     } catch (err) {
       console.error("Error logging in with Google:", err);
     }
@@ -34,7 +42,7 @@ const Login = () => {
 
     if (token) {
       localStorage.setItem("token", token);
-      navigate("/home");
+      navigate("/store");
     }
   }, [navigate]);
 
@@ -45,8 +53,8 @@ const Login = () => {
         return;
       }
       try {
-        const res = await axios.post("/user/send-otp", { email });
-        console.log("Response from backend:", res.data);
+        const res = await axios.post("/users/send-otp", { email });
+
         if (res.data.success) {
           alert(res.data.message);
           setStep(2);
@@ -66,7 +74,7 @@ const Login = () => {
         return;
       }
       try {
-        const res = await axios.post("/user/verify-otp", {
+        const res = await axios.post("/users/verify-otp", {
           email,
           otp,
           name,
@@ -92,11 +100,11 @@ const Login = () => {
     }
 
     try {
-      const res = await axios.post("/user/login", { email, password });
+      const res = await axios.post("/users/login", { email, password });
 
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
-        navigate("/home");
+        navigate("/store");
       } else {
         alert(res.data.message || "Login failed. Please try again.");
       }
@@ -112,7 +120,7 @@ const Login = () => {
     <div className="h-screen w-full bg-black flex relative overflow-hidden">
       <div>
         <div className="flex justify-center items-center absolute z-100 bottom-10 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <button
+          {/* <button
             onClick={() => setActiveDiv("signin")}
             className={`text-white pt-3 pr-6 pl-6 rounded-full mx-3 backdrop-blur-md shadow-lg ${
               activeDiv === "signin"
@@ -141,7 +149,7 @@ const Login = () => {
                 <div className="w-4 h-0.5 bg-white mt-2 rounded"></div>
               )}
             </div>
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -178,12 +186,11 @@ const Login = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-[5%] w-[80%] lg:w-[45%] py-1 rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+              className="h-[5%] w-[80%] lg:w-[45%] py-1 rounded-lg bg-black text-white px-4 outline-none border border-gray-700  transition-all mb-5"
             />
 
             <PasswordInput password={password} setPassword={setPassword} />
 
-          
             <div className="h-[2%] w-[80%] lg:w-[45%] flex justify-center items-center mb-5">
               <div className="h-[1px] w-[10%] bg-[#8F8F8F]"></div>
               <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F] cursor-pointer mx-5">
@@ -214,7 +221,10 @@ const Login = () => {
               <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F]">
                 Don’t have an account ? &nbsp;
               </h4>
-              <h4  onClick={() => setActiveDiv("reg")} className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
+              <h4
+                onClick={() => setActiveDiv("reg")}
+                className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer"
+              >
                 Create Account!
               </h4>
             </div>
@@ -238,7 +248,7 @@ const Login = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={step === 2}
-                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700  transition-all mb-5"
               />
               <input
                 type="email"
@@ -246,7 +256,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={step === 2}
-                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700 focus:border-white transition-all mb-5"
+                className="w-[80%] lg:w-[45%] h-[5%] rounded-lg bg-black text-white px-4 outline-none border border-gray-700  transition-all mb-5"
               />
               <PasswordInput password={password} setPassword={setPassword} />
 
@@ -286,7 +296,10 @@ const Login = () => {
                 <h4 className="font-[gilroy-bold] text-sm text-[#8F8F8F]">
                   Already have an account ? &nbsp;
                 </h4>
-                <h4 onClick={() => setActiveDiv("signin")} className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer">
+                <h4
+                  onClick={() => setActiveDiv("signin")}
+                  className="font-[gilroy-bold] text-sm text-[#D5A4FF] cursor-pointer"
+                >
                   Login!
                 </h4>
               </div>

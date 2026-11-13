@@ -26,11 +26,7 @@ const LibGames = ({ games, onSelect }) => {
         >
           {/* Shadow behind card */}
           <img
-            src={
-              game.portrait_image?.[0]?.thumb
-                ? game.portrait_image[0].thumb
-                : game.hero_image?.thumb
-            }
+            src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/library_600x900.jpg`}
             alt={game.name}
             className="absolute top-0 left-0 w-full h-full object-cover blur-lg scale-95 group-hover:scale-100 opacity-0 group-hover:opacity-80 rounded-xl transition-all ease-in-out duration-400"
           />
@@ -38,11 +34,7 @@ const LibGames = ({ games, onSelect }) => {
           {/* Actual Card */}
           <div className="relative h-full w-full overflow-hidden rounded-sm transition duration-400 ease-in-out group-hover:scale-106">
             <img
-              src={
-                game.portrait_image?.[0].thumb
-                  ? game.portrait_image[0].thumb
-                  : game.hero_image?.thumb
-              }
+              src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/library_600x900.jpg`}
               alt={game.name}
               className="w-full h-full object-cover relative z-10 "
             />

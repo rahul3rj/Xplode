@@ -2,6 +2,7 @@ import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
+import { useNavigate } from "react-router-dom";
 
 const categories = [
   {
@@ -47,6 +48,16 @@ const categories = [
 ];
 
 const Category = () => {
+    const navigate = useNavigate();
+
+  const handleClick = (tag) => {
+    navigate("/search", {
+      state: {
+        initialTags: [tag],
+      },
+    });
+  };
+
   return (
     <>
       <div className="h-[35svh] w-full flex flex-col justify-center items-center relative">
@@ -68,18 +79,20 @@ const Category = () => {
         />
         <Swiper
           modules={[Navigation]}
-          slidesPerView={5}
-          spaceBetween={110}
+          slidesPerView={6}
+          spaceBetween={60}
           loop={true}
           navigation={{
             nextEl: ".category-swiper-next ",
             prevEl: ".category-swiper-prev",
           }}
-          className="w-[70vw] flex justify-center items-center cursor-pointer"
+          className="w-[75vw] flex justify-center items-center "
         >
           {categories.map((cat, idx) => (
-            <SwiperSlide key={idx} className="flex justify-center items-center">
-              <div className="w-[20svh] h-[20svh] bg-transparent rounded-lg flex items-center justify-center text-xl font-bold relative">
+            <SwiperSlide onClick={() => handleClick(cat.name)} key={idx} className="flex justify-center cursor-pointer items-center">
+              <div
+                className="w-[20svh] h-[20svh] bg-transparent rounded-lg flex items-center justify-center text-xl font-bold relative"
+              >
                 <img
                   src={`${cat.image}`}
                   alt=""

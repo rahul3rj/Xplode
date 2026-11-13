@@ -33,16 +33,6 @@ const Details = () => {
     }
   }, [navigate]);
 
-  const handleLogout = async () => {
-    try {
-      await axios.get("/user/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -73,7 +63,7 @@ const Details = () => {
         navigate("/login");
       } finally {
         setIsLoading(false);
-      }
+      } 
     };
 
     if (!token) {
@@ -83,12 +73,11 @@ const Details = () => {
     }
   }, [navigate]);
 
-  const { appid } = useParams();
   return (
     <div className="h-screen w-full relative bg-transparent">
       <div className="relative sticky z-10">
-        <NavBar user={user} />
-        <SideNav handleLogout={handleLogout} />
+        {/* <NavBar user={user} />
+        <SideNav handleLogout={handleLogout} /> */}
         <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
           <DetailsPage />
         </div>

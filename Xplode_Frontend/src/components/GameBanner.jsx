@@ -28,7 +28,7 @@ const GameBanner = ({ games }) => {
   return (
     <div className="h-[47svh] w-[87vw] flex gap-3 ">
       {games.map((game, idx) => {
-        console.log(game)
+    
         return (
           <Link
             key={`${game.steam_appid}`}
@@ -43,6 +43,7 @@ const GameBanner = ({ games }) => {
               price={game.price || "Free"}
               genres={game.genres}
               isActive={activeIndex === idx}
+              appid={game.steam_appid}
             />
           </Link>
         );

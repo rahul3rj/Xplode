@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { userModel, validateUser } = require("../models/user");
+const { userModel} = require("../models/user");
 const OTP = require("../models/otp");
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
@@ -38,8 +38,6 @@ catch(err){
   console.error(err);
   res.status(500).json({ success: false,   message: "Invalid Credentials" });
 }
-
-  
 });
 
 router.post("/send-otp", async (req, res) => {
@@ -61,7 +59,7 @@ router.post("/send-otp", async (req, res) => {
   try {
     const existingUser = await userModel.findOne({email})
     if(existingUser){
-      console.log(existingUser)
+      // console.log(existingUser)
       return res.status(400).json({ success: false, message: "User already registered" });
     }
     await OTP.findOneAndUpdate(
@@ -88,6 +86,7 @@ router.post("/send-otp", async (req, res) => {
 
 router.post("/verify-otp", async (req, res) => {
   const { email, otp, name, password } = req.body;
+
 
   try {
     const otpEntry = await OTP.findOne({ email });
@@ -119,48 +118,45 @@ router.post("/verify-otp", async (req, res) => {
 });
 
 
+// router.post("/register", async (req, res) => {
+//   const { email , name ,password} = req.body;
+
+//   if (!email ||!name || !password) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Email and name required!",
+//     });
+//   }
+
+//   try {
+//     let user = await userModel.findOne({ email });
+//     if (user) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "User already registered!" });
+//     }
+
+//     const salt = await bcrypt.genSalt(10)
+//     const hashedPassword = await bcrypt.hash(password, salt)
+
+//     user = new userModel({ email ,name , password:hashedPassword});
+//     await user.save();
 
 
-router.post("/register", async (req, res) => {
-  const { email , name ,password} = req.body;
-
-  if (!email ||!name || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Email and name required!",
-    });
-  }
-
-  try {
-    
-
-    let user = await userModel.findOne({ email });
-    if (user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already registered!" });
-    }
-
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
-
-    user = new userModel({ email ,name , password:hashedPassword});
-    await user.save();
+//     const token = jwt.sign({ id: user._id, email: user.email ,name: user.name }, process.env.JWT_KEY, { expiresIn: "1h" });
 
 
-    const token = jwt.sign({ id: user._id, email: user.email ,name: user.name }, process.env.JWT_KEY, { expiresIn: "1h" });
+//     res.json({
+//       success: true,
+//       message: "User registered successfully!",
+//       token,
+//     });
 
-
-    res.json({
-      success: true,
-      message: "User registered successfully!",
-      token,
-    });
-  } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ success: false, message: "Error registering user" });
-  }
-});
+//   } catch (error) {
+//     console.error("Registration error:", error);
+//     res.status(500).json({ success: false, message: "Error registering user" });
+//   }
+// });
 
 router.get("/logout", (req, res) => {
   res.clearCookie("token");

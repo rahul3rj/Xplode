@@ -22,7 +22,8 @@ const LibrarySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
-  }
+  },
+  verified: { type: Boolean, default: false },
 });
 
 // Create compound index to ensure each user can only have a game once

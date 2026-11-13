@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import GameResult from "../components/GameResult";
+import { useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import axios from "../utils/axios";
 
@@ -10,10 +11,20 @@ const SearchResults = ({ query }) => {
   const [showGenre, setshowGenre] = useState(true);
   const [showPublisher, setshowPublisher] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearchingByTags, setIsSearchingByTags] = useState(false);
   const [exactMatches, setExactMatches] = useState([]); // ✅ Exact matches ko alag se store karo
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedGenres, setExpandedGenres] = useState(false);
+  const [expandedPublishers, setExpandedPublishers] = useState(false);
 
-  
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.initialTags) {
+      setTags(location.state.initialTags);
+    }
+  }, [location]);
+
   const GAMES_PER_PAGE = 10;
 
   // Sample game data
@@ -110,67 +121,100 @@ const SearchResults = ({ query }) => {
   //   },
   // ];
 
-useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (!query) return;
+  const fetchSearchResults = async () => {
+    if (!query) return;
 
-      setIsLoading(true);
-      try {
-        // First fetch exact matches
-        const exactResponse = await axios.get(
-          `/games/search?q=${encodeURIComponent(query)}`
-        );
-        const exactMatchesData = exactResponse.data.map((game) => ({
-          ...game,
-          matchType: "Exact match",
-        }));
-        
-        setExactMatches(exactMatchesData); // ✅ Exact matches alag se store karo
+    setIsLoading(true);
+    try {
+      // First fetch exact matches
+      const exactResponse = await axios.get(
+        `/games/search?q=${encodeURIComponent(query)}`
+      );
+      const exactMatchesData = exactResponse.data.map((game) => ({
+        ...game,
+        matchType: "Exact match",
+      }));
 
-        // Then fetch related games based on genres of exact matches
-        let relatedGames = [];
-        if (exactMatchesData.length > 0) {
-          // Get all unique genres from exact matches
-          const allGenres = [
-            ...new Set(exactMatchesData.flatMap((game) => game.genres || [])),
-          ];
+      setExactMatches(exactMatchesData); // ✅ Exact matches alag se store karo
 
-          if (allGenres.length > 0) {
-            // Fetch games with similar genres (excluding exact matches)
-            const genreQuery = allGenres.slice(0, 3).join(",");
-            const relatedResponse = await axios.get(
-              `/games/search/by-genres?genres=${genreQuery}&limit=20`
-            );
+      // Then fetch related games based on genres of exact matches
+      let relatedGames = [];
+      if (exactMatchesData.length > 0) {
+        // Get all unique genres from exact matches
+        const allGenres = [
+          ...new Set(exactMatchesData.flatMap((game) => game.genres || [])),
+        ];
 
-            // Filter out exact matches and add match type
-            relatedGames = relatedResponse.data
-              .filter(
-                (relatedGame) =>
-                  !exactMatchesData.some(
-                    (exactGame) => exactGame.appid === relatedGame.appid
-                  )
-              )
-              .map((game) => ({
-                ...game,
-                matchType: "Related",
-              }));
-          }
+        if (allGenres.length > 0) {
+          // Fetch games with similar genres (excluding exact matches)
+          const genreQuery = allGenres.slice(0, 3).join(",");
+          const relatedResponse = await axios.get(
+            `/games/search/by-genres?genres=${genreQuery}&limit=20`
+          );
+
+          // Filter out exact matches and add match type
+          relatedGames = relatedResponse.data
+            .filter(
+              (relatedGame) =>
+                !exactMatchesData.some(
+                  (exactGame) => exactGame.appid === relatedGame.appid
+                )
+            )
+            .map((game) => ({
+              ...game,
+              matchType: "Related",
+            }));
         }
-
-        // Combine exact matches and related games
-        const allResults = [...exactMatchesData, ...relatedGames];
-        setSearchResults(allResults);
-      } catch (error) {
-        console.error("Error fetching search results:", error);
-        setSearchResults([]);
-        setExactMatches([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
+      // Combine exact matches and related games
+      const allResults = [...exactMatchesData, ...relatedGames];
+      setSearchResults(allResults);
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+      setSearchResults([]);
+      setExactMatches([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchSearchResults();
   }, [query]);
+
+  useEffect(() => {
+    if (tags.length > 0) {
+      searchByTags();
+    } else {
+      setIsSearchingByTags(false);
+      // Original search restore karo agar tags empty hain
+      if (query) {
+        fetchSearchResults(query);
+      }
+    }
+  }, [tags]);
+
+  const searchByTags = async () => {
+    if (tags.length === 0) return;
+
+    setIsLoading(true);
+    setIsSearchingByTags(true);
+
+    try {
+      const tagQuery = tags.join(",");
+      const response = await axios.get(
+        `/games/search/advanced?tags=${tagQuery}&limit=30`
+      );
+
+      setSearchResults(response.data);
+      setActivePage(1); // Reset to first page
+    } catch (error) {
+      console.error("Error searching by tags:", error);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const totalPages = Math.ceil(searchResults.length / GAMES_PER_PAGE);
   const startIndex = (activePage - 1) * GAMES_PER_PAGE;
@@ -228,10 +272,14 @@ useEffect(() => {
     return pages;
   };
 
-const genreCounts = useMemo(() => {
+  const genreCounts = useMemo(() => {
     const counts = {};
 
-    exactMatches.forEach((game) => {
+    // ✅ Agar tags search ho raha hai to searchResults se calculate karo
+    // ✅ Agar normal search hai to exactMatches se calculate karo
+    const sourceData = isSearchingByTags ? searchResults : exactMatches;
+
+    sourceData.forEach((game) => {
       if (game.genres && Array.isArray(game.genres)) {
         game.genres.forEach((genre) => {
           counts[genre] = (counts[genre] || 0) + 1;
@@ -242,13 +290,15 @@ const genreCounts = useMemo(() => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [exactMatches]); 
-  
+  }, [isSearchingByTags ? searchResults : exactMatches]); // ✅ Dependency change
 
   const publisherCounts = useMemo(() => {
     const counts = {};
 
-    exactMatches.forEach((game) => {
+    // ✅ Same logic for publishers
+    const sourceData = isSearchingByTags ? searchResults : exactMatches;
+
+    sourceData.forEach((game) => {
       if (game.publishers && Array.isArray(game.publishers)) {
         game.publishers.forEach((publisher) => {
           counts[publisher] = (counts[publisher] || 0) + 1;
@@ -261,7 +311,7 @@ const genreCounts = useMemo(() => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [exactMatches]); 
+  }, [isSearchingByTags ? searchResults : exactMatches]);
 
   // tag functions
   const addTag = () => {
@@ -286,16 +336,26 @@ const genreCounts = useMemo(() => {
     <div className="h-[290vh] w-full px-5 flex items-start justify-start gap-5 relative">
       <div className="h-full w-[70%] relative">
         <div className="h-[6vh] w-full flex items-center justify-start mb-3">
-          <div className="h-full w-[14vh] flex justify-center items-center gap-2">
+          {/* <div className="h-full w-[14vh] flex justify-center items-center gap-2">
             <div className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-black/40 cursor-pointer">
               <i className="ri-arrow-left-s-line text-white text-xl"></i>
             </div>
             <div className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-black/40 cursor-pointer">
               <i className="ri-arrow-right-s-line text-white text-xl"></i>
             </div>
-          </div>
-          <h2 className="text-white font-[gilroy-bold] text-xl mx-5">
-            Search results for "<span className="text-[#A641FF]">{query}</span>"
+          </div> */}
+          <h2 className="text-white font-[gilroy-bold] text-lg mx-3">
+            {isSearchingByTags ? (
+              <>
+                Searching by tags:{" "}
+                <span className="text-[#A641FF]">{tags.join(", ")}</span>
+              </>
+            ) : (
+              <>
+                Search results for "
+                <span className="text-[#A641FF]">{query}</span>"
+              </>
+            )}
           </h2>
         </div>
         <div className="h-auto w-full absolute z-30 overflow-y-auto hide-scrollbar">
@@ -311,66 +371,88 @@ const genreCounts = useMemo(() => {
         </div>
       </div>
       {/* Right section */}
-      <div className="h-[85vh] w-auto sticky top-0 z-10 right-7">
-        {/* Pagination */}
+      <div className="h-[85vh] w-[28%] sticky top-0 z-10 right-7">
+        {/* Pagination with ellipsis */}
         <div className="h-[6vh] w-full flex flex-col items-center justify-center">
           <div className="h-[4vh] w-full flex items-center justify-between">
             <button
               onClick={() => setActivePage((prev) => Math.max(1, prev - 1))}
-              className="text-white font-[gilroy-bold] px-4 py-0.5 rounded-sm bg-[#1E1E1E] cursor-pointer hover:bg-[#A641FF] "
+              disabled={activePage === 1}
+              className={`text-white font-[gilroy-bold] px-4 py-0.5 rounded-sm cursor-pointer ${
+                activePage === 1
+                  ? "bg-[#1E1E1E] cursor-not-allowed opacity-50"
+                  : "bg-[#A641FF] hover:bg-[#A641FF]/80"
+              }`}
             >
               Prev
             </button>
-            <div className="h-[4vh] w-[60%] flex justify-center items-center gap-2">
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="text-white font-[gilroy-bold]"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setActivePage(page)}
-                    className={`text-white font-[gilroy-bold] h-[4vh] w-[4vh] rounded-full cursor-pointer transition-colors ${
-                      activePage === page
-                        ? "bg-[#A641FF]"
-                        : "bg-[#1E1E1E] hover:bg-[#A641FF]/50"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
+
+            <div className="h-[4vh] w-[70%] flex justify-center items-center gap-2">
+              {/* First 5 pages */}
+              {[1, 2, 3, 4, 5].map((page) => (
+                <button
+                  key={page}
+                  onClick={() => {
+                    if (page <= totalPages) {
+                      setActivePage(page);
+                    }
+                  }}
+                  disabled={page > totalPages}
+                  className={`text-white font-[gilroy-bold] h-[4vh] w-[4vh] rounded-full cursor-pointer transition-colors flex items-center justify-center ${
+                    activePage === page
+                      ? "bg-[#A641FF]"
+                      : page > totalPages
+                      ? "bg-[#1E1E1E] cursor-not-allowed opacity-30"
+                      : "bg-[#1E1E1E] hover:bg-[#A641FF]/50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Ellipsis */}
+              <span className="text-white font-[gilroy-bold]">...</span>
+
+              {/* Last page (10) */}
+              <button
+                onClick={() => {
+                  if (10 <= totalPages) {
+                    setActivePage(10);
+                  }
+                }}
+                disabled={10 > totalPages}
+                className={`text-white font-[gilroy-bold] h-[4vh] w-[4vh] rounded-full cursor-pointer transition-colors flex items-center justify-center ${
+                  activePage === 10
+                    ? "bg-[#A641FF]"
+                    : 10 > totalPages
+                    ? "bg-[#1E1E1E] cursor-not-allowed opacity-30"
+                    : "bg-[#1E1E1E] hover:bg-[#A641FF]/50"
+                }`}
+              >
+                10
+              </button>
             </div>
+
             <button
               onClick={() =>
                 setActivePage((prev) => Math.min(totalPages, prev + 1))
               }
-              disabled={activePage === totalPages}
+              disabled={activePage === totalPages || totalPages === 0}
               className={`text-white font-[gilroy-bold] px-4 py-0.5 rounded-sm cursor-pointer ${
-                activePage === totalPages
-                  ? "bg-[#A641FF]/50 cursor-not-allowed"
+                activePage === totalPages || totalPages === 0
+                  ? "bg-[#1E1E1E] cursor-not-allowed opacity-50"
                   : "bg-[#A641FF] hover:bg-[#A641FF]/80"
               }`}
             >
               Next
             </button>
-
-            <div className="mt-2 text-white text-sm font-[gilroy]">
-              Showing {startIndex + 1}-
-              {Math.min(startIndex + GAMES_PER_PAGE, searchResults.length)} of{" "}
-              {searchResults.length} games
-            </div>
           </div>
         </div>
         {/* Tag search */}
         <div className="h-[76vh] w-full flex flex-col items-center justify-start bg-[#8800FF]/20 rounded-lg mt-5 overflow-auto hide-scrollbar ">
-          <div className="h-[30vh] w-full px-5 py-4 relative">
+          <div className="h-[27vh] w-full px-5 py-4 relative">
             <input
-              placeholder="Search for a tag..."
+              placeholder="Search by genre, publisher, platform..."
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -384,40 +466,54 @@ const genreCounts = useMemo(() => {
               <i className="ri-search-2-line text-[#A641FF] text-xl"></i>
             </div>
 
-            {/* Tags display */}
-            <div className="mt-4 h-[15vh] flex flex-wrap gap-3 overflow-auto hide-scrollbar">
-              {tags.length === 0 ? (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <img
-                    src="/Logo_short.svg"
-                    alt="Nothing here"
-                    className="w-16 h-16 opacity-50 mb-2"
-                  />
-                  <p className="text-white/60 text-sm font-[gilroy-bold]">
-                    Nothing here yet
-                  </p>
-                </div>
-              ) : (
-                tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="h-[6vh] flex items-center gap-2 bg-[#A641FF]/40 px-4 py-2 rounded-sm"
+            <div className="mt-4 h-[15vh] flex flex-col gap-3 overflow-auto hide-scrollbar">
+              {/* Clear button top pe rahega */}
+              {tags.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setTags([])}
+                    className="text-[#A641FF] text-sm font-[gilroy] hover:text-white px-3 py-1 rounded"
                   >
-                    <span className="text-white font-[gilroy-bold] text-sm">
-                      {tag}
-                    </span>
-                    <button onClick={() => removeTag(tag)}>
-                      <i className="ri-close-line w-4 h-4 text-white hover:text-red-800"></i>
-                    </button>
-                  </div>
-                ))
+                    Clear all tags
+                  </button>
+                </div>
               )}
+
+              {/* Tags display */}
+              <div className="flex flex-wrap gap-2">
+                {tags.length === 0 ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center">
+                    <img
+                      src="/Logo_short.svg"
+                      alt="Nothing here"
+                      className="w-16 h-16 opacity-50 mb-2"
+                    />
+                    <p className="text-white/60 text-sm font-[gilroy-bold]">
+                      Nothing here yet
+                    </p>
+                  </div>
+                ) : (
+                  tags.map((tag, index) => (
+                    <div
+                      key={index}
+                      className="h-[6vh] flex items-center gap-2 bg-[#A641FF]/20 px-4 py-2 rounded-full"
+                    >
+                      <span className="text-white font-[gilroy-bold] text-sm">
+                        {tag}
+                      </span>
+                      <button onClick={() => removeTag(tag)}>
+                        <i className="ri-close-line w-4 h-4 text-zinc-400 hover:scale-125 transition-transform duration-300 ease-in-out hover:text-white cursor-pointer"></i>
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-            <div className="h-[2px] w-full bg-[#A641FF] mt-3"></div>
+            {/* <div className="h-[2px] w-full bg-[#A641FF] mt-3"></div> */}
           </div>
-          <div className="h-auto w-full flex flex-col items-center justify-start px-5">
+          <div className="h-auto w-[90%] flex flex-col items-center justify-start px-5 py-2 bg-[#8800FF]/20 rounded-lg mt-5">
             <div
-              className="h-auto w-full flex items-center justify-between "
+              className="h-auto w-full flex items-center justify-between cursor-pointer"
               onClick={() => setshowGenre(!showGenre)}
             >
               <p className="text-white text-lg font-[gilroy-bold]">Genre</p>
@@ -430,24 +526,29 @@ const genreCounts = useMemo(() => {
 
             <div
               className={`${
-                showGenre ? "h-[25vh] opacity-100 mt-3" : "h-0 opacity-0"
-              } w-full mt-3 flex flex-col items-center gap-3 transition-all duration-300 overflow-hidden`}
+                showGenre
+                  ? expandedGenres
+                    ? "max-h-[50vh] opacity-100 mt-3" // ✅ Expanded height
+                    : "max-h-[25vh] opacity-100 mt-3" // ✅ Collapsed height
+                  : "max-h-0 opacity-0"
+              } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-y-auto hide-scrollbar`}
             >
-              {genreCounts.slice(0, 4).map((genre, index) => (
-                <div
-                  key={genre.name}
-                  className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm ${
-                    index % 2 === 0 ? "bg-[#A641FF]/50" : ""
-                  }`}
-                >
-                  <p className="text-white text-sm font-[gilroy-bold]">
-                    {genre.name}
-                  </p>
-                  <p className="text-white text-sm font-[gilroy-bold]">
-                    {genre.count}
-                  </p>
-                </div>
-              ))}
+              {genreCounts
+                .slice(0, expandedGenres ? genreCounts.length : 4) // ✅ Expand/collapse logic
+                .map((genre, index) => (
+                  <div
+                    key={genre.name}
+                    onClick={() => setTags([genre.name])}
+                    className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer`}
+                  >
+                    <p className="text-white text-xs font-[gilroy]">
+                      {genre.name}
+                    </p>
+                    <p className="text-white text-xs font-[gilroy]">
+                      {genre.count}
+                    </p>
+                  </div>
+                ))}
 
               {genreCounts.length > 4 && (
                 <div
@@ -456,14 +557,16 @@ const genreCounts = useMemo(() => {
                   } w-full flex justify-end items-center`}
                 >
                   <p
-                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer`}
+                    onClick={() => setExpandedGenres(!expandedGenres)} // ✅ Toggle expand/collapse
+                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer hover:text-white`}
                   >
-                    see more...
+                    {expandedGenres ? "see less..." : "see more..."}{" "}
+                    {/* ✅ Text change */}
                   </p>
                 </div>
               )}
             </div>
-            <div
+            {/* <div
               className={`${
                 showGenre ? "block h-[2vh] mt-3" : "hidden h-0"
               } w-full  flex justify-end items-center`}
@@ -473,17 +576,17 @@ const genreCounts = useMemo(() => {
               >
                 see more...
               </p>
-            </div>
+            </div> */}
 
-            <div
+            {/* <div
               className={`${
                 showGenre ? "mt-3" : "mt-0"
               } h-[2px] w-full bg-[#A641FF] mb-3`}
-            ></div>
+            ></div> */}
           </div>
-          <div className="h-auto w-full flex flex-col items-center justify-start px-5">
+          <div className="h-auto w-[90%] flex flex-col items-center justify-start px-5 py-2 bg-[#8800FF]/20 rounded-lg mt-4">
             <div
-              className="h-auto w-full flex items-center justify-between "
+              className="h-auto w-full flex items-center justify-between cursor-pointer"
               onClick={() => setshowPublisher(!showPublisher)}
             >
               <p className="text-white text-lg font-[gilroy-bold]">Publisher</p>
@@ -496,24 +599,29 @@ const genreCounts = useMemo(() => {
 
             <div
               className={`${
-                showPublisher ? "h-[25vh] opacity-100 mt-3" : "h-0 opacity-0"
-              } w-full mt-3 flex flex-col items-center gap-3 transition-all duration-300 overflow-hidden`}
+                showPublisher
+                  ? expandedPublishers
+                    ? "max-h-[50vh] opacity-100 mt-3" // ✅ Expanded height
+                    : "max-h-[25vh] opacity-100 mt-3" // ✅ Collapsed height
+                  : "max-h-0 opacity-0"
+              } w-full flex flex-col items-center gap-2 transition-all duration-300 overflow-y-auto hide-scrollbar`}
             >
-              {publisherCounts.slice(0, 4).map((publisher, index) => (
-                <div
-                  key={publisher.name}
-                  className={`h-[5vh] w-full flex items-center justify-between px-5 rounded-sm ${
-                    index % 2 === 0 ? "bg-[#A641FF]/50" : ""
-                  }`}
-                >
-                  <p className="text-white text-sm font-[gilroy-bold]">
-                    {publisher.name}
-                  </p>
-                  <p className="text-white text-sm font-[gilroy-bold]">
-                    {publisher.count}
-                  </p>
-                </div>
-              ))}
+              {publisherCounts
+                .slice(0, expandedPublishers ? publisherCounts.length : 4) // ✅ Expand/collapse logic
+                .map((publisher, index) => (
+                  <div
+                    key={publisher.name}
+                    onClick={() => setTags([publisher.name])}
+                    className="h-[5vh] w-full flex items-center justify-between px-5 rounded-sm bg-[#A641FF]/20 hover:bg-[#A641FF]/50 transition-colors duration-300 cursor-pointer"
+                  >
+                    <p className="text-white text-xs font-[gilroy]">
+                      {publisher.name}
+                    </p>
+                    <p className="text-white text-xs font-[gilroy]">
+                      {publisher.count}
+                    </p>
+                  </div>
+                ))}
 
               {publisherCounts.length > 4 && (
                 <div
@@ -522,14 +630,16 @@ const genreCounts = useMemo(() => {
                   } w-full flex justify-end items-center`}
                 >
                   <p
-                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer`}
+                    onClick={() => setExpandedPublishers(!expandedPublishers)} // ✅ Toggle expand/collapse
+                    className={`text-[#A641FF]/50 text-sm font-[gilroy] cursor-pointer hover:text-white`}
                   >
-                    see more...
+                    {expandedPublishers ? "see less..." : "see more..."}{" "}
+                    {/* ✅ Text change */}
                   </p>
                 </div>
               )}
             </div>
-            <div
+            {/* <div
               className={`${
                 showPublisher ? "block h-[2vh] mt-3" : "hidden h-0"
               } w-full  flex justify-end items-center`}
@@ -545,7 +655,7 @@ const genreCounts = useMemo(() => {
               className={`${
                 showPublisher ? "mt-3" : "mt-0"
               } h-[2px] w-full bg-[#A641FF] mb-3`}
-            ></div>
+            ></div> */}
           </div>
         </div>
       </div>
