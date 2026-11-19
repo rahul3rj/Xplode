@@ -11,7 +11,9 @@ import SearchPage from "./pages/SearchPage"; // Add this import
 import Store from "./pages/Store";
 import Library from "./pages/Library";
 import Community from "./pages/Community";
+import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
+import Launcher from "./pages/Launcher";
 import SideNav from "./components/SideNav";
 import axios from "./utils/axios";
 import { useState, useEffect } from "react";
@@ -135,10 +137,10 @@ const App = () => {
             <Route path="/home" element={<Home />} />
             <Route path="/store" element={<Store />} />
             <Route path="/library" element={<Library />} />
-            <Route path="/community/trigger" element={<Community />} />
-            <Route path="/community/:name" element={<Community />} />
-            <Route path="/community" element={<Community />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/community/*" element={<Community />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/launcher" element={<Launcher />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/game/:appid" element={<Details />} />
             <Route path="/search" element={<SearchPage />} />

@@ -1,148 +1,94 @@
-import React, { useState, useEffect } from "react";
-import NavBar from "../components/NavBar";
-import SideNav from "../components/SideNav";
-import ProfilePage from "../pages/ProfilePage";
-import CommunitySection from "../components/CommunitySection";
-import GameList from "../components/GameList";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, Gamepad2, Pencil, Users } from "lucide-react";
 import axios from "../utils/axios";
-import Footer from "../components/Footer";
-import { useNavigate } from "react-router-dom";
-import PreLoader from "../components/PreLoader";
+import { getUserLibrary } from "../utils/addToLibrary";
+import { libraryArtwork } from "../utils/libraryArtwork";
+import ArtworkImage from "../components/ArtworkImage";
+import LoadingIndicator from "../components/LoadingIndicator";
+import creatorSnapshots from "../data/liveCreatorsSnapshot.json";
+import streams from "../data/liveStreamDemo.json";
+import { getStreamFavoriteKey, isStreamFavorite, STREAM_FAVORITES_CHANGED } from "../utils/streamFavorites";
+import "./profile.css";
 
-
-const GameListTitle = ["Trending Games", "Top Games", "Top Records"];
-
-
-const Profile = () => {
-  const [activePage, setActivePage] = useState("store");
-  const [user, setUser] = useState({
-    name: "",
-    bannerPic: "",
-    username: "",
-    profilePic: null,
-    email: "",
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [games, setGames] = useState([]);
-  const navigate = useNavigate();
-  const handleLogout = async () => {
-    try {
-      await axios.get("/users/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  const fetchGames = async () => {
-    try {
-      const response = await axios.get("/games/home"); // assuming it's a GET now
-      setGames(response.data);
-    } catch (err) {
-      console.error("Failed to fetch games:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchGames(); 
-  }, []);
-
-  const trendingGames = games.filter((game) => game.category === "trending");
-  const topGames = games.filter((game) => game.category === "top_games");
-  const topRecordGames = games.filter(
-    (game) => game.category === "top_records"
-  );
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    const fetchUserData = async () => {
-      try {
-        setIsLoading(true);
-        const res = await axios.get("/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Cache-Control": "no-cache",
-          },
-        });
-
-        const profilePic = res.data.profilePic
-          ? `data:${res.data.profilePic.contentType};base64,${res.data.profilePic.data}`
-          : "/defaultprofile.jpg";
-        const bannerPic = res.data.bannerPic
-          ? `data:${res.data.bannerPic.contentType};base64,${res.data.bannerPic.data}`
-          : "/defaultbanner.jpg";
-
-        setUser({
-          name: res.data.name,
-          username: res.data.username || res.data.name,
-          profilePic,
-          bannerPic,
-          email: res.data.email,
-          about: res.data.about,
-        });
-      } catch (err) {
-        console.error(
-          "🔒 Auth Error:",
-          err.response?.data?.message || err.message
-        );
-        localStorage.removeItem("token");
-        navigate("/login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (!token) {
-      navigate("/login");
-    } else {
-      fetchUserData();
-    }
-  }, [navigate]);
- 
-  return (
-    <div className="h-[88vh] w-[90vw] ml-[10vw] mt-[12vh]  gap-5 relative bg-transparent">
-
-      {isLoading && (
-        <div className="fixed inset-0 z-[99] flex items-center justify-center bg-black/40">
-          <PreLoader />
-        </div>
-      )}
-      <div className="relative sticky z-10">
-        {/* <NavBar user={user} /> */}
-        {/* <SideNav handleLogout={handleLogout} setActivePage={setActivePage} activePage={activePage}/> */}
-        <div className="absolute  h-[88svh] w-[100%] z-30 overflow-y-auto hide-scrollbar">
-          <ProfilePage user={user} setUser={setUser} />
-          <CommunitySection />
-          {topGames.length > 0 && (
-            <GameList
-              games={topGames}
-              title={GameListTitle[1]}
-              nextClass="game-list-swiper-next-1"
-              prevClass="game-list-swiper-prev-1"
-            />
-          )}
-          {topRecordGames.length > 0 && (
-            <GameList
-              games={topRecordGames}
-              title={GameListTitle[2]}
-              nextClass="game-list-swiper-next-2"
-              prevClass="game-list-swiper-prev-2"
-            />
-          )}
-          <Footer />
-        </div>
-      </div>
-      <div className="absolute bottom-0 left-0 w-full fixed z-0">
-        <img
-          src="../bg.svg"
-          alt=""
-          className="w-full h-auto pointer-events-none select-none saturate-140"
-        />
-      </div>
-    </div>
-  );
+const imageSrc = (image, fallback) => {
+  if (typeof image === "string" && image) return image;
+  return image?.data && image?.contentType ? `data:${image.contentType};base64,${image.data}` : fallback;
 };
 
-export default Profile;
+function favoriteCreators() {
+  const favorites = new Map();
+  [...creatorSnapshots, ...streams].forEach((stream) => {
+    const key = getStreamFavoriteKey(stream);
+    if (!favorites.has(key) && isStreamFavorite(stream)) favorites.set(key, stream);
+  });
+  return [...favorites.values()];
+}
+
+function Homie({ stream }) {
+  const [failed, setFailed] = useState(false);
+  const platform = { youtube: "YouTube", twitch: "Twitch", kick: "Kick" }[stream.platform] || "YouTube";
+  return <Link className="profile-homie" to={`/community/live/${encodeURIComponent(stream.id)}`}>
+    <span className="profile-homie-avatar">{stream.avatarUrl && !failed ? <img src={stream.avatarUrl} alt="" loading="lazy" onError={() => setFailed(true)} /> : <span>{(stream.creator || "?").charAt(0).toUpperCase()}</span>}</span>
+    <span className="profile-homie-name">{stream.creator}</span><span className="profile-homie-platform">{platform}</span>
+  </Link>;
+}
+
+function LibraryCover({ game }) {
+  const sources = libraryArtwork(game);
+  const [index, setIndex] = useState(0);
+  return <Link className="profile-game" to="/library" aria-label={`View ${game.name || "game"} in library`}>
+    <span className="profile-game-cover"><ArtworkImage src={sources[index]} alt="" loading="lazy" onError={() => setIndex((current) => Math.min(current + 1, sources.length - 1))} /></span>
+    <span className="profile-game-name">{game.name || game.title || "Untitled game"}</span>
+  </Link>;
+}
+
+export default function Profile() {
+  const [profile, setProfile] = useState(null);
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [libraryLoading, setLibraryLoading] = useState(true);
+  const [profileError, setProfileError] = useState("");
+  const [libraryError, setLibraryError] = useState("");
+  const [homies, setHomies] = useState(favoriteCreators);
+
+  useEffect(() => {
+    const refresh = () => setHomies(favoriteCreators());
+    window.addEventListener(STREAM_FAVORITES_CHANGED, refresh);
+    window.addEventListener("storage", refresh);
+    return () => { window.removeEventListener(STREAM_FAVORITES_CHANGED, refresh); window.removeEventListener("storage", refresh); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    axios.get("/profile", { headers: { "Cache-Control": "no-cache" } }).then(({ data }) => {
+      if (!active) return;
+      setProfile({ name: data.name || "User", username: data.username || "", about: data.about || "", profilePic: imageSrc(data.profilePic, "/defaultprofile.jpg"), bannerPic: imageSrc(data.bannerPic, "/defaultbanner.jpg") });
+    }).catch(() => { if (active) setProfileError("Could not load your profile. Please refresh and try again."); }).finally(() => { if (active) setLoading(false); });
+    getUserLibrary().then((data) => { if (active) setGames(Array.isArray(data) ? data : []); }).catch(() => { if (active) setLibraryError("Could not load your library right now."); }).finally(() => { if (active) setLibraryLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  return <main className="profile-page"><div className="profile-content">
+    {loading ? <div className="profile-state"><LoadingIndicator label="Loading profile" /></div> : profileError ? <div className="profile-state" role="alert">{profileError}</div> : profile && <>
+      <div className="profile-cover"><img src={profile.bannerPic} alt="" /></div>
+      <section className="profile-identity" aria-label="Your profile">
+        <img className="profile-avatar" src={profile.profilePic} alt="" />
+        <div className="profile-name"><h1>{profile.name}</h1>{profile.username && <p>@{profile.username}</p>}</div>
+        <div className="profile-actions"><Link className="profile-creator-link" to="/settings#creator-profile">Creator profile <ArrowUpRight size={15} /></Link><Link className="profile-edit" to="/settings#settings-profile"><Pencil size={15} /> Edit profile</Link></div>
+      </section>
+      <div className="profile-sections">
+        <div className="profile-column">
+        <section className="profile-about" aria-labelledby="profile-about-title"><h2 id="profile-about-title">About</h2><p>{profile.about || "Add a little about yourself to your profile."}</p>{!profile.about && <Link to="/settings#settings-profile">Add bio <ArrowUpRight size={14} /></Link>}</section>
+        <section className="profile-friends" aria-labelledby="profile-friends-title"><div className="profile-section-heading"><h2 id="profile-friends-title">Friends</h2><Link to="/chat">View all <ArrowUpRight size={15} /></Link></div><div className="profile-friends-empty"><Users size={20} aria-hidden="true" /><p>Your friends will appear here when messaging is connected.</p></div></section>
+        </div>
+        <div className="profile-column">
+        <section className="profile-homies" aria-labelledby="profile-homies-title"><div className="profile-section-heading"><div><h2 id="profile-homies-title">Fav Homies</h2><p>Your favorite creators</p></div><Link to="/community/home">Explore <ArrowUpRight size={15} /></Link></div>{homies.length ? <div className="profile-homies-list">{homies.map((stream) => <Homie key={getStreamFavoriteKey(stream)} stream={stream} />)}</div> : <p className="profile-homies-empty">Favorite a creator to see them here.</p>}</section>
+        <section className="profile-library" aria-labelledby="profile-library-title"><div className="profile-section-heading"><div><h2 id="profile-library-title">Your games</h2>{!libraryLoading && !libraryError && <p>{games.length} {games.length === 1 ? "game" : "games"} in your library</p>}</div><Link to="/library">View library <ArrowUpRight size={15} /></Link></div>
+          {libraryLoading ? <div className="profile-library-state"><LoadingIndicator label="Loading your games" small /></div> : libraryError ? <p className="profile-library-state" role="alert">{libraryError}</p> : games.length ? <div className="profile-game-grid">{games.slice(0, 6).map((game, index) => <LibraryCover key={game.steam_appid || game.appid || game.id || index} game={game} />)}</div> : <div className="profile-library-empty"><Gamepad2 size={22} /><p>Your library is waiting for its first game.</p><Link to="/store">Explore games <ArrowUpRight size={14} /></Link></div>}
+        </section>
+        </div>
+      </div>
+    </>}
+  </div></main>;
+}

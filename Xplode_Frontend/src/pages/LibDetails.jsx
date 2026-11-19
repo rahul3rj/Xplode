@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
+import { recordCommunityActivity } from "../utils/communityActivity";
+import ArtworkImage from "../components/ArtworkImage";
 
-const LibDetails = ({ game, onClose }) => {
+const LibDetails = ({ game, onVerified }) => {
   const [isVerified, setIsVerified] = useState(game.verified);
   const [verifying, setVerifying] = useState(false);
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ const LibDetails = ({ game, onClose }) => {
 
       if (response.data.success) {
         setIsVerified(true);
+        onVerified?.(game.steam_appid);
         alert("Game verified successfully!");
       } else {
         alert(`Verification failed: ${response.data.message}`);
@@ -46,6 +49,7 @@ const LibDetails = ({ game, onClose }) => {
   };
 
   const handlePlay = () => {
+    recordCommunityActivity(game, "launched");
     window.location.href = `steam://rungameid/${game.steam_appid}`;
   };
 
@@ -57,10 +61,10 @@ const LibDetails = ({ game, onClose }) => {
     );
   }
   return (
-    <div className="h-full w-full px-5">
+    <div className="library-detail-content h-full w-full px-5">
       <div className="h-[30vh] w-full relative">
         <div className="h-full w-full onject-cover flex items-center justify-center overflow-hidden rounded-sm">
-          <img
+          <ArtworkImage
             src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_appid}/library_hero.jpg`}
             alt={game.name}
             className="w-full h-full object-cover"
@@ -74,7 +78,7 @@ const LibDetails = ({ game, onClose }) => {
           />
         </div>
       </div>
-      <div className="h-[10vh] w-full flex items-center justify-between">
+      <div className="library-detail-actions h-[10vh] w-full flex items-center justify-between">
         {/* verify game files logic dalna hai yaha par */}
         <button
           onClick={isVerified ? handlePlay : handleVerify}
@@ -91,13 +95,13 @@ const LibDetails = ({ game, onClose }) => {
             <>Verify Now</>
           )}
         </button>
-        <div className="flex items-center justify-center gap-2">
+        <div className="library-detail-secondary flex items-center justify-center gap-2">
           <button
             className="px-8 py-2 cursor-pointer rounded-sm hover:bg-[#8800FF]/40 bg-[#8800FF]/20 text-white transition-all duration-200 ease-in-out"
             onClick={() => navigate(`/game/${game.steam_appid}`)}
           >
             {" "}
-            <i class="ri-store-2-fill text-white text-xl"></i> Stor e Page
+            <i className="ri-store-2-fill text-white text-xl"></i> Store Page
           </button>
           <button className="px-8 py-2 cursor-pointer rounded-sm hover:bg-[#8800FF]/40 bg-[#8800FF]/20 text-white flex items-center justify-center gap-1 transition-all duration-200 ease-in-out">
             {" "}
@@ -113,12 +117,12 @@ const LibDetails = ({ game, onClose }) => {
           </button>
           <button className="px-3 py-2 cursor-pointer rounded-sm hover:bg-[#8800FF]/40 bg-[#8800FF]/20 text-white transition-all duration-200 ease-in-out">
             {" "}
-            <i class="ri-settings-3-fill text-white text-xl"></i>{" "}
+            <i className="ri-settings-3-fill text-white text-xl"></i>{" "}
           </button>
         </div>
       </div>
-      <div className="h-[34vh] w-full flex justify-between items-center overflow-auto hide-scrollbar">
-        <div className="h-[34vh] w-[38vw]">
+      <div className="library-detail-lower h-[34vh] w-full flex justify-between items-center overflow-auto hide-scrollbar">
+        <div className="library-detail-activity h-[34vh] w-[38vw]">
           <h1 className="text-md font-[gilroy-bold] text-[#A641FF]">
             ACTIVITY
           </h1>
@@ -139,7 +143,7 @@ const LibDetails = ({ game, onClose }) => {
               </h1>
               <div className="h-[1px] w-[79%] bg-[#696969]"></div>
             </div>
-            <div className="h-[10vh] w-full mt-2 rounded-sm bg-[#8800FF]/20 flex justify-start items-center">
+            <div className="library-detail-achievement h-[10vh] w-full mt-2 rounded-sm bg-[#8800FF]/20 flex justify-start items-center">
               <img src="/medal.svg" alt="" className="h-full w-[5vw] py-2" />
               <div className="h-full w-auto flex flex-col justify-center items-start">
                 <h1 className="text-xs font-[gilroy] text-[#696969]">
@@ -161,7 +165,7 @@ const LibDetails = ({ game, onClose }) => {
               </h1>
               <div className="h-[1px] w-[79%] bg-[#696969]"></div>
             </div>
-            <div className="h-[10vh] w-full mt-2 rounded-sm bg-[#8800FF]/20 flex justify-start items-center">
+            <div className="library-detail-achievement h-[10vh] w-full mt-2 rounded-sm bg-[#8800FF]/20 flex justify-start items-center">
               <img src="/medal.svg" alt="" className="h-full w-[5vw] py-2" />
               <div className="h-full w-auto flex flex-col justify-center items-start">
                 <h1 className="text-xs font-[gilroy] text-[#696969]">
@@ -177,10 +181,10 @@ const LibDetails = ({ game, onClose }) => {
             </div>
           </div>
         </div>
-        <div className="h-[34vh] w-[20vw] bg-[#8800FF]/20 rounded-sm px-5 py-5">
+        <div className="library-detail-friends h-[34vh] w-[20vw] bg-[#8800FF]/20 rounded-sm px-5 py-5">
           <div className="h-auto w-full flex items-center justify-between">
             <h1 className="text-sm font-[gilroy-bold] text-[#A641FF] ">
-              FRIENDS WHO PLAYS
+              FRIENDS WHO PLAY
             </h1>
           </div>
           <div className="flex justify-between items-center mt-3">

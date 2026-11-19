@@ -74,21 +74,8 @@ const Details = () => {
   }, [navigate]);
 
   return (
-    <div className="h-screen w-full relative bg-transparent">
-      <div className="relative sticky z-10">
-        {/* <NavBar user={user} />
-        <SideNav handleLogout={handleLogout} /> */}
-        <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
-          <DetailsPage />
-        </div>
-      </div>
-      <div className="absolute bottom-0 left-0 w-full fixed z-0">
-        <img
-          src="../bg.svg"
-          alt=""
-          className="w-full h-auto pointer-events-none select-none saturate-140"
-        />
-      </div>
+    <div className="game-details-scroll">
+      <DetailsPage />
     </div>
   )
 }

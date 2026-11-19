@@ -1,0 +1,9 @@
+.store-side-nav { position: fixed; z-index: 45; top: 50%; left: 2.3%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 38px; }
+.store-side-nav a { display: grid; place-items: center; color: #797979; }
+.store-side-nav a img, .store-side-nav a svg { width: 25px; height: 25px; opacity: .55; transition: opacity .2s ease; }
+.store-side-nav a svg { color: #fff; }
+.store-side-nav a.active img, .store-side-nav a:hover img, .store-side-nav a:focus-visible img, .store-side-nav a.active svg, .store-side-nav a:hover svg, .store-side-nav a:focus-visible svg { opacity: 1; }
+.store-side-nav a.active, .store-side-nav a:hover { color: #fff; }
+.store-side-nav a:focus-visible { outline: 2px solid white; outline-offset: 6px; border-radius: 2px; }
+@media (max-width: 800px) { .store-side-nav { left: 12px; gap: 25px; } }
+@media (prefers-reduced-motion: reduce) { .store-side-nav a img { transition: none; } }

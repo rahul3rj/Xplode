@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import LoadingIndicator from "./LoadingIndicator";
 
 const DEBOUNCE_MS = 600;
 
@@ -9,6 +10,7 @@ const SearchBar = ({
   filteredGames = [],
   isLoading = false,
   onShowSearch,
+  storeAppearance = false,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [localValue, setLocalValue] = useState(query || "");
@@ -46,7 +48,7 @@ const SearchBar = ({
       return (
         <div className="p-6 text-center text-white font-medium animate-pulse">
           <div className="flex items-center justify-center gap-2 ">
-            <img src="./Preloader.svg" alt="" className="h-6 text-[#A641FF]" />
+            <LoadingIndicator label="Searching games" small />
           </div>
         </div>
       );
@@ -62,14 +64,14 @@ const SearchBar = ({
         to={`/game/${game.appid}`}
         className="flex items-center gap-4 p-2 px-5 hover:bg-[#A641FF]/20 transition-all duration-300 cursor-pointer"
       >
-        <img
+        {!storeAppearance && <img
           src={game.header_image || "/default.png"}
           alt={game.name}
           className="w-[13vw] h-[11vh] rounded-lg object-cover shadow-md"
           onError={(e) => {
             e.currentTarget.src = "/default.png";
           }}
-        />
+        />}
         <div className="h-[11vh] w-[18vw] flex flex-col justify-center items-between">
           <div className="w-[18vw] h-[8vh] flex flex-col justify-start items-start">
             <h3 className="text-white w-full font-medium truncate">
@@ -139,7 +141,7 @@ const SearchBar = ({
             }}
             className="relative text-zinc-300 hover:text-white cursor-pointer w-full h-full flex items-center justify-center"
           >
-            <i className="ri-close-large-line group-hover:scale-125 transition-transform duration-300 text-sm"></i>
+            {storeAppearance ? "Clear" : <i className="ri-close-large-line group-hover:scale-125 transition-transform duration-300 text-sm"></i>}
           </div>
         </div>
 

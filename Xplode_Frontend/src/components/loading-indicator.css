@@ -1,0 +1,9 @@
+.loading-indicator { display: inline-flex; width: 54px; height: 54px; flex: none; color: #fff; }
+.loading-indicator--small { width: 28px; height: 28px; }
+.loading-indicator svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.loading-indicator-track, .loading-indicator-arc { fill: none; stroke-width: 2.5; }
+.loading-indicator-track { stroke: #333; }
+.loading-indicator-arc { stroke: currentColor; stroke-linecap: round; stroke-dasharray: 52 124; transform-origin: 32px 32px; animation: xplode-loading-spin 1.1s linear infinite; }
+.loading-indicator-logo { filter: invert(1); }
+@keyframes xplode-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .loading-indicator-arc { animation: none; } }

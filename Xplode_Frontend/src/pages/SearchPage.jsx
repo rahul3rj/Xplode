@@ -7,7 +7,7 @@ import { useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import SideNav from "../components/SideNav";
 import SearchResults from "../pages/SearchResults";
-import Footer from "../components/Footer";
+import StoreFooter from "../components/StoreFooter";
 
 const SearchPage = () => {
   const [user, setUser] = useState({ username: "", profilePic: null });
@@ -62,24 +62,8 @@ const SearchPage = () => {
   const query = new URLSearchParams(location.search).get("q");
 
   return (
-    <div className="">
-      <div className="h-screen w-full relative bg-transparent">
-        <div className="relative sticky z-10">
-          
-          <div className="absolute top-[12svh] left-[10%] h-[88svh] w-[90%] z-30 overflow-y-auto hide-scrollbar">
-            <SearchResults query={query} />
-            <Footer />
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 w-full fixed z-0">
-          <img
-            src="../bg.svg"
-            alt=""
-            className="w-full h-auto pointer-events-none select-none saturate-140"
-          />
-        </div>
-      </div>
-      {/* <h1 className="text-xl font-bold">Results for "{query}"</h1> */}
+    <div className="search-page-scroll">
+      <div className="search-page-content"><SearchResults query={query} /><StoreFooter /></div>
     </div>
   );
 };

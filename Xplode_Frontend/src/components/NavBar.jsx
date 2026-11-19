@@ -129,7 +129,7 @@ const NavBar = ({ user, onShowProfile }) => {
               className="h-[3svh] w-[3svh]"
             />
           </div>
-          {showNotification && <Notification ref={notificationRef} />}
+          {showNotification && <Notification ref={notificationRef} onClose={() => setShowNotification(false)} />}
 
           <div className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer">
             <img

@@ -1,0 +1,12 @@
+img[data-artwork-state="loading"] {
+  background: linear-gradient(100deg, #161616 20%, #262626 42%, #161616 64%);
+  background-size: 220% 100%;
+  animation: artwork-loading-shimmer 1.8s ease-in-out infinite;
+  object-position: -99999px -99999px !important;
+  color: transparent;
+}
+img[data-artwork-state="error"] { background: #171717; color: transparent; }
+.community-post-image[data-artwork-state="loading"] { aspect-ratio: 16 / 9; }
+.details-media-viewer img[data-artwork-state="loading"] { width: 100%; height: 100%; }
+@keyframes artwork-loading-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { img[data-artwork-state="loading"] { animation: none; background: #1c1c1c; } }

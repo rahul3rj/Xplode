@@ -1,52 +1,19 @@
-import React, { forwardRef, useState } from "react";
+import { forwardRef, useId } from "react";
+import { X } from "lucide-react";
+import ArtworkImage from "./ArtworkImage";
+import "./notification.css";
 
-const Notification = forwardRef((props, ref) => {
-  return (
-    <div ref={ref} className='absolute top-[12svh] right-[21vw] h-[50vh] w-[25vw] rounded-xl bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] py-5 px-7'>
-      <div className='h-[10%] w-full flex justify-between items-center'>
-        <h4 className='font-[Gilroy-Bold] text-white text-md'>Notifications</h4>
-      </div>
-      <div className='h-[10%] w-full flex justify-between items-center gap-2'>
-        <h4 className='font-[Gilroy-Bold] text-[#A641FF] text-xs'>Important</h4>
-        <div className="h-[2px] w-full bg-[#696969]"></div>
-      </div>
-      <div className="h-[35%] w-full flex items-center justify-start">
-        <div className="h-[80%] w-[55%] rounded-md overflow-hidden">
-            <img src="https://cdn2.steamgriddb.com/grid/8c048326e93a94589190693897ce3456.jpg" alt="" />
-        </div>
-        <div className="h-[80%] w-[45%] px-2 flex flex-col justify-between items-center">
-            <div className="h-[50%] w-full flex flex-col justify-between">
-                <h4 className="font-[Gilroy-Bold] text-white text-md">DLC Released</h4>
-                <p className="font-[Gilroy] text-[#B5B5B5] text-[1.3vh]">Cyberpunk 2077</p>
-            </div>
-            <div className="h-[20%] w-full flex flex-col justify-between">
-                <p className="font-[Gilroy-bold] text-[#B5B5B5] text-xs">1 hours ago</p>
-            </div>
-        </div>
-      </div>
-      <div className='h-[10%] w-full flex justify-between items-center gap-2'>
-        <h4 className='font-[Gilroy-Bold] text-[#A641FF] text-xs'>More</h4>
-        <div className="h-[2px] w-full bg-[#696969]"></div>
-      </div>
-      <div className="h-[35%] w-full flex items-center justify-start">
-        <div className="h-[80%] w-[55%] rounded-md overflow-hidden">
-            <img src="https://cdn2.steamgriddb.com/grid/095cbfc2bef4012059a1641551b1f46f.png" alt="" />
-        </div>
-        <div className="h-[80%] w-[45%] px-2 flex flex-col justify-between items-center">
-            <div className="h-[50%] w-full flex flex-col justify-between">
-                <h4 className="font-[Gilroy-Bold] text-white text-md">LIVE stream Watch Now!!</h4>
-                <p className="font-[Gilroy] text-[#B5B5B5] text-[1.3vh]">Sekiro: Shadows Die Twice</p>
-            </div>
-            <div className="h-[20%] w-full flex flex-col justify-between">
-                <p className="font-[Gilroy-bold] text-[#B5B5B5] text-xs">3 hours ago</p>
-            </div>
-        </div>
-      </div>
-    </div>
+const sections = [
+  { title: "Important", items: [{ title: "DLC released", game: "Cyberpunk 2077", time: "1 hour ago", image: "https://cdn2.steamgriddb.com/grid/8c048326e93a94589190693897ce3456.jpg" }] },
+  { title: "More", items: [{ title: "Live stream", game: "Sekiro: Shadows Die Twice", time: "3 hours ago", image: "https://cdn2.steamgriddb.com/grid/095cbfc2bef4012059a1641551b1f46f.png" }] },
+];
 
-
-  )
+const Notification = forwardRef(function Notification({ onClose }, ref) {
+  const headingId = useId();
+  return <div ref={ref} className="notification-panel" role="region" aria-labelledby={headingId}>
+    <div className="notification-panel-header"><h2 id={headingId}>Notifications</h2>{onClose && <button type="button" className="notification-close" onClick={onClose} aria-label="Close notifications"><X size={17} aria-hidden="true" /></button>}</div>
+    <div className="notification-panel-body">{sections.map((section) => <section className="notification-group" key={section.title} aria-label={section.title}><h3>{section.title}</h3>{section.items.map((item) => <div className="notification-item" key={item.title}><ArtworkImage className="notification-art" src={item.image} alt="" /><div className="notification-copy"><strong>{item.title}</strong><span>{item.game}</span><small>{item.time}</small></div></div>)}</section>)}</div>
+  </div>;
 });
 
-
-export default Notification
+export default Notification;

@@ -1,4 +1,5 @@
 import React from "react";
+import LoadingIndicator from "./LoadingIndicator";
 import { useEffect, useState } from "react";
 import axios from "../utils/axios";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -188,7 +189,7 @@ const CommunitySection = () => {
 
   const handleCommunityMedia = (e, gameTitle) => {
     e.stopPropagation();
-    navigate("/community/trigger");
+    navigate("/community/home");
   };
 
   const isGameInLibrary = (gameAppId) => {
@@ -213,7 +214,7 @@ const CommunitySection = () => {
   if (loading) {
     return (
       <div className="py-8 h-[65svh] flex items-center justify-center">
-        <h1 className="text-white text-xl">Loading Community Games...</h1>
+        <LoadingIndicator label="Loading community games" />
       </div>
     );
   }
@@ -352,7 +353,7 @@ const CommunitySection = () => {
                 </div>
                 <div className="h-[6vh] w-[90%] absolute left-7 bottom-7 flex items-center justify-between">
                   <Link
-                    to={`/community/trigger`}
+                    to={`/community/home`}
                     onClick={(e) => e.stopPropagation()}
                     className="text-white text-xs font-[gilroy] bg-[#A641FF]/50 hover:bg-[#A641FF]/70 transition-all duration-200 px-6 py-3 rounded-full gap-2 flex items-center justify-center cursor-pointer shadow-[0px_4px_30.600000381469727px_0px_rgba(0,0,0,0.25)] backdrop-blur-xs"
                   >

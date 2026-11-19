@@ -1,451 +1,142 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom"; // Import useLocation
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Search, Trash2, X } from "lucide-react";
 import LibGames from "../components/LibGames";
+import LibraryGameIcon from "../components/LibraryGameIcon";
 import LibDetails from "./LibDetails";
-import {
-  getUserLibrary,
-  removeFromLibrary,
-  getUserFavorite,
-  removeFromFavorite,
-} from "../utils/addToLibrary";
+import LoadingIndicator from "../components/LoadingIndicator";
+import axios from "../utils/axios";
+import { storePortraitArtwork } from "../utils/libraryArtwork";
+import { getUserLibrary, removeFromLibrary, getUserFavorite, removeFromFavorite } from "../utils/addToLibrary";
+import "./library.css";
 
-const Library = () => {
-  const location = useLocation(); // Get the current location
-  const [gameList, setGameList] = useState(null);
+const filters = [
+  { id: "all", label: "All games" },
+  { id: "installed", label: "Installed" },
+  { id: "favorite", label: "Favorites" },
+];
+
+export default function Library() {
+  const location = useLocation();
+  const [selectedId, setSelectedId] = useState(null);
+  const [recentId, setRecentId] = useState(null);
   const [userGames, setUserGames] = useState([]);
   const [userFavorites, setUserFavorites] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all"); // Added filter state
-  const historyRef = useRef([]);
-  // const games = [
-  //   {
-  //     id: 1,
-  //     title: "Assassin’s Creed Shadows",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/3159330/library_600x900.jpg",
-  //     appId: "3159330",
-  //   },
-  //   {
-  //     id: 2,
-  //     title: "Black Myth: Wukong",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/2358720/library_600x900.jpg",
-  //     appId: "2358720",
-  //   },
-  //   {
-  //     id: 3,
-  //     title: "Call of Duty: Modern Warfare II",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1938090/library_600x900.jpg",
-  //     appId: "1938090",
-  //   },
-  //   {
-  //     id: 4,
-  //     title: "Counter-Strike 2",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/730/library_600x900.jpg",
-  //     appId: "730",
-  //   },
-  //   {
-  //     id: 5,
-  //     title: "Cyberpunk 2077",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1091500/library_600x900.jpg",
-  //     appId: "1091500",
-  //   },
-  //   {
-  //     id: 6,
-  //     title: "Dark Souls III",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/374320/library_600x900.jpg",
-  //     appId: "374320",
-  //   },
-  //   {
-  //     id: 7,
-  //     title: "Elden Ring",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/library_600x900.jpg",
-  //     appId: "1245620",
-  //   },
-  //   {
-  //     id: 8,
-  //     title: "Forza Horizon 5",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1551360/library_600x900.jpg",
-  //     appId: "1551360",
-  //   },
-  //   {
-  //     id: 9,
-  //     title: "Ghost of Tsushima DIRECTOR'S CUT",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/2215430/library_600x900.jpg",
-  //     appId: "2215430",
-  //   },
-  //   {
-  //     id: 10,
-  //     title: "God of War",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1593500/library_600x900.jpg",
-  //     appId: "1593500",
-  //   },
-  //   {
-  //     id: 11,
-  //     title: "Grand Theft Auto V",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/271590/library_600x900.jpg",
-  //     appId: "271590",
-  //   },
-  //   {
-  //     id: 12,
-  //     title: "Red Dead Redemption 2",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1174180/library_600x900.jpg",
-  //     appId: "1174180",
-  //   },
-  //   {
-  //     id: 13,
-  //     title: "Split Fiction",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/2001120/library_600x900.jpg",
-  //     appId: "2001120",
-  //   },
-  //   {
-  //     id: 14,
-  //     title: "Stray",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/1332010/library_600x900.jpg",
-  //     appId: "1332010",
-  //   },
-  //   {
-  //     id: 15,
-  //     title: "Terraria",
-  //     image:
-  //       "https://cdn.cloudflare.steamstatic.com/steam/apps/105600/library_600x900.jpg",
-  //     appId: "105600",
-  //   },
-  // ];
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [storeGames, setStoreGames] = useState([]);
 
-  // create a combined list from library + favorites (keep info about both sources)
-  const combinedMap = new Map();
-  // add favorites first and mark as favorite
-  userFavorites.forEach((g) =>
-    combinedMap.set(g.steam_appid, { ...g, _isFavorite: true, _isLibrary: false })
-  );
-
-  // then add/merge library entries; if an entry exists in favorites, mark both
-  userGames.forEach((g) => {
-    const existing = combinedMap.get(g.steam_appid);
-    if (existing) {
-      // merge: library fields take precedence, but keep favorite flag
-      combinedMap.set(g.steam_appid, {
-        ...existing,
-        ...g,
-        _isLibrary: true,
-        _isFavorite: !!existing._isFavorite,
-      });
-    } else {
-      combinedMap.set(g.steam_appid, { ...g, _isLibrary: true, _isFavorite: false });
-    }
-  });
-
-  const combinedGames = Array.from(combinedMap.values());
-
-  const filteredGames = combinedGames
-    .filter((game) => {
-      if (activeFilter === "all") return true;
-      if (activeFilter === "installed") return !!game.verified;
-      if (activeFilter === "favorite") return !!game._isFavorite; // show favorites even if also in library
-      return true;
-    })
-    .filter((game) => game.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  const handleDeleteGame = async (steamAppId, e) => {
-    e.stopPropagation();
-    // Determine whether the game exists in library or favorites
-    const inLibrary = userGames.some((g) => g.steam_appid === steamAppId);
-    const inFavorite = userFavorites.some((g) => g.steam_appid === steamAppId);
-
-    if (!inLibrary && !inFavorite) {
-      alert("Game not found in your lists");
-      return;
-    }
-
-    const confirmMsg = inLibrary
-      ? "Are you sure you want to remove this game from your library?"
-      : "Are you sure you want to remove this game from your favorites?";
-
-    if (!window.confirm(confirmMsg)) return;
-
-    try {
-      if (inLibrary) {
-        await removeFromLibrary(steamAppId);
-        setUserGames((prev) => prev.filter((g) => g.steam_appid !== steamAppId));
-      } else if (inFavorite) {
-        await removeFromFavorite(steamAppId);
-        setUserFavorites((prev) => prev.filter((g) => g.steam_appid !== steamAppId));
-      }
-
-      // Close details if open
-      if (gameList === steamAppId) {
-        setGameList(null);
-      }
-
-      console.log("Game removed successfully!");
-    } catch (error) {
-      console.error("Failed to remove game:", error);
-      alert(error.message || "Failed to remove game");
-    }
-  };
   useEffect(() => {
-    const fetchUserLibrary = async () => {
-      try {
-        const games = await getUserLibrary();
-        console.log("Fetched user library:", games);
-        setUserGames(games);
-      } catch (err) {
-        console.error("Failed to fetch user library:", err);
-        setError(err.message || "Failed to load your library");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-        const [games, favorites] = await Promise.all([getUserLibrary(), getUserFavorite()]);
-        console.log("Fetched user library:", games);
-        console.log("Fetched user favorites:", favorites);
-        setUserGames(games || []);
-        setUserFavorites(favorites || []);
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
-        setError(err.message || "Failed to load your library/favorites");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAll();
+    let active = true;
+    axios.get("/games/home").then(({ data }) => { if (active && Array.isArray(data)) setStoreGames(data); }).catch((err) => console.error("Failed to load store artwork:", err));
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
-    if (gameList && !historyRef.current.includes(gameList)) {
-      historyRef.current.push(gameList);
-    }
-  }, [gameList]);
+    let active = true;
+    Promise.all([getUserLibrary(), getUserFavorite()]).then(([games, favorites]) => {
+      if (!active) return;
+      setUserGames(Array.isArray(games) ? games : []);
+      setUserFavorites(Array.isArray(favorites) ? favorites : []);
+    }).catch((err) => {
+      console.error("Failed to fetch library:", err);
+      if (active) setError(err?.message || "Failed to load your library.");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const filter = params.get("filter");
-    if (filter) {
-      // normalize common names
-      if (filter === "wishlist" || filter === "favorites") setActiveFilter("favorite");
-      else setActiveFilter(filter);
-    }
+    const filter = new URLSearchParams(location.search).get("filter");
+    if (filter === "wishlist" || filter === "favorites" || filter === "favorite") setActiveFilter("favorite");
+    else if (filter === "installed") setActiveFilter("installed");
+    else setActiveFilter("all");
   }, [location.search]);
 
-  if (loading) {
-    return (
-      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10vw] flex justify-center items-center gap-5">
-        <img src="../Preloader.svg" alt="loading" className="h-10" />
-      </div>
-    );
-  }
+  const combinedGames = useMemo(() => {
+    const combined = new Map();
+    userFavorites.forEach((game) => combined.set(String(game.steam_appid), { ...game, _isFavorite: true, _isLibrary: false }));
+    userGames.forEach((game) => {
+      const key = String(game.steam_appid);
+      const previous = combined.get(key);
+      combined.set(key, { ...previous, ...game, _isLibrary: true, _isFavorite: !!previous?._isFavorite });
+    });
+    return [...combined.values()];
+  }, [userGames, userFavorites]);
 
-  if (error) {
-    return (
-      <div className="h-[85vh] w-full flex flex-col items-center justify-center gap-3">
-        <p className="text-white/80">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-[#A641FF] rounded text-white"
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
+  const storeArtworkById = useMemo(() => {
+    const categories = ["trending", "New_Releases", "top_games", "top_records", "Online_Multiplayer_Games", "RPG_Games", "Try_these_also"];
+    const artwork = new Map();
+    categories.forEach((category) => storeGames.forEach((game) => {
+      const id = game.steam_appid || game.appid || game.id;
+      if (id && game.category?.trim() === category && !artwork.has(String(id))) artwork.set(String(id), storePortraitArtwork(game));
+    }));
+    return artwork;
+  }, [storeGames]);
+
+  const filteredGames = combinedGames.filter((game) => {
+    if (activeFilter === "installed" && !game.verified) return false;
+    if (activeFilter === "favorite" && !game._isFavorite) return false;
+    return (game.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase());
+  }).map((game) => ({ ...game, _storePortraitSources: storeArtworkById.get(String(game.steam_appid)) || [] }));
+  const selectedGame = combinedGames.find((game) => String(game.steam_appid) === String(selectedId));
+
+  const selectGame = (id) => { setSelectedId(id); setRecentId(id); };
+  const handleVerified = (id) => {
+    const update = (games) => games.map((game) => String(game.steam_appid) === String(id) ? { ...game, verified: true } : game);
+    setUserGames(update);
+    setUserFavorites(update);
+  };
+  const handleDeleteGame = async (id) => {
+    const inLibrary = userGames.some((game) => String(game.steam_appid) === String(id));
+    const inFavorite = userFavorites.some((game) => String(game.steam_appid) === String(id));
+    if (!inLibrary && !inFavorite) return;
+    if (!window.confirm(`Are you sure you want to remove this game from your ${inLibrary ? "library" : "favorites"}?`)) return;
+    try {
+      if (inLibrary) {
+        await removeFromLibrary(id);
+        setUserGames((previous) => previous.filter((game) => String(game.steam_appid) !== String(id)));
+      } else {
+        await removeFromFavorite(id);
+        setUserFavorites((previous) => previous.filter((game) => String(game.steam_appid) !== String(id)));
+      }
+      if (String(selectedId) === String(id)) setSelectedId(null);
+    } catch (err) {
+      console.error("Failed to remove game:", err);
+      window.alert(err?.message || "Failed to remove game.");
+    }
+  };
 
   return (
-    <div className="absolute h-screen w-full z-30 overflow-y-auto hide-scrollbar">
-      <img
-        src="../bg.svg"
-        alt=""
-        className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none saturate-140 -z-10"
-        style={{ zIndex: -10 }}
-      />
-      <div className="h-[85vh] w-[90vw] mt-[12svh] ml-[10.5vw] flex justify-center items-center gap-5">
-        <div className="h-[85vh] w-[70%] ">
-          <div className="h-[6vh] w-full flex justify-start items-center px-5">
-            <div className="h-[6vh] w-[14vh] flex items-center justify-center gap-2">
-              <div
-                className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-                onClick={() => setGameList(null)}
-              >
-                <i className="ri-arrow-left-s-line text-white text-xl"></i>
-              </div>
-              <div
-                className="h-[6vh] w-[6vh] flex items-center justify-center rounded-full bg-transparent hover:bg-[#8800FF]/20 cursor-pointer"
-                onClick={() => {
-                  if (historyRef.current.length > 0) {
-                    const lastGame = historyRef.current.pop();
-                    setGameList(lastGame);
-                  }
-                }}
-              >
-                <i className="ri-arrow-right-s-line text-white text-xl"></i>
-              </div>
-            </div>
-            <div className="h-[6vh] w-[30vw] flex items-center justify-between ml-5">
-              <div
-                className={`h-[6vh] w-auto flex items-center justify-center px-10 rounded-md cursor-pointer transition-colors ${
-                  activeFilter === "all"
-                    ? "bg-[#8800FF]/40"
-                    : "bg-transparent hover:bg-[#8800FF]/20"
-                }`}
-                onClick={() => setActiveFilter("all")}
-              >
-                <h3 className="text-white text-sm font-[gilroy-bold]">
-                  All Games
-                </h3>
-              </div>
-              <div
-                className={`h-[6vh] w-auto flex items-center justify-center px-10 rounded-md cursor-pointer transition-colors ${
-                  activeFilter === "installed"
-                    ? "bg-[#8800FF]/40"
-                    : "bg-transparent hover:bg-[#8800FF]/20"
-                }`}
-                onClick={() => setActiveFilter("installed")}
-              >
-                <h3 className="text-white text-sm font-[gilroy-bold]">
-                  Installed
-                </h3>
-              </div>
-              <button
-                className={`h-[6vh] w-[10vw] flex items-center justify-center rounded-md cursor-pointer transition-colors ${
-                  activeFilter === "favorite"
-                    ? "bg-[#8800FF]/40"
-                    : "bg-transparent hover:bg-[#8800FF]/20"
-                }`}
-                onClick={() => setActiveFilter("favorite")}
-              >
-                <h3 className="text-white text-sm font-[gilroy-bold]">
-                  Favorites
-                </h3>
-              </button>
+    <main className="library-page">
+      <div className="library-layout">
+        <section className="library-main" aria-labelledby="library-title">
+          <div className="library-section-heading"><div className="library-history" aria-label="Library navigation">
+            <button type="button" onClick={() => setSelectedId(null)} disabled={selectedId === null} aria-label="Back to library"><ChevronLeft size={18} /></button>
+            <button type="button" onClick={() => recentId !== null && selectGame(recentId)} disabled={recentId === null || String(selectedId) === String(recentId) || !combinedGames.some((game) => String(game.steam_appid) === String(recentId))} aria-label="Return to last game"><ChevronRight size={18} /></button>
+          </div><h1 id="library-title">Library {selectedId === null && <span>{filteredGames.length}</span>}</h1><div className="library-section-line" /></div>
+          <div key={selectedId === null ? "grid" : selectedId} className="library-main-scroll" tabIndex={0} aria-label={selectedId === null ? "Library games" : "Game details"}>
+          {loading ? <div className="library-empty"><LoadingIndicator label="Loading your library" /></div> : error ? <div className="library-empty" role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></div> : selectedId !== null && selectedGame ? <div className="library-details"><LibDetails key={selectedGame.steam_appid} game={selectedGame} onVerified={handleVerified} /></div> : filteredGames.length ? <LibGames games={filteredGames} onSelect={selectGame} /> : <div className="library-empty"><h3>{searchTerm ? "No games found" : activeFilter === "favorite" ? "No favorites yet" : activeFilter === "installed" ? "No installed games" : "Your library is empty"}</h3><p>{searchTerm ? "Try a different search term." : activeFilter === "all" ? "Explore the store and add games to your collection." : "Games in this filter will appear here."}</p>{!searchTerm && activeFilter === "all" && <Link to="/store">Explore the store</Link>}</div>}
+          </div>
+        </section>
+        <aside className="library-panel" aria-label="Game list">
+          <div className="library-panel-header"><h2>Game list <span>{filteredGames.length}</span></h2></div>
+          <div className="library-toolbar">
+            <div className="library-filters" aria-label="Filter games">
+              {filters.map((filter) => <button key={filter.id} type="button" className={activeFilter === filter.id ? "is-active" : ""} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); setSelectedId(null); }}>{filter.label}</button>)}
             </div>
           </div>
-          <div
-            className={`h-[5vh] w-full flex justify-between items-center transition-opacity duration-300 ${
-              gameList !== null
-                ? "opacity-0 pointer-events-none"
-                : "opacity-100"
-            }`}
-          >
-            <h3 className="text-white text-sm font-[gilroy-bold] pl-10">
-              My Games
-            </h3>
-            <p className="text-[#696969] text-sm font-[gilroy] px-2">
-              ({filteredGames.length}) {/* ✅ Filtered count show karo */}
-            </p>
-            <i className="ri-arrow-down-s-line text-[#696969] text-xl cursor-pointer"></i>
-            <div className="h-[0.5px] w-[78%] bg-[#696969]"></div>
+          <div className="library-search"><Search size={17} aria-hidden="true" /><input type="search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search your games" aria-label="Search your games" />{searchTerm && <button type="button" onClick={() => setSearchTerm("")} aria-label="Clear search"><X size={16} /></button>}</div>
+          <div className="library-panel-list">
+            {filteredGames.map((game) => <div key={game.steam_appid} className={`library-list-item${String(selectedId) === String(game.steam_appid) ? " is-selected" : ""}`}>
+              <button type="button" className="library-list-select" onClick={() => String(selectedId) === String(game.steam_appid) ? setSelectedId(null) : selectGame(game.steam_appid)} aria-label={`Open ${game.name}`} aria-pressed={String(selectedId) === String(game.steam_appid)}><LibraryGameIcon key={game.steam_appid} game={game} /><span>{game.name}</span></button>
+              <button type="button" className="library-remove" onClick={() => handleDeleteGame(game.steam_appid)} aria-label={`Remove ${game.name} from ${game._isLibrary ? "library" : "favorites"}`}><Trash2 size={16} /></button>
+            </div>)}
+            {!loading && !error && !filteredGames.length && <p className="library-panel-empty">{searchTerm ? "No matching games." : "No games to show."}</p>}
           </div>
-
-          <div className="h-[74vh] w-full overflow-y-auto hide-scrollbar">
-            {gameList === null ? (
-              <LibGames games={filteredGames} onSelect={setGameList} />
-            ) : (
-              <LibDetails
-                game={combinedGames.find((g) => g.steam_appid === gameList)}
-                onClose={() => setGameList(null)}
-              />
-            )}
-          </div>
-        </div>
-        <div className="h-[85vh] w-[25vw] mr-7 pt-10">
-          <div className="h-full w-full bg-[#8800FF]/20 rounded-lg">
-            <div className="h-[10vh] w-full flex justify-center items-center px-5">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name"
-                className="h-[6vh] w-full px-5 rounded-sm text-sm font-[gilroy-bold] bg-[#250740] placeholder-[#A641FF] z-10 outline-none text-white relative"
-              />
-              <i className="ri-search-line text-[#A641FF] text-xl absolute right-15 z-10"></i>
-            </div>
-            <div className="h-[69vh] w-full flex flex-col justify-start items-start px-5 overflow-y-auto hide-scrollbar">
-              <h3 className="text-[#A641FF] text-sm font-[gilroy-bold] py-2">
-                All games {searchTerm && `- Searching: "${searchTerm}"`}
-              </h3>
-              {filteredGames.map((g) => (
-                <div
-                  className={`h-[7vh] w-full flex justify-between items-center cursor-pointer rounded-md mb-2 transition-colors
-                ${
-                  gameList === g.steam_appid
-                    ? "bg-[#A641FF]/30"
-                    : "hover:bg-[#A641FF]/10"
-                }`}
-                  onClick={() =>
-                    setGameList((prev) =>
-                      prev === g.steam_appid ? null : g.steam_appid
-                    )
-                  }
-                >
-                  <div className="h-[6vh] w-[80%] flex justify-start items-center gap-5 px-5">
-                    <div className="h-[5vh] w-[5vh]  rounded-full overflow-hidden flex justify-center items-center ">
-                      <img
-                        className="w-full h-full object-cover"
-                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.steam_appid}/library_600x900.jpg`}
-                        alt=""
-                      />
-                    </div>
-                    <h3 className="text-white text-xs font-[gilroy-bold] truncate">
-                      {g.name}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      console.log(g.steam_appid);
-                      handleDeleteGame(g.steam_appid, e);
-                    }}
-                    className="px-3 py-1 hover:bg-red-500/20 rounded-full transition-colors group cursor-pointer"
-                  >
-                    <i className="ri-delete-bin-fill text-white group-hover:text-red-400 text-md"></i>
-                  </button>
-                </div>
-              ))}
-              {filteredGames.length === 0 && searchTerm && (
-                <div className="h-full w-full flex flex-col items-center justify-center">
-                  <i className="ri-search-line text-[#A641FF] text-4xl mb-3"></i>{" "}
-                  {/* Search icon better hai */}
-                  <p className="text-[#696969] text-sm text-center">
-                    No games found for "{searchTerm}"
-                    <br />
-                    Try a different search term
-                  </p>
-                </div>
-              )}
-
-              {filteredGames.length === 0 && !searchTerm && (
-                <div className="h-full w-full flex flex-col items-center justify-center">
-                  <i className="ri-gamepad-line text-[#A641FF] text-4xl mb-3"></i>
-                  <p className="text-[#696969] text-sm text-center">
-                    Your library is empty. <br />
-                    Add games from the store to get started!
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default Library;
+}

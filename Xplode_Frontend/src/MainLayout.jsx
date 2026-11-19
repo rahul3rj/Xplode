@@ -1,7 +1,7 @@
 import React from "react";
-import NavBar from "./components/NavBar";
 import SideNav from "./components/SideNav";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import StoreChrome from "./components/StoreChrome";
 import axios from "./utils/axios";
 import { useEffect, useState } from "react";
 
@@ -10,8 +10,8 @@ const MainLayout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [games, setGames] = useState([]);
-  const [activePage, setActivePage] = useState("store");
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const fetchGames = async (page = 1) => {
     try {
@@ -100,26 +100,16 @@ const MainLayout = () => {
     }
   }, [navigate]);
 
-  // This function will set the active page and navigate to the route
-  const handleSetActivePage = (page) => {
-    setActivePage(page);
-    navigate(`/${page}`);
-  };
-
   return (
-    <div className="h-screen w-full bg-black flex relative">
-      <SideNav
-        handleLogout={handleLogout}
-        setActivePage={handleSetActivePage}
-        activePage={activePage}
-      />
+    <div
+      className="h-screen w-full flex relative bg-black bg-cover bg-center bg-no-repeat bg-fixed"
+      style={{ backgroundImage: 'url("/bg.svg")' }}
+    >
+      <SideNav />
+      <StoreChrome key={pathname} user={user} />
       <div className="flex-1 flex flex-col">
-        <NavBar
-          user={user}
-          onShowProfile={() => handleSetActivePage("profile")}
-        />
         <div className="flex-1">
-          <Outlet />
+          <Outlet context={{ handleLogout, setHeaderUser: setUser, user }} />
         </div>
       </div>
     </div>

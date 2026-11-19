@@ -1,4 +1,5 @@
 import React from 'react';
+import './ErrorBoundary.css';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -17,15 +18,16 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="text-white text-center p-4">
-          <h2>Something went wrong.</h2>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-[#D65F30] rounded-lg"
-          >
-            Refresh Page
-          </button>
-        </div>
+        <main className="xplode-error-page">
+          <a className="xplode-error-brand" href="/store" aria-label="Xplode store"><img src="/New%20Assets/LOGO.svg" alt="Xplode" /></a>
+          <section className="xplode-error-content" aria-labelledby="xplode-error-title">
+            <span className="xplode-error-mark" aria-hidden="true"><img src="/New%20Assets/favicon-white.svg" alt="" /></span>
+            <p className="xplode-error-label">SOMETHING WENT WRONG</p>
+            <h1 id="xplode-error-title">Let's get you<br />back in the game.</h1>
+            <p className="xplode-error-copy">We couldn't load this page. Try refreshing, or head back to the store.</p>
+            <div className="xplode-error-actions"><button type="button" onClick={() => window.location.reload()}>Refresh page</button><a href="/store">Back to store <span aria-hidden="true">↗</span></a></div>
+          </section>
+        </main>
       );
     }
 

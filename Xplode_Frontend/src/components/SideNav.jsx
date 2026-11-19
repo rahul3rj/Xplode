@@ -1,139 +1,28 @@
-import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import "./SideNav.css";
 
-const SideNav = ({ activePage, setActivePage, handleLogout }) => {
+const links = [
+  { path: "/store", label: "Store", icon: "Home.svg" },
+  { path: "/library", label: "Library", icon: "Library.svg" },
+  { path: "/chat", label: "Chat" },
+  { path: "/community/home", label: "Community", icon: "Trigger.svg" },
+  { path: "/settings", label: "Settings", icon: "Settings.svg" },
+];
+
+export default function SideNav() {
+  const { pathname } = useLocation();
+  const isStorePage = pathname === "/home" || pathname === "/search" || pathname.startsWith("/game/");
+
   return (
-    <div className="h-[88svh] w-[9%] ml-5 flex fixed top-[12svh] left-0 z-40">
-      <img
-        src="../HomePage/sidenav-bg.svg"
-        alt=""
-        className="h-[90svh] w-full object-cover rounded-xl z-0"
-      />
-
-      {/* icons */}
-      <div className="h-[24svh] w-full absolute z-10 cursor-pointer mt-5 ">
-        <div
-          className="h-[6svh] w-full flex justify-start items-center"
-          onClick={() => setActivePage("store")}
-        >
-          <div className="h-[6svh] w-[6svh] flex justify-center items-center">
-            <img
-              src={
-                activePage === "store"
-                  ? "../SidenavPage/store-g.svg"
-                  : "../SidenavPage/store.svg"
-              }
-              alt=""
-              className={`${
-                activePage === "store"
-                  ? "h-[6svh] w-[6svh]"
-                  : "h-[2svh] w-[2svh]"
-              }`}
-            />
-          </div>
-          <h4
-            className={`font-[Gilroy-Bold] text-sm ml-2 ${
-              activePage === "store" ? "text-[#A641FF]" : "text-white"
-            }`}
-          >
-            Store
-          </h4>
-        </div>
-
-        <div
-          className="h-[6svh] w-full flex justify-start items-center"
-          onClick={() => setActivePage("library")}
-        >
-          <div className="h-[6svh] w-[6svh] flex justify-center items-center">
-            <img
-              src={
-                activePage === "library"
-                  ? "../SidenavPage/Books-g.svg"
-                  : "../SidenavPage/Books.svg"
-              }
-              alt=""
-            />
-          </div>
-          <h4
-            className={`font-[Gilroy-Bold] text-sm ml-2 ${
-              activePage === "library" ? "text-[#A641FF]" : "text-white"
-            }`}
-          >
-            Library
-          </h4>
-        </div>
-
-        <div
-          className="h-[6svh] w-full flex justify-start items-center"
-          onClick={() => setActivePage("community")}
-        >
-          <div className="h-[6svh] w-[6svh] flex justify-center items-center">
-            <img
-              src={
-                activePage === "community"
-                  ? "../SidenavPage/people-g.svg"
-                  : "../SidenavPage/people.svg"
-              }
-              alt=""
-            />
-          </div>
-          <h4
-            className={`font-[Gilroy-Bold] text-sm ml-2 ${
-              activePage === "community" ? "text-[#A641FF]" : "text-white"
-            }`}
-          >
-            Community
-          </h4>
-        </div>
-
-        <div
-          className="h-[6svh] w-full flex justify-start items-center"
-          onClick={() => setActivePage("settings")}
-        >
-          <div className="h-[6svh] w-[6svh] flex justify-center items-center">
-            <img
-              src={
-                activePage === "settings"
-                  ? "../SidenavPage/Settings-g.svg"
-                  : "../SidenavPage/Settings.svg"
-              }
-              alt=""
-            />
-          </div>
-          <h4
-            className={`font-[Gilroy-Bold] text-sm ml-2 ${
-              activePage === "settings" ? "text-[#A641FF]" : "text-white"
-            }`}
-          >
-            Settings
-          </h4>
-        </div>
-      </div>
-
-      {/* Logout */}
-      <div className="h-[6svh] w-full absolute bottom-5">
-        <button
-          className="h-full w-full cursor-pointer flex justify-end items-center group"
-          onClick={handleLogout}
-        >
-          <div className="ml-1 h-[6svh] w-[6svh] flex justify-center items-center group-hover:hidden">
-            <img
-              src="../SidenavPage/Log.svg"
-              alt=""
-              className="mx-6 h-[2.3svh] w-[2.3svh] "
-            />
-          </div>
-          <img
-            src="../SidenavPage/Log-g.svg"
-            alt=""
-            className="ml-1 h-[6svh] w-[6svh] hidden group-hover:block"
-          />
-          <h4 className="h-full w-[70%] flex justify-start items-center font-[Gilroy-Bold] ml-2 text-sm text-white hover:text-[#A641FF]">
-            Logout
-          </h4>
-        </button>
-      </div>
-    </div>
+    <nav className="store-side-nav" aria-label="Main navigation">
+      {links.map(({ path, label, icon }) => {
+        const active = path === "/store" ? pathname === path || isStorePage : path === "/community/home" ? pathname === "/community" || pathname.startsWith("/community/") : pathname === path || pathname.startsWith(`${path}/`);
+        return (
+          <Link key={path} to={path} title={label} aria-label={label} aria-current={active ? "page" : undefined} className={active ? "active" : ""}>
+            {icon ? <img src={`/New%20Assets/${icon}`} alt="" /> : <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 5.84 2 10.58c0 2.31 1.1 4.41 2.9 5.96L4.1 21l4.64-2.1c1.02.28 2.12.43 3.26.43 5.52 0 10-3.85 10-8.59S17.52 2 12 2Z" /><circle cx="8" cy="10.7" r="1" fill="#000" /><circle cx="12" cy="10.7" r="1" fill="#000" /><circle cx="16" cy="10.7" r="1" fill="#000" /></svg>}
+          </Link>
+        );
+      })}
+    </nav>
   );
-};
-
-export default SideNav;
+}

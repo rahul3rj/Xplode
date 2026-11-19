@@ -25,7 +25,7 @@ const avatars = [
   }, 
 ];
 
-const ProfilePage = ({ user, setUser }) => {
+const ProfilePage = ({ user, setUser, onLogout }) => {
   const [showEdit, setShowEdit] = useState(false);
 
 
@@ -105,6 +105,9 @@ const ProfilePage = ({ user, setUser }) => {
               </button>
               <img src="../profile/option.svg" alt="" className="h-[20%]" />
             </div>
+            <button type="button" onClick={onLogout} className="absolute top-[10svh] right-5 z-10 h-[6svh] px-4 rounded-lg border border-white/40 text-white font-[gilroy-bold] text-sm hover:bg-white/10 transition-colors cursor-pointer">
+              Log out
+            </button>
             <div className="h-[50svh] w-full flex justify-center items-center ">
               <img src="../profile/Titanium.svg" alt="" className="" />
               <h1 className="font-[gilroy-ebold] text-[5svh] absolute bottom-5 bg-[linear-gradient(0deg,_rgba(166,65,255,1)_37%,_rgba(219,179,255,1)_100%)] bg-clip-text text-transparent">
