@@ -2,6 +2,7 @@ import React from "react";
 import SideNav from "./components/SideNav";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import StoreChrome from "./components/StoreChrome";
+import { SocketProvider } from "./contexts/SocketContext";
 import axios from "./utils/axios";
 import { useEffect, useState } from "react";
 
@@ -101,6 +102,7 @@ const MainLayout = () => {
   }, [navigate]);
 
   return (
+    <SocketProvider>
     <div
       className="h-screen w-full flex relative bg-black bg-cover bg-center bg-no-repeat bg-fixed"
       style={{ backgroundImage: 'url("/bg.svg")' }}
@@ -113,6 +115,7 @@ const MainLayout = () => {
         </div>
       </div>
     </div>
+    </SocketProvider>
   );
 };
 

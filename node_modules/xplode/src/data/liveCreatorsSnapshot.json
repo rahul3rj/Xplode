@@ -1,0 +1,12 @@
+[
+  { "id": "carryislive-youtube", "platform": "youtube", "videoId": "irNhWMG560k", "creator": "CarryisLive", "avatarUrl": "https://unavatar.io/youtube/@CarryisLive", "title": "CarryisLive stream", "game": "YouTube", "snapshot": true },
+  { "id": "ishowspeed-youtube", "platform": "youtube", "videoId": "qSyo5d-dVzA", "creator": "IShowSpeed", "avatarUrl": "https://unavatar.io/youtube/@IShowSpeed", "title": "IShowSpeed stream", "game": "YouTube", "snapshot": true },
+  { "id": "jonathangaming-kick", "platform": "kick", "channel": "jonathangaming", "creator": "Jonathan Gaming", "avatarUrl": "https://unavatar.io/kick/jonathangaming", "title": "Jonathan Gaming stream", "game": "Kick", "snapshot": true },
+  { "id": "xqc-kick", "platform": "kick", "channel": "xqc", "creator": "xQc", "avatarUrl": "https://unavatar.io/twitch/xqc", "title": "xQc stream", "game": "Kick", "snapshot": true },
+  { "id": "asmongold-twitch", "platform": "twitch", "channel": "zackrawrr", "creator": "Asmongold", "avatarUrl": "https://unavatar.io/twitch/zackrawrr", "title": "Asmongold stream", "game": "Twitch", "snapshot": true },
+  { "id": "missmikkaa-twitch", "platform": "twitch", "channel": "missmikkaa", "creator": "MissMikkaa", "avatarUrl": "https://unavatar.io/twitch/missmikkaa", "title": "MissMikkaa stream", "game": "Twitch", "snapshot": true },
+  { "id": "kaicenat-twitch", "platform": "twitch", "channel": "kaicenat", "creator": "Kai Cenat", "avatarUrl": "https://unavatar.io/twitch/kaicenat", "title": "Kai Cenat stream", "game": "Twitch", "snapshot": true },
+  { "id": "adinross-kick", "platform": "kick", "channel": "adinross", "creator": "Adin Ross", "avatarUrl": "https://unavatar.io/kick/adinross", "title": "Adin Ross stream", "game": "Kick", "snapshot": true },
+  { "id": "valkyrae-youtube", "platform": "youtube", "videoId": "LIxBN4AHMEE", "creator": "Valkyrae", "avatarUrl": "https://unavatar.io/youtube/@Valkyrae", "title": "Valkyrae stream", "game": "YouTube", "snapshot": true },
+  { "id": "ninja-twitch", "platform": "twitch", "channel": "ninja", "creator": "Ninja", "avatarUrl": "https://unavatar.io/twitch/ninja", "title": "Ninja stream", "game": "Twitch", "snapshot": true }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "demo-stream-elden-01", "communityGameId": "1245620", "gameName": "ELDEN RING", "author": "Xplode", "createdAt": "2026-11-18T00:00:00Z", "title": "Stream announcement preview", "body": "This sample post shows how a stream announcement could appear in the feed.", "streamId": "elden-ring-preview", "score": 0, "comments": []
+  },
+  {
+    "id": "demo-sekiro-01", "communityGameId": "814380", "gameName": "Sekiro: Shadows Die Twice", "author": "shinobi_preview", "createdAt": "2026-11-15T15:20:00Z", "title": "The moment Sekiro finally clicks", "body": "That first perfect deflect changes everything. Which encounter made the combat finally click for you?", "image": "https://cdn.cloudflare.steamstatic.com/steam/apps/814380/library_hero_2x.jpg", "score": 143,
+    "comments": [{ "id": "demo-sekiro-c1", "author": "ashina_preview", "body": "Genichiro taught me to stop dodging and trust my deflects.", "createdAt": "2026-11-15T16:00:00Z" }, { "id": "demo-sekiro-c2", "author": "wolf_preview", "body": "Lady Butterfly was the fight that finally made it click for me.", "createdAt": "2026-11-15T17:10:00Z" }]
+  },
+  {
+    "id": "demo-pubg-01", "communityGameId": "578080", "gameName": "PUBG: BATTLEGROUNDS", "author": "dropzone_preview", "createdAt": "2026-11-15T11:00:00Z", "title": "One squad. One circle. One chance.", "body": "You land with your squad and the final circle ends up on the other side of the map. What's your go-to strategy for getting everyone home?", "image": "https://cdn.cloudflare.steamstatic.com/steam/apps/578080/library_hero_2x.jpg", "score": 87,
+    "comments": [{ "id": "demo-pubg-c1", "author": "lastcircle_preview", "body": "Grab a vehicle early and keep an eye on the next circle.", "createdAt": "2026-11-15T12:30:00Z" }, { "id": "demo-pubg-c2", "author": "squadmate_preview", "body": "A chaotic squad road trip is half the fun.", "createdAt": "2026-11-15T13:00:00Z" }]
+  },
+  {
+    "id": "demo-forza-01", "communityGameId": "1551360", "gameName": "Forza Horizon 5", "author": "horizon_preview", "createdAt": "2026-11-15T08:30:00Z", "title": "Pick one car for a sunset drive across Mexico", "body": "No races, no objectives: just your favourite car and an open road. What are you driving, and where's your first stop?", "image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1551360/library_hero_2x.jpg", "score": 218,
+    "comments": [{ "id": "demo-forza-c1", "author": "roadtrip_preview", "body": "Something classic, with the coast as the destination.", "createdAt": "2026-11-15T09:15:00Z" }, { "id": "demo-forza-c2", "author": "aperture_preview", "body": "I'd head for the volcano road and stop for photos on the way down.", "createdAt": "2026-11-15T10:20:00Z" }]
+  },
+  {
+    "id": "demo-elden-01", "communityGameId": "1245620", "gameName": "ELDEN RING", "author": "tarnished_preview", "createdAt": "2026-11-14T19:45:00Z", "title": "Where would you return for the first time again?", "body": "The Lands Between are full of unforgettable discoveries. Which place or moment would you erase from memory just to experience it again?", "image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/library_hero_2x.jpg", "score": 326,
+    "comments": [{ "id": "demo-elden-c1", "author": "grace_preview", "body": "Stepping into Limgrave for the first time, easily.", "createdAt": "2026-11-14T20:10:00Z" }, { "id": "demo-elden-c2", "author": "rune_preview", "body": "Taking the lift down to Siofra River was unforgettable.", "createdAt": "2026-11-14T20:35:00Z" }]
+  }
+]

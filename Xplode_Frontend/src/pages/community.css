@@ -192,6 +192,16 @@
 .community-lookup-result .community-feed-game-avatar { width: 32px; height: 32px; }
 .community-lookup-result > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .community-lookup-result > svg { flex: none; color: #aaa; }
+.community-lookup-result--user { cursor: default; }
+.community-lookup-result--user:hover, .community-lookup-result--user:focus-visible { background: #252525; }
+.community-lookup-user-info { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.community-lookup-user-info strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.community-lookup-user-info small { color: #888; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.community-lookup-friend-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border: 0; border-radius: 999px; background: #fff; color: #111; font: 12px store-gilroy-bold, sans-serif; cursor: pointer; white-space: nowrap; flex: none; }
+.community-lookup-friend-btn:hover { background: #e0e0e0; }
+.community-lookup-friend-btn:disabled { opacity: .5; cursor: wait; }
+.community-lookup-friend-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: #2a2a2a; color: #8f8; font-size: 12px; white-space: nowrap; flex: none; }
+.community-lookup-friend-badge--pending { color: #fc9; }
 .community-lookup-status { display: grid; place-items: center; min-height: 64px; margin: 0; padding: 12px; color: #aaa; font-size: 12px; text-align: center; }
 .community-game-expanded { position: relative; display: block; width: 100%; min-height: 128px; overflow: hidden; padding: 0; margin: 3px 0 8px; border: 0; border-radius: 5px; background: #202020; color: #fff; text-align: left; cursor: pointer; }
 .community-game-expanded-background, .community-game-expanded-shade { position: absolute; inset: 0; width: 100%; height: 100%; }

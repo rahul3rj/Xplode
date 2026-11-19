@@ -28,6 +28,7 @@
     "react-dom": "^19.0.0",
     "react-responsive-3d-carousel": "^2.1.5",
     "react-router-dom": "^7.6.0",
+    "socket.io-client": "^4.8.4",
     "swiper": "^11.2.8",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.4"

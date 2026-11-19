@@ -1,61 +1,473 @@
-import { useEffect, useRef, useState } from "react";
-import { ImagePlus, MessageCircle, Send, Users, X } from "lucide-react";
-import demoChats from "../data/chatDemo.json";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { ImagePlus, MessageCircle, Send, UserPlus, Users, X, Check, XCircle, Search } from "lucide-react";
+import { useSocket } from "../contexts/SocketContext";
+import axios from "../utils/axios";
 import "./community.css";
 import "./chat.css";
 
-function ChatAvatar({ chat }) {
-  return <span className={`chat-demo-avatar${chat.kind === "group" ? " chat-demo-avatar--group" : ""}`} aria-hidden="true">{chat.kind === "group" ? <Users size={19} /> : chat.name.charAt(0)}</span>;
+function ChatAvatar({ participant, isGroup }) {
+  const pic = participant?.profilePic
+    ? `data:${participant.profilePic.contentType};base64,${participant.profilePic.data}`
+    : null;
+
+  if (isGroup) {
+    return <span className="chat-demo-avatar chat-demo-avatar--group" aria-hidden="true"><Users size={19} /></span>;
+  }
+
+  return (
+    <span className="chat-demo-avatar" aria-hidden="true">
+      {pic ? <img src={pic} alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : (participant?.name || "?").charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
+function FriendRequestPanel({ onAccepted }) {
+  const [requests, setRequests] = useState({ received: [], sent: [] });
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequests = useCallback(async () => {
+    try {
+      const { data } = await axios.get("/friends/requests");
+      setRequests(data);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+  const accept = async (userId) => {
+    try {
+      await axios.post(`/friends/accept/${userId}`);
+      fetchRequests();
+      onAccepted?.();
+    } catch { /* ignore */ }
+  };
+
+  const reject = async (userId) => {
+    try {
+      await axios.post(`/friends/reject/${userId}`);
+      fetchRequests();
+    } catch { /* ignore */ }
+  };
+
+  if (loading) return null;
+  if (!requests.received.length) return null;
+
+  return (
+    <div className="chat-requests">
+      <span className="chat-requests-label">Friend requests</span>
+      {requests.received.map((user) => (
+        <div key={user._id} className="chat-request-row">
+          <ChatAvatar participant={user} />
+          <span className="chat-request-info">
+            <strong>{user.name}</strong>
+            {user.username && <small>@{user.username}</small>}
+          </span>
+          <button type="button" className="chat-request-accept" onClick={() => accept(user._id)} aria-label="Accept"><Check size={16} /></button>
+          <button type="button" className="chat-request-reject" onClick={() => reject(user._id)} aria-label="Reject"><XCircle size={16} /></button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function Chat() {
-  const [chats, setChats] = useState(demoChats);
-  const [selectedId, setSelectedId] = useState(null);
+  const { socket, onlineUsers } = useSocket() || {};
+  const [friends, setFriends] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeConversation, setActiveConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesRef = useRef(null);
   const mediaInput = useRef(null);
   const objectUrls = useRef([]);
-  const chat = chats.find((item) => item.id === selectedId);
+  const typingTimeout = useRef(null);
 
+  // Fetch friends list
+  const fetchFriends = useCallback(async () => {
+    try {
+      const { data } = await axios.get("/friends");
+      setFriends(data);
+    } catch { /* ignore */ }
+    setLoadingFriends(false);
+  }, []);
+
+  // Fetch conversations
+  const fetchConversations = useCallback(async () => {
+    try {
+      const { data } = await axios.get("/chat/conversations");
+      setConversations(data);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    fetchFriends();
+    fetchConversations();
+  }, [fetchFriends, fetchConversations]);
+
+  // Get the "other" participant in a DM
+  const getOtherParticipant = useCallback((conversation) => {
+    const myId = JSON.parse(atob(localStorage.getItem("token").split(".")[1])).id;
+    return conversation.participants?.find((p) => (p._id || p) !== myId) || conversation.participants?.[0];
+  }, []);
+
+  // Open or create a conversation with a friend
+  const openChat = useCallback(async (friendId) => {
+    try {
+      setLoadingMessages(true);
+      const { data: conversation } = await axios.post(`/chat/conversation/${friendId}`);
+      setActiveConversation(conversation);
+
+      // Join socket room
+      socket?.emit("joinConversation", { conversationId: conversation._id });
+
+      // Fetch messages
+      const { data: msgs } = await axios.get(`/chat/messages/${conversation._id}`);
+      setMessages(msgs);
+
+      // Mark as read
+      socket?.emit("markRead", { conversationId: conversation._id });
+    } catch (err) {
+      console.error("Failed to open chat:", err);
+    }
+    setLoadingMessages(false);
+    setDraft("");
+    setAttachment(null);
+  }, [socket]);
+
+  // Scroll to bottom on new messages
   useEffect(() => {
     const container = messagesRef.current;
     if (container) container.scrollTop = container.scrollHeight;
-  }, [chat]);
+  }, [messages]);
 
+  // Cleanup object URLs
   useEffect(() => {
     const urls = objectUrls.current;
     return () => urls.forEach((url) => URL.revokeObjectURL(url));
   }, []);
 
-  const sendMessage = (event) => {
+  // ——— Socket event listeners ———
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (message) => {
+      setMessages((prev) => {
+        // Only add if it belongs to the active conversation
+        if (message.conversation === activeConversation?._id) {
+          // Avoid duplicates
+          if (prev.some((m) => m._id === message._id)) return prev;
+          return [...prev, message];
+        }
+        return prev;
+      });
+
+      // Update conversation list (move to top, update last message)
+      setConversations((prev) => {
+        const updated = prev.map((conv) => {
+          if (conv._id === message.conversation) {
+            return { ...conv, lastMessage: { text: message.text, sender: message.sender?._id || message.sender, timestamp: message.createdAt }, updatedAt: message.createdAt };
+          }
+          return conv;
+        });
+        return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      });
+
+      // Mark as read if this conversation is active
+      if (message.conversation === activeConversation?._id) {
+        socket.emit("markRead", { conversationId: message.conversation });
+      }
+    };
+
+    const handleTyping = ({ conversationId, userName }) => {
+      if (conversationId === activeConversation?._id) {
+        setTypingUser(userName);
+        clearTimeout(typingTimeout.current);
+        typingTimeout.current = setTimeout(() => setTypingUser(null), 2500);
+      }
+    };
+
+    const handleStopTyping = ({ conversationId }) => {
+      if (conversationId === activeConversation?._id) {
+        setTypingUser(null);
+      }
+    };
+
+    const handleFriendAccepted = () => {
+      fetchFriends();
+      fetchConversations();
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socket.on("userTyping", handleTyping);
+    socket.on("userStopTyping", handleStopTyping);
+    socket.on("friendAccepted", handleFriendAccepted);
+    socket.on("friendRequest", handleFriendAccepted);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("userTyping", handleTyping);
+      socket.off("userStopTyping", handleStopTyping);
+      socket.off("friendAccepted", handleFriendAccepted);
+      socket.off("friendRequest", handleFriendAccepted);
+    };
+  }, [socket, activeConversation, fetchFriends, fetchConversations]);
+
+  // Send message
+  const sendMessage = async (event) => {
     event.preventDefault();
     const text = draft.trim();
-    if (!chat || (!text && !attachment)) return;
-    const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date());
-    const media = attachment ? { url: URL.createObjectURL(attachment), type: attachment.type, name: attachment.name } : null;
+    if (!activeConversation || (!text && !attachment)) return;
+
+    const media = attachment
+      ? { url: URL.createObjectURL(attachment), type: attachment.type, name: attachment.name }
+      : null;
     if (media) objectUrls.current.push(media.url);
-    setChats((current) => current.map((item) => item.id === chat.id ? { ...item, messages: [...item.messages, { sender: "You", text, time, media }] } : item));
+
+    // Send via socket (primary) with REST fallback
+    if (socket?.connected) {
+      socket.emit("sendMessage", {
+        conversationId: activeConversation._id,
+        text,
+        media,
+      }, (response) => {
+        if (response?.error) {
+          console.error("Socket send failed:", response.error);
+        }
+      });
+    } else {
+      // REST fallback
+      try {
+        await axios.post("/chat/messages", {
+          conversationId: activeConversation._id,
+          text,
+          media,
+        });
+      } catch (err) {
+        console.error("Failed to send message:", err);
+      }
+    }
+
+    // Stop typing
+    socket?.emit("stopTyping", { conversationId: activeConversation._id });
+
     setDraft("");
     setAttachment(null);
   };
 
-  return <main className="chat-page"><div className="chat-layout">
-    <aside className="chat-list" aria-label="Conversations"><h1>Chats</h1><p>Friends and squads</p><span className="chat-demo-label">Demo conversations</span>
-      <div className="chat-demo-list">{chats.map((item) => {
-        const latest = item.messages[item.messages.length - 1];
-        return <button key={item.id} type="button" className={`chat-demo-row${selectedId === item.id ? " is-active" : ""}`} onClick={() => { setSelectedId(item.id); setDraft(""); setAttachment(null); }} aria-pressed={selectedId === item.id}>
-          <ChatAvatar chat={item} /><span className="chat-demo-row-copy"><strong>{item.name}</strong><small>{latest?.sender === "You" ? "You: " : item.kind === "group" ? `${latest?.sender}: ` : ""}{latest?.text || (latest?.media?.type.startsWith("video/") ? "Video" : "Photo")}</small></span>
-        </button>;
-      })}</div>
-    </aside>
-    <section className="community-chat-preview" aria-label="Conversation">{chat ? <>
-      <div className="community-chat-header"><ChatAvatar chat={chat} /><div><h2>{chat.name}</h2><p>{chat.status} · Demo</p></div></div>
-      <div className="chat-demo-wallpaper"><div className="chat-demo-messages" ref={messagesRef} aria-label={`Messages with ${chat.name}`}><div className="chat-demo-notice">Demo conversation · Messages stay in this session</div>{chat.messages.map((message, index) => <div key={`${chat.id}-${index}`} className={`chat-demo-message${message.sender === "You" ? " chat-demo-message--own" : ""}`}>
-        {chat.kind === "group" && message.sender !== "You" && <span className="chat-demo-sender">{message.sender}</span>}{message.media && (message.media.type.startsWith("video/") ? <video className="chat-demo-media" src={message.media.url} controls aria-label={message.media.name} /> : <img className="chat-demo-media" src={message.media.url} alt={message.media.name} />)}{message.text && <p>{message.text}</p>}<time>{message.time}</time>
-      </div>)}</div></div>
-      {attachment && <div className="chat-demo-attachment"><ImagePlus size={15} /><span>{attachment.name}</span><button type="button" onClick={() => setAttachment(null)} aria-label="Remove attachment"><X size={15} /></button></div>}
-      <form className="chat-demo-input" onSubmit={sendMessage}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." aria-label="Message" /><input ref={mediaInput} type="file" accept="image/*,video/*" hidden onChange={(event) => { setAttachment(event.target.files?.[0] || null); event.target.value = ""; }} /><button className="chat-demo-media-button" type="button" onClick={() => mediaInput.current?.click()} aria-label="Attach image or video" title="Attach image or video"><ImagePlus size={18} /></button><button type="submit" disabled={!draft.trim() && !attachment} aria-label="Send demo message"><Send size={17} /></button></form>
-    </> : <div className="community-chat-empty"><MessageCircle size={24} /><h3>Choose a conversation</h3><p>Select a demo chat to see your messages.</p></div>}</section>
-  </div></main>;
+  // Handle typing indicator
+  const handleDraftChange = (event) => {
+    setDraft(event.target.value);
+    if (activeConversation && socket) {
+      socket.emit("typing", { conversationId: activeConversation._id });
+      clearTimeout(typingTimeout.current);
+      typingTimeout.current = setTimeout(() => {
+        socket.emit("stopTyping", { conversationId: activeConversation._id });
+      }, 1500);
+    }
+  };
+
+  // Filter friends by search
+  const filteredFriends = friends.filter((f) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (f.name || "").toLowerCase().includes(q) || (f.username || "").toLowerCase().includes(q);
+  });
+
+  // Find conversation for a friend (to show latest message in sidebar)
+  const getConversationForFriend = (friendId) => {
+    return conversations.find((conv) =>
+      conv.kind === "dm" && conv.participants?.some((p) => (p._id || p) === friendId)
+    );
+  };
+
+  // Check if a friend is online
+  const isOnline = (friendId) => onlineUsers?.has(friendId) || false;
+
+  // Get the other participant from active conversation
+  const activeFriend = activeConversation ? getOtherParticipant(activeConversation) : null;
+
+  return (
+    <main className="chat-page">
+      <div className="chat-layout">
+        {/* ——— Sidebar ——— */}
+        <aside className="chat-list" aria-label="Conversations">
+          <h1>Chats</h1>
+          <p>Friends and squads</p>
+
+          {/* Search friends */}
+          <div className="chat-search-box">
+            <Search size={14} />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search friends..."
+              aria-label="Search friends"
+            />
+          </div>
+
+          {/* Friend requests */}
+          <FriendRequestPanel onAccepted={fetchFriends} />
+
+          {/* Friends list */}
+          {loadingFriends ? (
+            <div className="chat-loading">Loading friends...</div>
+          ) : filteredFriends.length ? (
+            <div className="chat-demo-list">
+              {filteredFriends.map((friend) => {
+                const conv = getConversationForFriend(friend._id);
+                const online = isOnline(friend._id);
+                const isActive = activeConversation?.participants?.some(
+                  (p) => (p._id || p) === friend._id
+                );
+
+                return (
+                  <button
+                    key={friend._id}
+                    type="button"
+                    className={`chat-demo-row${isActive ? " is-active" : ""}`}
+                    onClick={() => openChat(friend._id)}
+                    aria-pressed={isActive}
+                  >
+                    <span style={{ position: "relative" }}>
+                      <ChatAvatar participant={friend} />
+                      <span className={`chat-online-dot${online ? " is-online" : ""}`} />
+                    </span>
+                    <span className="chat-demo-row-copy">
+                      <strong>{friend.name}</strong>
+                      <small>
+                        {conv?.lastMessage?.text
+                          ? conv.lastMessage.text.slice(0, 40)
+                          : friend.username
+                            ? `@${friend.username}`
+                            : online ? "Online" : "Offline"}
+                      </small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="chat-empty-friends">
+              <Users size={20} />
+              <p>{searchQuery ? "No friends match your search" : "No friends yet. Search for people in the Community tab to add friends!"}</p>
+            </div>
+          )}
+        </aside>
+
+        {/* ——— Chat area ——— */}
+        <section className="community-chat-preview" aria-label="Conversation">
+          {activeConversation && activeFriend ? (
+            <>
+              <div className="community-chat-header">
+                <ChatAvatar participant={activeFriend} />
+                <div>
+                  <h2>{activeFriend.name}</h2>
+                  <p>
+                    {typingUser
+                      ? `${typingUser} is typing...`
+                      : isOnline(activeFriend._id || activeFriend)
+                        ? "Online"
+                        : "Offline"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="chat-demo-wallpaper">
+                <div className="chat-demo-messages" ref={messagesRef} aria-label={`Messages with ${activeFriend.name}`}>
+                  {loadingMessages ? (
+                    <div className="chat-demo-notice">Loading messages...</div>
+                  ) : (
+                    <>
+                      <div className="chat-demo-notice">
+                        Start of your conversation with {activeFriend.name}
+                      </div>
+                      {messages.map((message, index) => {
+                        const myId = JSON.parse(atob(localStorage.getItem("token").split(".")[1])).id;
+                        const isOwn = (message.sender?._id || message.sender) === myId;
+                        const time = new Intl.DateTimeFormat(undefined, {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }).format(new Date(message.createdAt));
+
+                        return (
+                          <div
+                            key={message._id || index}
+                            className={`chat-demo-message${isOwn ? " chat-demo-message--own" : ""}`}
+                          >
+                            {message.media?.url && (
+                              message.media.type?.startsWith("video/") ? (
+                                <video className="chat-demo-media" src={message.media.url} controls aria-label={message.media.name} />
+                              ) : message.media.type?.startsWith("image/") ? (
+                                <img className="chat-demo-media" src={message.media.url} alt={message.media.name} />
+                              ) : null
+                            )}
+                            {message.text && <p>{message.text}</p>}
+                            <time>{time}</time>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {attachment && (
+                <div className="chat-demo-attachment">
+                  <ImagePlus size={15} />
+                  <span>{attachment.name}</span>
+                  <button type="button" onClick={() => setAttachment(null)} aria-label="Remove attachment">
+                    <X size={15} />
+                  </button>
+                </div>
+              )}
+
+              <form className="chat-demo-input" onSubmit={sendMessage}>
+                <input
+                  value={draft}
+                  onChange={handleDraftChange}
+                  placeholder="Write a message..."
+                  aria-label="Message"
+                />
+                <input
+                  ref={mediaInput}
+                  type="file"
+                  accept="image/*,video/*"
+                  hidden
+                  onChange={(event) => {
+                    setAttachment(event.target.files?.[0] || null);
+                    event.target.value = "";
+                  }}
+                />
+                <button
+                  className="chat-demo-media-button"
+                  type="button"
+                  onClick={() => mediaInput.current?.click()}
+                  aria-label="Attach image or video"
+                  title="Attach image or video"
+                >
+                  <ImagePlus size={18} />
+                </button>
+                <button type="submit" disabled={!draft.trim() && !attachment} aria-label="Send message">
+                  <Send size={17} />
+                </button>
+              </form>
+            </>
+          ) : (
+            <div className="community-chat-empty">
+              <MessageCircle size={24} />
+              <h3>Choose a conversation</h3>
+              <p>Select a friend to start chatting in real-time.</p>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
 }

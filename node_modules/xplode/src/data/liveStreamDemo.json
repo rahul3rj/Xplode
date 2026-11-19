@@ -1,0 +1,5 @@
+[
+  { "id": "elden-ring-preview", "platform": "youtube", "videoId": "irNhWMG560k", "steamAppId": 1245620, "game": "ELDEN RING", "creator": "YouTube creator", "title": "YouTube stream", "viewerCount": 12400, "demo": true },
+  { "id": "forza-preview", "platform": "kick", "channel": "asmongold247", "steamAppId": 1551360, "game": "Forza Horizon 5", "creator": "Asmongold247", "avatarUrl": "https://unavatar.io/twitch/asmongold247", "title": "Asmongold247 stream preview", "viewerCount": 2850, "demo": true },
+  { "id": "sekiro-preview", "platform": "twitch", "channel": "asmongold247", "steamAppId": 814380, "game": "Sekiro: Shadows Die Twice", "creator": "Asmongold247", "avatarUrl": "https://unavatar.io/twitch/asmongold247", "title": "Asmongold247 stream preview", "viewerCount": 1960, "demo": true }
+]

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { ArrowUpRight, ChevronDown, Gamepad2, MessageCircle, RefreshCw, Search, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Gamepad2, MessageCircle, RefreshCw, Search, UserPlus, UserCheck, Clock, X } from "lucide-react";
 import { getUserLibrary } from "../utils/addToLibrary";
 import axios from "../utils/axios";
 import { getCommunityActivity } from "../utils/communityActivity";
@@ -82,9 +82,50 @@ function CommunityPicker({ games, value, onChange, locked }) {
   </div>;
 }
 
+function UserAvatar({ user }) {
+  const pic = user.profilePic ? `data:${user.profilePic.contentType};base64,${user.profilePic.data}` : null;
+  return <span className="community-feed-game-avatar">{pic ? <img src={pic} alt="" style={{ borderRadius: "50%" }} /> : <span style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", borderRadius: "50%", background: "#313131", color: "#fff", fontSize: "13px", fontWeight: 700 }}>{(user.name || "?").charAt(0).toUpperCase()}</span>}</span>;
+}
+
+function FriendButton({ userId }) {
+  const [status, setStatus] = useState("loading");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    axios.get(`/friends/status/${userId}`).then(({ data }) => { if (active) setStatus(data.status); }).catch(() => { if (active) setStatus("none"); });
+    return () => { active = false; };
+  }, [userId]);
+
+  const send = async () => {
+    setBusy(true);
+    try {
+      const { data } = await axios.post(`/friends/request/${userId}`);
+      setStatus(data.status || "request_sent");
+    } catch { /* ignore */ }
+    setBusy(false);
+  };
+
+  const accept = async () => {
+    setBusy(true);
+    try {
+      const { data } = await axios.post(`/friends/accept/${userId}`);
+      setStatus(data.status || "friends");
+    } catch { /* ignore */ }
+    setBusy(false);
+  };
+
+  if (status === "loading") return null;
+  if (status === "friends") return <span className="community-lookup-friend-badge" title="Friends"><UserCheck size={15} /> Friends</span>;
+  if (status === "request_sent") return <span className="community-lookup-friend-badge community-lookup-friend-badge--pending" title="Request sent"><Clock size={14} /> Pending</span>;
+  if (status === "request_received") return <button type="button" className="community-lookup-friend-btn" disabled={busy} onClick={accept}><UserPlus size={14} /> Accept</button>;
+  return <button type="button" className="community-lookup-friend-btn" disabled={busy} onClick={send}><UserPlus size={14} /> Add</button>;
+}
+
 function CommunitySearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [userResults, setUserResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -92,15 +133,26 @@ function CommunitySearch() {
 
   useEffect(() => {
     let active = true;
-    setResults([]); setError(false);
+    setResults([]); setUserResults([]); setError(false);
     if (!term) { setLoading(false); return () => { active = false; }; }
     setLoading(true);
     const timer = setTimeout(() => {
-      axios.get("/games/search", { params: { q: term } }).then(({ data }) => {
+      // Search both games and users in parallel
+      Promise.allSettled([
+        axios.get("/games/search", { params: { q: term } }),
+        axios.get("/friends/search", { params: { q: term } }),
+      ]).then(([gamesRes, usersRes]) => {
         if (!active) return;
-        const unique = new Map();
-        (Array.isArray(data) ? data : []).forEach((game) => { const id = idOf(game); if (id && !unique.has(id)) unique.set(id, game); });
-        setResults([...unique.values()]);
+        // Games
+        if (gamesRes.status === "fulfilled") {
+          const unique = new Map();
+          (Array.isArray(gamesRes.value.data) ? gamesRes.value.data : []).forEach((game) => { const id = idOf(game); if (id && !unique.has(id)) unique.set(id, game); });
+          setResults([...unique.values()]);
+        } else { setResults([]); }
+        // Users
+        if (usersRes.status === "fulfilled") {
+          setUserResults(Array.isArray(usersRes.value.data) ? usersRes.value.data : []);
+        } else { setUserResults([]); }
       }).catch(() => { if (active) setError(true); }).finally(() => { if (active) setLoading(false); });
     }, 300);
     return () => { active = false; clearTimeout(timer); };
@@ -108,7 +160,31 @@ function CommunitySearch() {
 
   return <div className="community-lookup" onFocus={() => setFocused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }} onKeyDown={(event) => { if (event.key === "Escape") { setFocused(false); event.currentTarget.querySelector("input")?.blur(); } }}>
     <div className="community-lookup-input"><Search size={16} aria-hidden="true" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search games and homies" aria-label="Search games and homies" />{query && <button type="button" onClick={() => setQuery("")} aria-label="Clear community search"><X size={15} /></button>}</div>
-    {focused && term && <div id="community-lookup-results" className="community-lookup-results"><h3>Search results</h3>{loading ? <div className="community-lookup-status"><LoadingIndicator label="Searching game communities" small /></div> : error ? <p className="community-lookup-status" role="alert">Could not search games. Please try again.</p> : results.length ? results.map((game) => <Link key={idOf(game)} className="community-lookup-result" to={threadUrl(idOf(game))} state={{ communityGame: game }} onClick={() => { setFocused(false); setQuery(""); }}><GameAvatar game={game} /><span>{gameNameFor(game)}</span><ArrowUpRight size={15} aria-hidden="true" /></Link>) : <p className="community-lookup-status">No communities found.</p>}</div>}
+    {focused && term && <div id="community-lookup-results" className="community-lookup-results">
+      {loading ? <div className="community-lookup-status"><LoadingIndicator label="Searching games & people" small /></div>
+        : error ? <p className="community-lookup-status" role="alert">Could not search. Please try again.</p>
+        : <>
+          {/* People results */}
+          {userResults.length > 0 && <>
+            <h3>People</h3>
+            {userResults.map((user) => <div key={user._id} className="community-lookup-result community-lookup-result--user">
+              <UserAvatar user={user} />
+              <span className="community-lookup-user-info">
+                <strong>{user.name}</strong>
+                {user.username && <small>@{user.username}</small>}
+              </span>
+              <FriendButton userId={user._id} />
+            </div>)}
+          </>}
+          {/* Game results */}
+          {results.length > 0 && <>
+            <h3>Games</h3>
+            {results.map((game) => <Link key={idOf(game)} className="community-lookup-result" to={threadUrl(idOf(game))} state={{ communityGame: game }} onClick={() => { setFocused(false); setQuery(""); }}><GameAvatar game={game} /><span>{gameNameFor(game)}</span><ArrowUpRight size={15} aria-hidden="true" /></Link>)}
+          </>}
+          {/* No results */}
+          {!userResults.length && !results.length && <p className="community-lookup-status">No results found.</p>}
+        </>}
+    </div>}
   </div>;
 }
 

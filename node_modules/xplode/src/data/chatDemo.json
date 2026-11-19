@@ -1,0 +1,7 @@
+[
+  { "id": "friend-maya", "name": "Maya", "kind": "friend", "status": "Online", "messages": [{ "sender": "Maya", "text": "Have you explored the new area in Elden Ring yet?", "time": "10:24 AM" }, { "sender": "You", "text": "Not yet! Want to check it out later?", "time": "10:27 AM" }, { "sender": "Maya", "text": "Definitely, I'll be on tonight.", "time": "10:29 AM" }] },
+  { "id": "group-night-owls", "name": "Night Owls", "kind": "group", "status": "4 members", "messages": [{ "sender": "Aarav", "text": "Anyone up for a few matches tonight?", "time": "Yesterday" }, { "sender": "Maya", "text": "Count me in!", "time": "Yesterday" }, { "sender": "You", "text": "I'm ready whenever you are.", "time": "Yesterday" }] },
+  { "id": "friend-aarav", "name": "Aarav", "kind": "friend", "status": "Away", "messages": [{ "sender": "Aarav", "text": "That last race was so close!", "time": "Yesterday" }, { "sender": "You", "text": "Rematch soon?", "time": "Yesterday" }] },
+  { "id": "group-squad", "name": "The Drop Squad", "kind": "group", "status": "3 members", "messages": [{ "sender": "Zoe", "text": "Where are we dropping next?", "time": "Monday" }, { "sender": "Aarav", "text": "Somewhere with good loot this time!", "time": "Monday" }] },
+  { "id": "friend-zoe", "name": "Zoe", "kind": "friend", "status": "Offline", "messages": [{ "sender": "Zoe", "text": "Thanks for the game recommendation!", "time": "Monday" }, { "sender": "You", "text": "Let me know what you think!", "time": "Monday" }] }
+]
