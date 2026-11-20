@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Launcher from "./pages/Launcher";
 import SideNav from "./components/SideNav";
 import axios from "./utils/axios";
+import { clearFavoriteHomiesCache } from "./utils/streamFavorites";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "./MainLayout";
@@ -69,10 +70,12 @@ const App = () => {
   const handleLogout = async () => {
     try {
       await axios.get("/users/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
+    } finally {
+      clearFavoriteHomiesCache();
+      localStorage.removeItem("token");
+      navigate("/");
     }
   };
 
@@ -142,6 +145,7 @@ const App = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/launcher" element={<Launcher />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/game/:appid" element={<Details />} />
             <Route path="/search" element={<SearchPage />} />
           </Route>

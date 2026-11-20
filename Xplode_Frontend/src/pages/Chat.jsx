@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ImagePlus, MessageCircle, Send, UserPlus, Users, X, Check, XCircle, Search } from "lucide-react";
+import { Check, CheckCheck, ImagePlus, MessageCircle, Search, Send, Users, X, XCircle } from "lucide-react";
 import { useSocket } from "../contexts/SocketContext";
 import axios from "../utils/axios";
 import "./community.css";
@@ -72,7 +72,14 @@ function FriendRequestPanel({ onAccepted }) {
 }
 
 export default function Chat() {
-  const { socket, onlineUsers } = useSocket() || {};
+  const {
+    socket,
+    onlineUsers,
+    unreadByConversation,
+    setActiveConversationId,
+    markConversationAsRead,
+  } = useSocket() || {};
+
   const [friends, setFriends] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -87,6 +94,14 @@ export default function Chat() {
   const mediaInput = useRef(null);
   const objectUrls = useRef([]);
   const typingTimeout = useRef(null);
+
+  // Sync active conversation with socket context
+  useEffect(() => {
+    setActiveConversationId?.(activeConversation?._id || null);
+    return () => {
+      setActiveConversationId?.(null);
+    };
+  }, [activeConversation, setActiveConversationId]);
 
   // Fetch friends list
   const fetchFriends = useCallback(async () => {
@@ -112,7 +127,11 @@ export default function Chat() {
 
   // Get the "other" participant in a DM
   const getOtherParticipant = useCallback((conversation) => {
-    const myId = JSON.parse(atob(localStorage.getItem("token").split(".")[1])).id;
+    let myId = null;
+    try {
+      const t = localStorage.getItem("token");
+      if (t) myId = JSON.parse(atob(t.split(".")[1])).id;
+    } catch { /* ignore */ }
     return conversation.participants?.find((p) => (p._id || p) !== myId) || conversation.participants?.[0];
   }, []);
 
@@ -122,6 +141,13 @@ export default function Chat() {
       setLoadingMessages(true);
       const { data: conversation } = await axios.post(`/chat/conversation/${friendId}`);
       setActiveConversation(conversation);
+      setActiveConversationId?.(conversation._id);
+      markConversationAsRead?.(conversation._id);
+
+      // Clear unread count for this conversation in local list
+      setConversations((prev) =>
+        prev.map((c) => (c._id === conversation._id ? { ...c, unreadCount: 0 } : c))
+      );
 
       // Join socket room
       socket?.emit("joinConversation", { conversationId: conversation._id });
@@ -130,7 +156,7 @@ export default function Chat() {
       const { data: msgs } = await axios.get(`/chat/messages/${conversation._id}`);
       setMessages(msgs);
 
-      // Mark as read
+      // Mark as read via socket
       socket?.emit("markRead", { conversationId: conversation._id });
     } catch (err) {
       console.error("Failed to open chat:", err);
@@ -138,7 +164,7 @@ export default function Chat() {
     setLoadingMessages(false);
     setDraft("");
     setAttachment(null);
-  }, [socket]);
+  }, [socket, setActiveConversationId, markConversationAsRead]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -157,30 +183,55 @@ export default function Chat() {
     if (!socket) return;
 
     const handleNewMessage = (message) => {
+      const isActive = message.conversation === activeConversation?._id;
+
       setMessages((prev) => {
-        // Only add if it belongs to the active conversation
-        if (message.conversation === activeConversation?._id) {
-          // Avoid duplicates
+        if (isActive) {
           if (prev.some((m) => m._id === message._id)) return prev;
           return [...prev, message];
         }
         return prev;
       });
 
-      // Update conversation list (move to top, update last message)
+      // Update conversation list (move to top, update preview and unread count)
       setConversations((prev) => {
         const updated = prev.map((conv) => {
           if (conv._id === message.conversation) {
-            return { ...conv, lastMessage: { text: message.text, sender: message.sender?._id || message.sender, timestamp: message.createdAt }, updatedAt: message.createdAt };
+            return {
+              ...conv,
+              unreadCount: isActive ? 0 : (conv.unreadCount || 0) + 1,
+              lastMessage: {
+                text: message.text,
+                sender: message.sender?._id || message.sender,
+                timestamp: message.createdAt,
+              },
+              updatedAt: message.createdAt,
+            };
           }
           return conv;
         });
         return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       });
 
-      // Mark as read if this conversation is active
-      if (message.conversation === activeConversation?._id) {
+      // Mark as read if currently open
+      if (isActive) {
         socket.emit("markRead", { conversationId: message.conversation });
+        markConversationAsRead?.(message.conversation);
+      }
+    };
+
+    const handleMessagesRead = ({ conversationId, userId }) => {
+      // If the other user read messages in our active conversation
+      if (activeConversation?._id === conversationId) {
+        setMessages((prev) =>
+          prev.map((m) => {
+            const readBy = m.readBy || [];
+            if (!readBy.some((id) => (id._id || id) === userId)) {
+              return { ...m, readBy: [...readBy, userId] };
+            }
+            return m;
+          })
+        );
       }
     };
 
@@ -204,6 +255,7 @@ export default function Chat() {
     };
 
     socket.on("newMessage", handleNewMessage);
+    socket.on("messagesRead", handleMessagesRead);
     socket.on("userTyping", handleTyping);
     socket.on("userStopTyping", handleStopTyping);
     socket.on("friendAccepted", handleFriendAccepted);
@@ -211,12 +263,13 @@ export default function Chat() {
 
     return () => {
       socket.off("newMessage", handleNewMessage);
+      socket.off("messagesRead", handleMessagesRead);
       socket.off("userTyping", handleTyping);
       socket.off("userStopTyping", handleStopTyping);
       socket.off("friendAccepted", handleFriendAccepted);
       socket.off("friendRequest", handleFriendAccepted);
     };
-  }, [socket, activeConversation, fetchFriends, fetchConversations]);
+  }, [socket, activeConversation, fetchFriends, fetchConversations, markConversationAsRead]);
 
   // Send message
   const sendMessage = async (event) => {
@@ -253,7 +306,6 @@ export default function Chat() {
       }
     }
 
-    // Stop typing
     socket?.emit("stopTyping", { conversationId: activeConversation._id });
 
     setDraft("");
@@ -279,17 +331,14 @@ export default function Chat() {
     return (f.name || "").toLowerCase().includes(q) || (f.username || "").toLowerCase().includes(q);
   });
 
-  // Find conversation for a friend (to show latest message in sidebar)
+  // Find conversation for a friend
   const getConversationForFriend = (friendId) => {
     return conversations.find((conv) =>
       conv.kind === "dm" && conv.participants?.some((p) => (p._id || p) === friendId)
     );
   };
 
-  // Check if a friend is online
   const isOnline = (friendId) => onlineUsers?.has(friendId) || false;
-
-  // Get the other participant from active conversation
   const activeFriend = activeConversation ? getOtherParticipant(activeConversation) : null;
 
   return (
@@ -327,6 +376,9 @@ export default function Chat() {
                   (p) => (p._id || p) === friend._id
                 );
 
+                const unread = conv ? (unreadByConversation?.[conv._id] ?? conv.unreadCount ?? 0) : 0;
+                const isUnread = unread > 0 && !isActive;
+
                 return (
                   <button
                     key={friend._id}
@@ -340,8 +392,8 @@ export default function Chat() {
                       <span className={`chat-online-dot${online ? " is-online" : ""}`} />
                     </span>
                     <span className="chat-demo-row-copy">
-                      <strong>{friend.name}</strong>
-                      <small>
+                      <strong className={isUnread ? "chat-row-unread" : ""}>{friend.name}</strong>
+                      <small className={isUnread ? "chat-row-unread-preview" : ""}>
                         {conv?.lastMessage?.text
                           ? conv.lastMessage.text.slice(0, 40)
                           : friend.username
@@ -349,6 +401,11 @@ export default function Chat() {
                             : online ? "Online" : "Offline"}
                       </small>
                     </span>
+                    {isUnread && (
+                      <span className="chat-unread-badge">
+                        {unread > 9 ? "9+" : unread}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -389,12 +446,21 @@ export default function Chat() {
                         Start of your conversation with {activeFriend.name}
                       </div>
                       {messages.map((message, index) => {
-                        const myId = JSON.parse(atob(localStorage.getItem("token").split(".")[1])).id;
+                        let myId = null;
+                        try {
+                          const t = localStorage.getItem("token");
+                          if (t) myId = JSON.parse(atob(t.split(".")[1])).id;
+                        } catch { /* ignore */ }
+
                         const isOwn = (message.sender?._id || message.sender) === myId;
                         const time = new Intl.DateTimeFormat(undefined, {
                           hour: "numeric",
                           minute: "2-digit",
                         }).format(new Date(message.createdAt));
+
+                        // Read receipt check
+                        const otherId = activeFriend?._id || activeFriend;
+                        const isRead = isOwn && (message.readBy || []).some((id) => (id._id || id) === otherId);
 
                         return (
                           <div
@@ -409,7 +475,17 @@ export default function Chat() {
                               ) : null
                             )}
                             {message.text && <p>{message.text}</p>}
-                            <time>{time}</time>
+                            <div className="chat-message-meta">
+                              <time>{time}</time>
+                              {isOwn && (
+                                <span
+                                  className={`chat-read-receipt${isRead ? " chat-read-receipt--read" : " chat-read-receipt--sent"}`}
+                                  title={isRead ? "Read" : "Sent"}
+                                >
+                                  {isRead ? <CheckCheck size={14} /> : <Check size={14} />}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}

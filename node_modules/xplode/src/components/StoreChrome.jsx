@@ -4,10 +4,12 @@ import { Bell, Heart, Search, X } from "lucide-react";
 import Notification from "./Notification";
 import LoadingIndicator from "./LoadingIndicator";
 import { useSearch } from "../lib/SearchContext";
+import { useSocket } from "../contexts/SocketContext";
 import "../pages/store.css";
 
 export default function StoreChrome({ user }) {
   const { query, setQuery, filteredGames, isLoading } = useSearch();
+  const { unreadConversationsCount } = useSocket() || {};
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -75,7 +77,14 @@ export default function StoreChrome({ user }) {
         <Link className="store-download" to="/launcher"><img src="/New%20Assets/LOGO%20Download.svg" alt="" /> <span>Download</span></Link>
         <Link className="store-round-button" to="/library?filter=wishlist" aria-label="Wishlist"><Heart fill="currentColor" strokeWidth={2.5} /></Link>
         <div className="store-notification-wrap" ref={notificationRef}>
-          <button className="store-round-button store-notification" onClick={() => setShowNotifications(!showNotifications)} aria-label="Notifications" aria-expanded={showNotifications}><Bell fill="currentColor" strokeWidth={2.5} /></button>
+          <button className="store-round-button store-notification" style={{ position: "relative" }} onClick={() => setShowNotifications(!showNotifications)} aria-label="Notifications" aria-expanded={showNotifications}>
+            <Bell fill="currentColor" strokeWidth={2.5} />
+            {!!unreadConversationsCount && (
+              <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "18px", height: "18px", padding: "0 4px", background: "linear-gradient(135deg, #ef4444, #ec4899)", color: "#fff", fontSize: "10px", fontWeight: "bold", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #000" }}>
+                {unreadConversationsCount > 9 ? "9+" : unreadConversationsCount}
+              </span>
+            )}
+          </button>
           {showNotifications && <Notification onClose={() => setShowNotifications(false)} />}
         </div>
         <Link to="/profile" className="store-avatar" aria-label="Profile"><img src={user?.profilePic || "/defaultprofile.jpg"} alt="" /></Link>

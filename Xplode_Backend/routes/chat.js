@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
@@ -6,6 +7,46 @@ const { userModel } = require("../models/user");
 const verifyToken = require("../middlewares/verifyToken");
 
 router.use(verifyToken);
+
+// ——— Get unread message counts across all conversations ———
+router.get("/unread-count", async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const conversations = await Conversation.find({ participants: userId }).select("_id").lean();
+    const convIds = conversations.map((c) => c._id);
+
+    const unreadAgg = await Message.aggregate([
+      {
+        $match: {
+          conversation: { $in: convIds },
+          readBy: { $ne: new mongoose.Types.ObjectId(userId) },
+        },
+      },
+      {
+        $group: {
+          _id: "$conversation",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const byConversation = {};
+    let totalUnreadMessages = 0;
+    unreadAgg.forEach((item) => {
+      byConversation[item._id.toString()] = item.count;
+      totalUnreadMessages += item.count;
+    });
+
+    res.json({
+      unreadConversationsCount: unreadAgg.length,
+      totalUnreadMessages,
+      byConversation,
+    });
+  } catch (err) {
+    console.error("Get unread-count error:", err.message);
+    res.status(500).json({ message: "Failed to get unread count" });
+  }
+});
 
 // ——— Get or create a DM conversation with a user ———
 router.post("/conversation/:userId", async (req, res) => {
@@ -56,16 +97,38 @@ router.post("/conversation/:userId", async (req, res) => {
 // ——— Get all conversations for the current user ———
 router.get("/conversations", async (req, res) => {
   try {
+    const userId = req.user.id;
     const conversations = await Conversation.find({
-      participants: req.user.id,
+      participants: userId,
     })
       .populate("participants", "name username profilePic status lastSeen")
       .sort({ updatedAt: -1 })
       .lean();
 
-    // Map profilePics for each participant
+    const convIds = conversations.map((c) => c._id);
+
+    // Get unread counts per conversation in one aggregation
+    const unreadAgg = await Message.aggregate([
+      {
+        $match: {
+          conversation: { $in: convIds },
+          readBy: { $ne: new mongoose.Types.ObjectId(userId) },
+        },
+      },
+      {
+        $group: {
+          _id: "$conversation",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const unreadMap = new Map(unreadAgg.map((u) => [u._id.toString(), u.count]));
+
+    // Map profilePics and unreadCount for each participant
     const mapped = conversations.map((conv) => ({
       ...conv,
+      unreadCount: unreadMap.get(conv._id.toString()) || 0,
       participants: conv.participants.map((p) => ({
         ...p,
         profilePic: p.profilePic?.data
@@ -114,6 +177,13 @@ router.get("/messages/:conversationId", async (req, res) => {
         { _id: { $in: unreadIds } },
         { $addToSet: { readBy: req.user.id } }
       );
+      const io = req.app.get("io");
+      if (io) {
+        io.to(`conv:${conversationId}`).emit("messagesRead", {
+          conversationId,
+          userId: req.user.id,
+        });
+      }
     }
 
     res.json(messages.reverse()); // return in chronological order

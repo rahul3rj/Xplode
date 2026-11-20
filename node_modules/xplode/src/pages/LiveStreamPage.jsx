@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronDown, ChevronUp, Heart, Maximize2, Minimize2 } from "lucide-react";
 import streams from "../data/liveStreamDemo.json";
 import creatorSnapshots from "../data/liveCreatorsSnapshot.json";
-import { getStreamFavoriteKey, setStreamFavorite } from "../utils/streamFavorites";
+import { isStreamFavorite, toggleStreamFavorite, getFavoriteHomies, STREAM_FAVORITES_CHANGED } from "../utils/streamFavorites";
 import LoadingIndicator from "../components/LoadingIndicator";
 import "./live-streams.css";
 
@@ -70,9 +70,27 @@ export default function LiveStreamPage({ streamId: embeddedStreamId, embedded = 
   const requestedReturn = location.state?.returnTo;
   const returnTo = typeof requestedReturn === "string" && requestedReturn.startsWith("/community/") && !requestedReturn.startsWith("/community/live/") ? requestedReturn : "/community/home";
   const returnState = location.state?.returnState || null;
-  const favoriteKey = stream ? getStreamFavoriteKey(stream) : null;
+
   useEffect(() => { setMetadata(null); }, [streamId]);
-  useEffect(() => { try { setFavorite(!!favoriteKey && localStorage.getItem(favoriteKey) === "true"); } catch { setFavorite(false); } setActionError(""); }, [favoriteKey]);
+
+  useEffect(() => {
+    let active = true;
+    if (stream) {
+      setFavorite(isStreamFavorite(stream));
+      getFavoriteHomies(true).then(() => {
+        if (active) setFavorite(isStreamFavorite(stream));
+      });
+    }
+    const handleFavChange = () => {
+      if (stream) setFavorite(isStreamFavorite(stream));
+    };
+    window.addEventListener(STREAM_FAVORITES_CHANGED, handleFavChange);
+    return () => {
+      active = false;
+      window.removeEventListener(STREAM_FAVORITES_CHANGED, handleFavChange);
+    };
+  }, [stream]);
+
   if (!stream) return <div className={`live-page${embedded ? " live-page--embedded" : ""}`}><div className="live-page-content"><Link className="live-back" to={returnTo} state={returnState} aria-label="Go back" title="Go back"><ArrowLeft size={18} /></Link><div className="live-not-found"><h1>Stream not found</h1><p>This preview is no longer available.</p><Link to={returnTo} state={returnState}>Go back</Link></div></div></div>;
 
   const platform = stream.platform || "youtube";
@@ -85,10 +103,20 @@ export default function LiveStreamPage({ streamId: embeddedStreamId, embedded = 
   if (streamIndex < 0) { streamOrder.push(stream); streamIndex = streamOrder.length - 1; }
   const previous = streamIndex > 0 ? streamOrder[streamIndex - 1] : null;
   const next = streamIndex >= 0 ? streamOrder[streamIndex + 1] : null;
-  const toggleFavorite = () => {
-    const value = !favorite;
-    try { setStreamFavorite(stream, value); setFavorite(value); setActionError(""); }
-    catch { setActionError("Could not save your favorite on this device."); }
+
+  const toggleFavorite = async () => {
+    if (!stream) return;
+    const previous = favorite;
+    const optimistic = !favorite;
+    setFavorite(optimistic);
+    setActionError("");
+    try {
+      const res = await toggleStreamFavorite(stream);
+      setFavorite(res);
+    } catch {
+      setFavorite(previous);
+      setActionError("Could not save your favorite homie. Please try again.");
+    }
   };
   const fullscreen = async () => {
     try { if (onToggleFullscreen) await onToggleFullscreen(); else { if (!playerStage.current?.requestFullscreen) throw new Error("Fullscreen unavailable"); await playerStage.current.requestFullscreen(); } setActionError(""); }

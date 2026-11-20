@@ -3,6 +3,7 @@ import SideNav from "./components/SideNav";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import StoreChrome from "./components/StoreChrome";
 import { SocketProvider } from "./contexts/SocketContext";
+import { clearFavoriteHomiesCache } from "./utils/streamFavorites";
 import axios from "./utils/axios";
 import { useEffect, useState } from "react";
 
@@ -54,10 +55,12 @@ const MainLayout = () => {
   const handleLogout = async () => {
     try {
       await axios.get("/users/logout", { withCredentials: true });
-      localStorage.removeItem("token");
-      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
+    } finally {
+      clearFavoriteHomiesCache();
+      localStorage.removeItem("token");
+      navigate("/");
     }
   };
 

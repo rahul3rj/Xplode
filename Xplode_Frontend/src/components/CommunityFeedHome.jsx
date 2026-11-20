@@ -14,20 +14,12 @@ import LoadingIndicator from "./LoadingIndicator";
 import { getDemoPosts, updateDemoPost } from "../utils/communityDemo";
 import streams from "../data/liveStreamDemo.json";
 import creatorSnapshots from "../data/liveCreatorsSnapshot.json";
-import { getStreamFavoriteKey, isStreamFavorite, STREAM_FAVORITES_CHANGED } from "../utils/streamFavorites";
+import { getStreamFavoriteKey, getFavoriteHomies, STREAM_FAVORITES_CHANGED } from "../utils/streamFavorites";
 
 const idOf = (game) => String(game.steam_appid || game.appid || game.id || "");
 const imageUrl = (value) => Array.isArray(value) ? imageUrl(value[0]) : typeof value === "string" ? value : value?.url || value?.thumb || "";
 const iconFor = (game) => imageUrl(game.portrait_image) || imageUrl(game.header_image) || imageUrl(game.capsule_image);
 const threadUrl = (id) => `/community/${encodeURIComponent(id)}`;
-const getFavoriteCreators = () => {
-  const unique = new Map();
-  [...creatorSnapshots, ...streams].forEach((stream) => {
-    const key = getStreamFavoriteKey(stream);
-    if (!unique.has(key) && isStreamFavorite(stream)) unique.set(key, stream);
-  });
-  return [...unique.values()];
-};
 const relativeTime = (time) => {
   const minutes = Math.max(0, Math.floor((Date.now() - time) / 60000));
   if (minutes < 1) return "just now";
@@ -167,13 +159,15 @@ function CommunitySearch() {
           {/* People results */}
           {userResults.length > 0 && <>
             <h3>People</h3>
-            {userResults.map((user) => <div key={user._id} className="community-lookup-result community-lookup-result--user">
-              <UserAvatar user={user} />
-              <span className="community-lookup-user-info">
-                <strong>{user.name}</strong>
-                {user.username && <small>@{user.username}</small>}
-              </span>
-              <FriendButton userId={user._id} />
+            {userResults.map((u) => <div key={u._id} className="community-lookup-result community-lookup-result--user">
+              <Link to={`/profile/${u._id}`} style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }} onClick={() => { setFocused(false); setQuery(""); }}>
+                <UserAvatar user={u} />
+                <span className="community-lookup-user-info">
+                  <strong>{u.name}</strong>
+                  {u.username && <small>@{u.username}</small>}
+                </span>
+              </Link>
+              <FriendButton userId={u._id} />
             </div>)}
           </>}
           {/* Game results */}
@@ -224,7 +218,7 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
   const [error, setError] = useState("");
   const [posts, setPosts] = useState(readPosts);
   const [activity] = useState(getCommunityActivity);
-  const [favoriteCreators, setFavoriteCreators] = useState(getFavoriteCreators);
+  const [favoriteCreators, setFavoriteCreators] = useState([]);
   const [selectedGame, setSelectedGame] = useState(initialCommunity || "all");
   const [linkedGame, setLinkedGame] = useState(() => {
     if (!initialCommunity) return null;
@@ -250,10 +244,24 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
   const refreshTimer = useRef(null);
   const mainRef = useRef(null);
   useEffect(() => {
-    const updateFavorites = () => setFavoriteCreators(getFavoriteCreators());
+    let active = true;
+    const updateFavorites = (event) => {
+      if (event?.detail?.homies) {
+        setFavoriteCreators(event.detail.homies);
+      } else {
+        getFavoriteHomies(true).then((list) => {
+          if (active) setFavoriteCreators(Array.isArray(list) ? list : []);
+        });
+      }
+    };
+    getFavoriteHomies(true).then((list) => {
+      if (active) setFavoriteCreators(Array.isArray(list) ? list : []);
+    });
     window.addEventListener(STREAM_FAVORITES_CHANGED, updateFavorites);
-    window.addEventListener("storage", updateFavorites);
-    return () => { window.removeEventListener(STREAM_FAVORITES_CHANGED, updateFavorites); window.removeEventListener("storage", updateFavorites); };
+    return () => {
+      active = false;
+      window.removeEventListener(STREAM_FAVORITES_CHANGED, updateFavorites);
+    };
   }, []);
   useEffect(() => {
     const syncFullscreen = () => setStreamFullscreen(document.fullscreenElement === hubRef.current);

@@ -40,6 +40,15 @@
 .chat-request-reject { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #333; color: #aaa; cursor: pointer; }
 .chat-request-reject:hover { background: #444; color: #f87171; }
 
+.chat-unread-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 10px; font-weight: 700; margin-left: auto; flex: none; box-shadow: 0 2px 6px rgba(168, 85, 247, 0.4); }
+.chat-row-unread { color: #fff !important; font-weight: 700 !important; }
+.chat-row-unread-preview { color: #f1f5f9 !important; font-weight: 600 !important; }
+.chat-message-meta { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 11px; color: #888; }
+.chat-demo-message--own .chat-message-meta { justify-content: flex-end; }
+.chat-read-receipt { display: inline-flex; align-items: center; }
+.chat-read-receipt--read { color: #38bdf8; }
+.chat-read-receipt--sent { color: #888; }
+
 /* ——— Light theme ——— */
 html[data-theme="light"] .chat-demo-row { color: #181818; }html[data-theme="light"] .chat-demo-row:hover, html[data-theme="light"] .chat-demo-row.is-active { background: #e8e8e8; }html[data-theme="light"] .chat-demo-row-copy small, html[data-theme="light"] .chat-demo-label, html[data-theme="light"] .chat-demo-notice, html[data-theme="light"] .chat-demo-message time, html[data-theme="light"] .chat-demo-sender { color: #626262; }html[data-theme="light"] .chat-demo-message p { background: #e8e8e8; color: #181818; }html[data-theme="light"] .chat-demo-message--own p { background: #222; color: #fff; }html[data-theme="light"] .chat-demo-input { border-color: #ddd; }html[data-theme="light"] .chat-demo-input input { background: #eee; color: #181818; }html[data-theme="light"] .chat-demo-input button { background: #222; color: #fff; }
 html[data-theme="light"] .chat-demo-wallpaper { background: #f3f3f3; }html[data-theme="light"] .chat-demo-wallpaper::before { filter: invert(1); opacity: .35; }

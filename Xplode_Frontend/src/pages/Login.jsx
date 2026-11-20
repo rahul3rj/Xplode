@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
+import { clearFavoriteHomiesCache } from "../utils/streamFavorites";
 import "./login.css";
 
 export default function Login() {
@@ -20,6 +21,7 @@ export default function Login() {
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
     if (token) {
+      clearFavoriteHomiesCache();
       localStorage.setItem("token", token);
       navigate("/store");
     }
@@ -48,6 +50,7 @@ export default function Login() {
       if (signingIn) {
         const response = await axios.post("/users/login", { email, password });
         if (!response.data.success) throw new Error(response.data.message || "Could not sign in. Please try again.");
+        clearFavoriteHomiesCache();
         localStorage.setItem("token", response.data.token);
         navigate("/store");
       } else if (step === 1) {
@@ -55,6 +58,7 @@ export default function Login() {
       } else {
         const response = await axios.post("/users/verify-otp", { email, otp, name, password });
         if (!response.data.success) throw new Error(response.data.message || "Invalid code. Please try again.");
+        clearFavoriteHomiesCache();
         localStorage.setItem("token", response.data.token);
         navigate("/home");
       }

@@ -76,12 +76,28 @@ const userSchema = mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    // ——— Favorite Homies / Creators ———
+    favHomies: [
+      {
+        id: { type: String, required: true },
+        creator: { type: String, required: true },
+        platform: {
+          type: String,
+          enum: ["youtube", "kick", "twitch"],
+          default: "youtube",
+        },
+        avatarUrl: { type: String, default: "" },
+        channel: { type: String, default: "" },
+        videoId: { type: String, default: "" },
+        game: { type: String, default: "" },
+        title: { type: String, default: "" },
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
-
-// Index username for fast search
-userSchema.index({ username: 1 });
 
 module.exports = {
   userModel: mongoose.model("user", userSchema),

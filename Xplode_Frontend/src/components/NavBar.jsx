@@ -6,9 +6,11 @@ import Notification from "./Notification";
 
 import { useState, useRef, useEffect } from "react";
 import { useSearch } from "../lib/SearchContext";
+import { useSocket } from "../contexts/SocketContext";
 
 const NavBar = ({ user, onShowProfile }) => {
   const { query, setQuery, filteredGames, isLoading } = useSearch();
+  const { unreadConversationsCount } = useSocket() || {};
   const [showWallet, setShowWallet] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
@@ -117,17 +119,24 @@ const NavBar = ({ user, onShowProfile }) => {
             />
           </div>
           <div
-            className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer"
+            className="h-[6svh] w-[6svh] rounded-full bg-[rgba(90,0,169,0.40)] shadow-[0_4px_5.8px_2px_rgba(13,13,13,0.22)] backdrop-blur-[35px] flex justify-center items-center cursor-pointer relative"
             onClick={() => {
               setShowNotification(!showNotification); // Toggle between true/false
             }}
             ref={notificationButtonRef}
+            aria-label="Notifications"
+            title={unreadConversationsCount ? `${unreadConversationsCount} unread chats` : "Notifications"}
           >
             <img
               src="../HomePage/Doorbell.svg"
               alt=""
               className="h-[3svh] w-[3svh]"
             />
+            {!!unreadConversationsCount && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-black">
+                {unreadConversationsCount > 9 ? "9+" : unreadConversationsCount}
+              </span>
+            )}
           </div>
           {showNotification && <Notification ref={notificationRef} onClose={() => setShowNotification(false)} />}
 
