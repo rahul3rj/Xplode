@@ -1,6 +1,11 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const path = require("path");
+require("dotenv").config({
+  path: path.join(__dirname, ".env")
+});
+
 const { Server } = require("socket.io");
 const indexRouter = require("./routes/indexRoute");
 const authRouter = require("./routes/auth");
@@ -18,7 +23,7 @@ const setupSocket = require("./config/socket");
 const passport = require("passport");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
-const path = require("path");
+
 const app = express();
 const server = http.createServer(app);
 
@@ -44,7 +49,6 @@ app.set("io", io);  // make io accessible in routes via req.app.get("io")
 setupSocket(io);
 
 require("./config/db");
-require("dotenv").config();
 require("./config/google_oauth_config");
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));

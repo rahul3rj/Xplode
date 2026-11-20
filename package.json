@@ -1,15 +1,37 @@
 {
   "name": "xplode-monorepo",
   "private": true,
-  "workspaces": ["Xplode_Backend", "Xplode_Frontend"],
+  "workspaces": [
+    "Xplode_Backend",
+    "Xplode_Frontend"
+  ],
   "main": "Xplode_Backend/app.js",
-  "scripts": {
-    "start": "node Xplode_Backend/app.js",
-    "backend": "npm start --prefix Xplode_Backend",
-    "frontend": "npm run start --prefix Xplode_Frontend"
-  },
+  
+"scripts": {
+  "start": "concurrently -n BACKEND,FRONTEND -c blue,green \"npm run backend\" \"npm run frontend\"",
+  "backend": "npm start --prefix Xplode_Backend",
+  "frontend": "npm run dev --prefix Xplode_Frontend"
+}
+,
   "dependencies": {
     "express-rate-limit": "^8.0.1",
     "fuse.js": "^7.1.0"
-  }
+  },
+  "version": "1.0.0",
+  "description": "<h1 align=\"center\">\r   🎮 Xplode — The Future of Gaming Commerce\r </h1>",
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rahul3rj/Xplode.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rahul3rj/Xplode/issues"
+  },
+  "homepage": "https://github.com/rahul3rj/Xplode#readme"
 }
