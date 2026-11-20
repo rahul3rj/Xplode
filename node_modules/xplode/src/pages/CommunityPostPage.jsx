@@ -5,6 +5,8 @@ import CommunityPost from "../components/CommunityPost";
 import axios from "../utils/axios";
 import { getCommunityActivity } from "../utils/communityActivity";
 import { getDemoPosts, updateDemoPost } from "../utils/communityDemo";
+import { getCurrentUserId } from "../utils/streamFavorites";
+import { COMMUNITY_VOTE_EVENT, broadcastVoteUpdate } from "../utils/communitySync";
 import "./community.css";
 
 function readLocalPosts(key) {
@@ -43,6 +45,7 @@ function CommunityPostPageContent({ name, postId, embedded, refreshToken, onPost
             setPost({
               id: `review-${found._id}`,
               dbId: found._id,
+              _id: found._id,
               communityGameId: String(found.steam_appid),
               gameName: found.gameName || game?.name || "Game",
               author: found.user?.username ? `@${found.user.username}` : (found.user?.name || "Player"),
@@ -53,7 +56,10 @@ function CommunityPostPageContent({ name, postId, embedded, refreshToken, onPost
               title: `Player Review: ${found.rating} / 5 Stars`,
               body: found.comment || `Rated ${found.rating} out of 5 stars.`,
               createdAt: found.createdAt,
-              score: (found.likes || 0) - (found.dislikes || 0),
+              score: found.score != null ? found.score : ((found.likesCount || 0) - (found.dislikesCount || 0)),
+              likesCount: found.likesCount != null ? found.likesCount : (Array.isArray(found.likes) ? found.likes.length : (typeof found.likes === "number" ? found.likes : 0)),
+              dislikesCount: found.dislikesCount != null ? found.dislikesCount : (Array.isArray(found.dislikes) ? found.dislikes.length : (typeof found.dislikes === "number" ? found.dislikes : 0)),
+              vote: found.vote || 0,
               comments: [],
             });
             setError("");
@@ -61,6 +67,24 @@ function CommunityPostPageContent({ name, postId, embedded, refreshToken, onPost
         })
         .catch(() => {
           setError("Could not load this review.");
+        });
+      return;
+    }
+
+    if (postId?.startsWith("post-")) {
+      const dbId = postId.replace(/^post-/, "");
+      axios
+        .get("/community/posts", { params: { appid: name } })
+        .then((res) => {
+          const list = Array.isArray(res.data) ? res.data : [];
+          const found = list.find((p) => String(p._id) === dbId || String(p.id) === postId);
+          if (found) {
+            setPost(found);
+            setError("");
+          }
+        })
+        .catch(() => {
+          setError("Could not load this post.");
         });
       return;
     }
@@ -77,6 +101,34 @@ function CommunityPostPageContent({ name, postId, embedded, refreshToken, onPost
     return () => { active = false; };
   }, [name]);
 
+  useEffect(() => {
+    const handleVoteEvent = (event) => {
+      const data = event.detail;
+      if (!data || !post) return;
+
+      const myId = getCurrentUserId();
+      const isCaller = myId && String(data.userId) === String(myId);
+
+      const targetId = String(data.reviewId || data.postId || data.id);
+      const currentId = String(post.dbId || post._id || post.id).replace(/^(review|post)-/, "");
+
+      if (targetId === currentId) {
+        setPost((prev) => ({
+          ...prev,
+          score: data.score,
+          likesCount: data.likesCount,
+          dislikesCount: data.dislikesCount,
+          vote: isCaller ? data.vote : prev.vote,
+        }));
+      }
+    };
+
+    window.addEventListener(COMMUNITY_VOTE_EVENT, handleVoteEvent);
+    return () => {
+      window.removeEventListener(COMMUNITY_VOTE_EVENT, handleVoteEvent);
+    };
+  }, [post]);
+
   const save = (update) => {
     try {
       if (post.demo) {
@@ -92,8 +144,120 @@ function CommunityPostPageContent({ name, postId, embedded, refreshToken, onPost
       setError(""); onPostsChanged?.(); return true;
     } catch { setError("Could not save your changes on this device."); return false; }
   };
-  const addComment = (_id, body) => save((item) => ({ ...item, comments: [...(item.comments || []), { id: crypto.randomUUID(), body, createdAt: new Date().toISOString() }] }));
-  const vote = (_id, value) => save((item) => ({ ...item, vote: value }));
+  const addComment = async (_id, body) => {
+    const rawId = post?._id || (String(post?.id).startsWith("post-") ? post.id.replace(/^post-/, "") : null);
+    if (rawId) {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+      try {
+        const res = await axios.post(`/community/posts/${rawId}/comment`, { body }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.comment) {
+          setPost((prev) => ({ ...prev, comments: [...(prev.comments || []), res.data.comment] }));
+          return true;
+        }
+      } catch { return false; }
+    } else {
+      return save((item) => ({ ...item, comments: [...(item.comments || []), { id: crypto.randomUUID(), body, createdAt: new Date().toISOString() }] }));
+    }
+  };
+  const vote = async (_id, value) => {
+    const isReview = post?.isReview || String(post?.id || "").startsWith("review-");
+    const token = localStorage.getItem("token");
+    const myId = getCurrentUserId();
+
+    if (isReview) {
+      const reviewId = String(post?.dbId || post?._id || post?.id).replace(/^review-/, "");
+      if (token && reviewId) {
+        const prevVote = post.vote || 0;
+        const currentLikes = post.likesCount !== undefined ? post.likesCount : Math.max(0, post.score || 0);
+        let nextLikes = currentLikes;
+        if (value === 1 && prevVote !== 1) nextLikes = currentLikes + 1;
+        else if (value !== 1 && prevVote === 1) nextLikes = Math.max(0, currentLikes - 1);
+
+        broadcastVoteUpdate({
+          reviewId,
+          isReview: true,
+          score: (post.score || 0) + (value - prevVote),
+          likesCount: nextLikes,
+          dislikesCount: post.dislikesCount || 0,
+          userId: myId,
+          vote: value,
+        });
+
+        try {
+          const res = await axios.post(`/community/reviews/${reviewId}/vote`, { vote: value });
+          broadcastVoteUpdate({
+            reviewId,
+            isReview: true,
+            score: res.data.score,
+            likesCount: res.data.likesCount,
+            dislikesCount: res.data.dislikesCount,
+            userId: myId,
+            vote: res.data.vote,
+          });
+        } catch (err) {
+          console.error("Failed to vote on review:", err);
+          broadcastVoteUpdate({
+            reviewId,
+            isReview: true,
+            score: post.score || 0,
+            likesCount: currentLikes,
+            dislikesCount: post.dislikesCount || 0,
+            userId: myId,
+            vote: prevVote,
+          });
+        }
+      }
+      return;
+    }
+
+    const rawId = String(post?._id || post?.id || "").replace(/^post-/, "");
+    if (rawId) {
+      if (!token) return;
+      const prevVote = post.vote || 0;
+      const currentLikes = post.likesCount !== undefined ? post.likesCount : Math.max(0, post.score || 0);
+      let nextLikes = currentLikes;
+      if (value === 1 && prevVote !== 1) nextLikes = currentLikes + 1;
+      else if (value !== 1 && prevVote === 1) nextLikes = Math.max(0, currentLikes - 1);
+
+      broadcastVoteUpdate({
+        postId: rawId,
+        isReview: false,
+        score: (post.score || 0) + (value - prevVote),
+        likesCount: nextLikes,
+        dislikesCount: post.dislikesCount || 0,
+        userId: myId,
+        vote: value,
+      });
+
+      try {
+        const res = await axios.post(`/community/posts/${rawId}/vote`, { vote: value });
+        broadcastVoteUpdate({
+          postId: rawId,
+          isReview: false,
+          score: res.data.score,
+          likesCount: res.data.likesCount,
+          dislikesCount: res.data.dislikesCount,
+          userId: myId,
+          vote: res.data.vote,
+        });
+      } catch {
+        broadcastVoteUpdate({
+          postId: rawId,
+          isReview: false,
+          score: post.score || 0,
+          likesCount: currentLikes,
+          dislikesCount: post.dislikesCount || 0,
+          userId: myId,
+          vote: prevVote,
+        });
+      }
+    } else {
+      save((item) => ({ ...item, vote: value }));
+    }
+  };
   const communityPath = `/community/${encodeURIComponent(name)}`;
   const requestedReturn = location.state?.returnTo;
   const returnTo = typeof requestedReturn === "string" && requestedReturn.startsWith("/community/") && requestedReturn !== location.pathname ? requestedReturn : "/community/home";

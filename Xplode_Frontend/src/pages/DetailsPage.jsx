@@ -9,6 +9,7 @@ import LoadingIndicator from "../components/LoadingIndicator";
 import ArtworkImage from "../components/ArtworkImage";
 import axios from "../utils/axios";
 import { addToLibrary, removeFromLibrary, getUserLibrary, addToFavorite, removeFromFavorite, getUserFavorite, requireAuth } from "../utils/addToLibrary";
+import { addSessionVisitedGame } from "../utils/sessionVisitedGames";
 import "./details.css";
 
 const imageValue = (value) => Array.isArray(value) ? imageValue(value[0]) : typeof value === "string" ? value : value?.url || value?.thumb || "";
@@ -332,7 +333,12 @@ export default function DetailsPage() {
     let active = true;
     document.querySelector(".game-details-scroll")?.scrollTo({ top: 0 });
     setLoading(true); setError(""); setGame(null); setHeroFailed(false);
-    axios.get(`/games/game/${appid}`).then((res) => { if (active) setGame(res.data); }).catch((err) => { if (active) setError(err.response?.data?.message || "Unable to load this game."); }).finally(() => { if (active) setLoading(false); });
+    axios.get(`/games/game/${appid}`).then((res) => {
+      if (active) {
+        setGame(res.data);
+        addSessionVisitedGame(res.data);
+      }
+    }).catch((err) => { if (active) setError(err.response?.data?.message || "Unable to load this game."); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [appid]);
   useEffect(() => {

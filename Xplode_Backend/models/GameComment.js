@@ -5,8 +5,9 @@ const GameCommentSchema = new mongoose.Schema({
   steam_appid: { type: Number, required: true },
   comment: { type: String, default: "", trim: true, maxlength: 1000 },
   rating: { type: Number, min: 1, max: 5, default: 5, required: true },
-  likes: { type: Number, default: 0 },
-  dislikes: { type: Number, default: 0 },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
+  dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
+  score: { type: Number, default: 0 },
   is_edited: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

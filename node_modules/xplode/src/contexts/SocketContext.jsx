@@ -1,6 +1,14 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import axios from "../utils/axios";
+import {
+  broadcastVoteUpdate,
+  broadcastNewPost,
+  broadcastNewReview,
+  broadcastNewComment,
+  broadcastCommentVote,
+  broadcastCommentDeleted,
+} from "../utils/communitySync";
 
 const SocketContext = createContext(null);
 
@@ -105,6 +113,35 @@ export function SocketProvider({ children }) {
           });
         }
       }
+    });
+
+    // Real-time Community Listeners
+    newSocket.on("communityPostVote", (data) => {
+      broadcastVoteUpdate({ ...data, isReview: false });
+    });
+
+    newSocket.on("communityReviewVote", (data) => {
+      broadcastVoteUpdate({ ...data, isReview: true });
+    });
+
+    newSocket.on("newCommunityPost", (post) => {
+      broadcastNewPost(post);
+    });
+
+    newSocket.on("newCommunityReview", (review) => {
+      broadcastNewReview(review);
+    });
+
+    newSocket.on("newCommunityComment", (comment) => {
+      broadcastNewComment(comment);
+    });
+
+    newSocket.on("communityCommentVote", (data) => {
+      broadcastCommentVote(data);
+    });
+
+    newSocket.on("communityCommentDeleted", (data) => {
+      broadcastCommentDeleted(data);
     });
 
     socketRef.current = newSocket;

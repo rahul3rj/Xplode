@@ -474,6 +474,41 @@ router.post("/:appid/review", verifyToken, async (req, res) => {
 
     const overall = await getOverallRatingStats(appid);
 
+    const io = req.app.get("io");
+    if (io) {
+      GameComment.findById(review._id)
+        .populate("user_id", "name username profilePic")
+        .lean()
+        .then((populated) => {
+          if (populated) {
+            const u = populated.user_id || {};
+            io.emit("newCommunityReview", {
+              _id: populated._id,
+              steam_appid: populated.steam_appid,
+              rating: populated.rating,
+              comment: populated.comment,
+              likesCount: Array.isArray(populated.likes) ? populated.likes.length : 0,
+              dislikesCount: Array.isArray(populated.dislikes) ? populated.dislikes.length : 0,
+              score: populated.score || 0,
+              createdAt: populated.createdAt,
+              updatedAt: populated.updatedAt,
+              user: {
+                _id: u._id,
+                name: u.name,
+                username: u.username,
+                profilePic: u.profilePic?.data
+                  ? {
+                      data: u.profilePic.data.toString("base64"),
+                      contentType: u.profilePic.contentType,
+                    }
+                  : null,
+              },
+            });
+          }
+        })
+        .catch(() => {});
+    }
+
     res.json({
       message: "Review saved successfully",
       userReview: {

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { ArrowUpRight, ChevronDown, Gamepad2, MessageCircle, RefreshCw, Search, UserPlus, UserCheck, Clock, X } from "lucide-react";
-import { getUserLibrary } from "../utils/addToLibrary";
+import { getUserLibrary, getUserFavorite } from "../utils/addToLibrary";
+import { getSessionVisitedGames, SESSION_VISITED_GAMES_CHANGED } from "../utils/sessionVisitedGames";
 import axios from "../utils/axios";
 import { getCommunityActivity } from "../utils/communityActivity";
 import CommunityPost from "./CommunityPost";
@@ -14,7 +15,13 @@ import LoadingIndicator from "./LoadingIndicator";
 import { getDemoPosts, updateDemoPost } from "../utils/communityDemo";
 import streams from "../data/liveStreamDemo.json";
 import creatorSnapshots from "../data/liveCreatorsSnapshot.json";
-import { getStreamFavoriteKey, getFavoriteHomies, STREAM_FAVORITES_CHANGED } from "../utils/streamFavorites";
+import { getStreamFavoriteKey, getFavoriteHomies, STREAM_FAVORITES_CHANGED, getCurrentUserId } from "../utils/streamFavorites";
+import {
+  COMMUNITY_VOTE_EVENT,
+  COMMUNITY_POST_EVENT,
+  COMMUNITY_REVIEW_EVENT,
+  broadcastVoteUpdate,
+} from "../utils/communitySync";
 
 const idOf = (game) => String(game.steam_appid || game.appid || game.id || "");
 const imageUrl = (value) => Array.isArray(value) ? imageUrl(value[0]) : typeof value === "string" ? value : value?.url || value?.thumb || "";
@@ -70,7 +77,23 @@ function CommunityPicker({ games, value, onChange, locked }) {
   };
   return <div className="community-picker" ref={root} onKeyDown={onKeyDown} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
     <button className="community-picker-trigger" type="button" aria-label={selected ? `Community: ${gameNameFor(selected)}` : "Choose a community"} aria-haspopup="listbox" aria-expanded={open} disabled={locked} onClick={() => setOpen(!open)}><Gamepad2 size={15} aria-hidden="true" /><span>{selected ? `xp/${gameNameFor(selected)}` : "Select game"}</span><ChevronDown size={15} aria-hidden="true" /></button>
-    {open && <div className="community-picker-menu" role="listbox" aria-label="Choose a game community">{games.length ? games.map((game) => { const id = idOf(game); return <button key={id} type="button" role="option" aria-selected={id === value} className="community-picker-option" onClick={() => { onChange(id); setOpen(false); root.current?.querySelector(".community-picker-trigger")?.focus(); }}><GameAvatar game={game} /><span>xp/{gameNameFor(game)}</span>{id === value && <span className="community-picker-check" aria-hidden="true">✓</span>}</button>; }) : <p>No communities available.</p>}</div>}
+    {open && <div className="community-picker-menu" role="listbox" aria-label="Choose a game community">{games.length ? games.map((game) => {
+      const id = idOf(game);
+      return <button key={id} type="button" role="option" aria-selected={id === value} className="community-picker-option" onClick={() => { onChange(id); setOpen(false); root.current?.querySelector(".community-picker-trigger")?.focus(); }}>
+        <GameAvatar game={game} />
+        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", textAlign: "left" }}>xp/{gameNameFor(game)}</span>
+        {game.isInstalled ? (
+          <span style={{ fontSize: "10px", color: "#4ade80", background: "rgba(74, 222, 128, 0.12)", border: "1px solid rgba(74, 222, 128, 0.25)", padding: "2px 6px", borderRadius: "4px", marginLeft: "6px", flexShrink: 0, fontWeight: 600 }}>Installed</span>
+        ) : game.inLibrary ? (
+          <span style={{ fontSize: "10px", color: "#60a5fa", background: "rgba(96, 165, 250, 0.12)", border: "1px solid rgba(96, 165, 250, 0.25)", padding: "2px 6px", borderRadius: "4px", marginLeft: "6px", flexShrink: 0, fontWeight: 600 }}>Library</span>
+        ) : game.isFavorite ? (
+          <span style={{ fontSize: "10px", color: "#f472b6", background: "rgba(244, 114, 182, 0.12)", border: "1px solid rgba(244, 114, 182, 0.25)", padding: "2px 6px", borderRadius: "4px", marginLeft: "6px", flexShrink: 0, fontWeight: 600 }}>Wishlist</span>
+        ) : game.isVisited ? (
+          <span style={{ fontSize: "10px", color: "#a1a1aa", background: "rgba(255, 255, 255, 0.08)", border: "1px solid rgba(255, 255, 255, 0.15)", padding: "2px 6px", borderRadius: "4px", marginLeft: "6px", flexShrink: 0 }}>Visited</span>
+        ) : null}
+        {id === value && <span className="community-picker-check" aria-hidden="true">✓</span>}
+      </button>;
+    }) : <p style={{ padding: "8px 12px", color: "#999", fontSize: "12px", margin: 0 }}>No games available.</p>}</div>}
   </div>;
 }
 
@@ -198,7 +221,7 @@ function ExpandedGame({ game, activity, inLibrary, onSelect }) {
   return <button type="button" className="community-game-expanded" onClick={onSelect} aria-pressed="true" aria-label={`Filter feed by ${gameNameFor(game)}`}>
     {!imageFailed && <ArtworkImage className="community-game-expanded-background" src={banner} alt="" onError={() => setImageFailed(true)} />}
     <span className="community-game-expanded-shade" />
-    <span className="community-game-expanded-content"><span className="community-game-expanded-top"><span className="community-game-expanded-name"><GameAvatar game={game} /><strong>{gameNameFor(game)}</strong></span><span className="community-game-expanded-platforms"><img src="/New%20Assets/Steam.svg" alt="Steam" /><img src="/New%20Assets/Epic%20Games.svg" alt="Epic Games" /><img src="/New%20Assets/Pirate.svg" alt="Pirate" /></span></span><span className="community-game-expanded-bottom"><span>{inLibrary ? "In your library" : game.demo ? "Demo community" : "Community"}</span>{time && <span>{launched ? "Launched" : "Opened"} {relativeTime(time)}</span>}</span></span>
+    <span className="community-game-expanded-content"><span className="community-game-expanded-top"><span className="community-game-expanded-name"><GameAvatar game={game} /><strong>{gameNameFor(game)}</strong></span><span className="community-game-expanded-platforms"><img src="/New%20Assets/Steam.svg" alt="Steam" /><img src="/New%20Assets/Epic%20Games.svg" alt="Epic Games" /><img src="/New%20Assets/Pirate.svg" alt="Pirate" /></span></span><span className="community-game-expanded-bottom"><span>{game.isInstalled ? "Installed" : inLibrary || game.inLibrary ? "In your library" : game.isFavorite ? "In your wishlist" : game.isVisited ? "Recently visited" : game.demo ? "Demo community" : "Community"}</span>{time && <span>{launched ? "Launched" : "Opened"} {relativeTime(time)}</span>}</span></span>
   </button>;
 }
 
@@ -214,12 +237,15 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
   const navigate = useNavigate();
   const location = useLocation();
   const [library, setLibrary] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [sessionVisited, setSessionVisited] = useState(getSessionVisitedGames);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [posts, setPosts] = useState(readPosts);
   const [activity] = useState(getCommunityActivity);
   const [favoriteCreators, setFavoriteCreators] = useState([]);
   const [backendReviews, setBackendReviews] = useState([]);
+  const [backendPosts, setBackendPosts] = useState([]);
   const [selectedGame, setSelectedGame] = useState(initialCommunity || "all");
   const [linkedGame, setLinkedGame] = useState(() => {
     if (!initialCommunity) return null;
@@ -275,8 +301,27 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
   useEffect(() => { mainRef.current?.scrollTo({ top: 0, behavior: "auto" }); }, [location.pathname]);
   useEffect(() => {
     let active = true;
-    getUserLibrary().then((games) => { if (active) setLibrary(Array.isArray(games) ? games : []); }).catch(() => { if (active) setError("Could not load your library games."); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    Promise.allSettled([getUserLibrary(), getUserFavorite()])
+      .then(([libRes, favRes]) => {
+        if (!active) return;
+        if (libRes.status === "fulfilled" && Array.isArray(libRes.value)) setLibrary(libRes.value);
+        if (favRes.status === "fulfilled" && Array.isArray(favRes.value)) setFavorites(favRes.value);
+      })
+      .catch(() => {
+        if (active) setError("Could not load your games.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onVisitedChange = () => setSessionVisited(getSessionVisitedGames());
+    window.addEventListener(SESSION_VISITED_GAMES_CHANGED, onVisitedChange);
+    return () => window.removeEventListener(SESSION_VISITED_GAMES_CHANGED, onVisitedChange);
   }, []);
   useEffect(() => {
     if (!initialCommunity) { setSelectedGame("all"); setLinkedGame(null); setLinkedError(""); return; }
@@ -297,15 +342,80 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
   }, [initialCommunity, location.state?.communityGame]);
   useEffect(() => { if (!postId) setPosts(readPosts()); }, [postId]);
   const games = useMemo(() => {
-    const result = new Map();
-    library.forEach((game) => { if (idOf(game)) result.set(idOf(game), game); });
-    Object.entries(activity).forEach(([id, item]) => { if (!result.has(id) && item.game) result.set(id, item.game); });
-    getDemoPosts().forEach((post) => { if (!result.has(post.communityGameId)) result.set(post.communityGameId, { steam_appid: post.communityGameId, name: post.gameName, demo: true }); });
-    return [...result.values()].sort((a, b) => {
-      const aActivity = activity[idOf(a)] || {}; const bActivity = activity[idOf(b)] || {};
-      return Math.max(bActivity.opened || 0, bActivity.launched || 0) - Math.max(aActivity.opened || 0, aActivity.launched || 0);
+    const map = new Map();
+
+    // 1. Library games (and Installed if game.verified)
+    library.forEach((game) => {
+      const id = idOf(game);
+      if (!id) return;
+      map.set(id, {
+        ...game,
+        steam_appid: Number(id),
+        inLibrary: true,
+        isInstalled: Boolean(game.verified),
+      });
     });
-  }, [library, activity]);
+
+    // 2. Favorites / Wishlist games
+    favorites.forEach((game) => {
+      const id = idOf(game);
+      if (!id) return;
+      if (map.has(id)) {
+        map.get(id).isFavorite = true;
+      } else {
+        map.set(id, {
+          ...game,
+          steam_appid: Number(id),
+          isFavorite: true,
+        });
+      }
+    });
+
+    // 3. Session-cached visited games
+    sessionVisited.forEach((game) => {
+      const id = idOf(game);
+      if (!id) return;
+      if (map.has(id)) {
+        map.get(id).isVisited = true;
+      } else {
+        map.set(id, {
+          ...game,
+          steam_appid: Number(id),
+          isVisited: true,
+        });
+      }
+    });
+
+    // 4. Fallback from activity / demo if list is small
+    if (map.size < 5) {
+      Object.entries(activity).forEach(([id, item]) => {
+        if (!map.has(id) && item.game) {
+          map.set(id, { ...item.game, isVisited: false });
+        }
+      });
+      getDemoPosts().forEach((post) => {
+        if (!map.has(post.communityGameId)) {
+          map.set(post.communityGameId, { steam_appid: Number(post.communityGameId), name: post.gameName, demo: true });
+        }
+      });
+    }
+
+    if (linkedGame && !map.has(idOf(linkedGame))) {
+      map.set(idOf(linkedGame), linkedGame);
+    }
+
+    return [...map.values()].sort((a, b) => {
+      const aActivity = activity[idOf(a)] || {};
+      const bActivity = activity[idOf(b)] || {};
+      const aTime = Math.max(aActivity.opened || 0, aActivity.launched || 0);
+      const bTime = Math.max(bActivity.opened || 0, bActivity.launched || 0);
+      if (aTime && bTime && aTime !== bTime) {
+        return bTime - aTime;
+      }
+      const scoreOf = (g) => (g.isInstalled ? 4 : g.inLibrary ? 3 : g.isFavorite ? 2 : 1);
+      return scoreOf(b) - scoreOf(a) || gameNameFor(a).localeCompare(gameNameFor(b));
+    });
+  }, [library, favorites, sessionVisited, activity, linkedGame]);
   const gameMap = useMemo(() => new Map(games.map((game) => [idOf(game), game])), [games]);
   useEffect(() => {
     const sidebar = gamesRef.current;
@@ -337,14 +447,115 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
 
   useEffect(() => {
     let active = true;
-    axios
-      .get("/community/reviews")
-      .then((res) => {
+    Promise.allSettled([
+      axios.get("/community/posts"),
+      axios.get("/community/reviews"),
+    ])
+      .then(([postsRes, reviewsRes]) => {
         if (!active) return;
-        const reviews = Array.isArray(res.data) ? res.data : [];
-        const mapped = reviews.map((r) => ({
+        if (postsRes.status === "fulfilled" && Array.isArray(postsRes.value.data)) {
+          setBackendPosts(postsRes.value.data);
+        }
+        if (reviewsRes.status === "fulfilled" && Array.isArray(reviewsRes.value.data)) {
+          const reviews = reviewsRes.value.data;
+          const mapped = reviews.map((r) => ({
+            id: `review-${r._id}`,
+            dbId: r._id,
+            _id: r._id,
+            communityGameId: String(r.steam_appid),
+            gameName: r.gameName || `Game ${r.steam_appid}`,
+            author: r.user?.username ? `@${r.user.username}` : (r.user?.name || "Player"),
+            authorId: r.user?._id,
+            authorPic: r.user?.profilePic,
+            rating: r.rating,
+            isReview: true,
+            title: `Player Review: ${r.rating} / 5 Stars`,
+            body: r.comment || `Rated ${r.rating} out of 5 stars.`,
+            createdAt: r.createdAt,
+            score: r.score != null ? r.score : ((r.likesCount || 0) - (r.dislikesCount || 0)),
+            likesCount: r.likesCount != null ? r.likesCount : (Array.isArray(r.likes) ? r.likes.length : (typeof r.likes === "number" ? r.likes : 0)),
+            dislikesCount: r.dislikesCount != null ? r.dislikesCount : (Array.isArray(r.dislikes) ? r.dislikes.length : (typeof r.dislikes === "number" ? r.dislikes : 0)),
+            vote: r.vote || 0,
+            comments: [],
+          }));
+          setBackendReviews(mapped);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load community feed:", err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [threadVersion]);
+
+  // Real-time listener: keeps right panel synchronized with middle panel and other clients
+  useEffect(() => {
+    const handleVoteEvent = (event) => {
+      const data = event.detail;
+      if (!data) return;
+
+      const myId = getCurrentUserId();
+      const isCaller = myId && String(data.userId) === String(myId);
+
+      if (data.isReview) {
+        const targetId = String(data.reviewId || data.id);
+        setBackendReviews((prev) =>
+          prev.map((r) => {
+            const rId = String(r.dbId || r._id || r.id).replace(/^review-/, "");
+            if (rId === targetId) {
+              return {
+                ...r,
+                score: data.score,
+                likesCount: data.likesCount,
+                dislikesCount: data.dislikesCount,
+                vote: isCaller ? data.vote : r.vote,
+              };
+            }
+            return r;
+          })
+        );
+      } else {
+        const targetId = String(data.postId || data.id);
+        setBackendPosts((prev) =>
+          prev.map((p) => {
+            const pId = String(p._id || p.id).replace(/^post-/, "");
+            if (pId === targetId) {
+              return {
+                ...p,
+                score: data.score,
+                likesCount: data.likesCount,
+                dislikesCount: data.dislikesCount,
+                vote: isCaller ? data.vote : p.vote,
+              };
+            }
+            return p;
+          })
+        );
+      }
+    };
+
+    const handleNewPostEvent = (event) => {
+      const newPost = event.detail;
+      if (!newPost) return;
+      setBackendPosts((prev) => {
+        const pId = String(newPost._id || newPost.id);
+        if (prev.some((p) => String(p._id || p.id) === pId)) return prev;
+        return [newPost, ...prev];
+      });
+    };
+
+    const handleNewReviewEvent = (event) => {
+      const r = event.detail;
+      if (!r) return;
+      setBackendReviews((prev) => {
+        const rId = String(r._id || r.id);
+        if (prev.some((item) => String(item.dbId || item._id || item.id).replace(/^review-/, "") === rId)) return prev;
+        const mapped = {
           id: `review-${r._id}`,
           dbId: r._id,
+          _id: r._id,
           communityGameId: String(r.steam_appid),
           gameName: r.gameName || `Game ${r.steam_appid}`,
           author: r.user?.username ? `@${r.user.username}` : (r.user?.name || "Player"),
@@ -355,32 +566,176 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
           title: `Player Review: ${r.rating} / 5 Stars`,
           body: r.comment || `Rated ${r.rating} out of 5 stars.`,
           createdAt: r.createdAt,
-          score: (r.likes || 0) - (r.dislikes || 0),
+          score: r.score != null ? r.score : 0,
+          likesCount: r.likesCount != null ? r.likesCount : 0,
+          dislikesCount: r.dislikesCount != null ? r.dislikesCount : 0,
+          vote: 0,
           comments: [],
-        }));
-        setBackendReviews(mapped);
-      })
-      .catch((err) => {
-        console.error("Failed to load community reviews in feed:", err);
+        };
+        return [mapped, ...prev];
       });
-    return () => {
-      active = false;
     };
-  }, [threadVersion]);
+
+    window.addEventListener(COMMUNITY_VOTE_EVENT, handleVoteEvent);
+    window.addEventListener(COMMUNITY_POST_EVENT, handleNewPostEvent);
+    window.addEventListener(COMMUNITY_REVIEW_EVENT, handleNewReviewEvent);
+    return () => {
+      window.removeEventListener(COMMUNITY_VOTE_EVENT, handleVoteEvent);
+      window.removeEventListener(COMMUNITY_POST_EVENT, handleNewPostEvent);
+      window.removeEventListener(COMMUNITY_REVIEW_EVENT, handleNewReviewEvent);
+    };
+  }, []);
 
   const visiblePosts = useMemo(() => {
-    const combined = [...backendReviews, ...posts];
+    const combined = [...backendPosts, ...backendReviews, ...posts];
     const seen = new Set();
     const result = [];
     for (const post of combined) {
-      const key = `${post.communityGameId}:${post.id}`;
+      const key = `${post.communityGameId}:${post.id || post._id}`;
       if (!seen.has(key)) {
         seen.add(key);
         result.push(post);
       }
     }
     return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [backendReviews, posts]);
+  }, [backendPosts, backendReviews, posts]);
+
+  const handleVote = async (post, voteValue) => {
+    const isReview = post.isReview || String(post.id || "").startsWith("review-");
+    const token = localStorage.getItem("token");
+    const myId = getCurrentUserId();
+
+    if (isReview) {
+      const reviewId = String(post.dbId || post._id || post.id).replace(/^review-/, "");
+      if (token && reviewId) {
+        const prevVote = post.vote || 0;
+        const currentLikes = post.likesCount !== undefined ? post.likesCount : Math.max(0, post.score || 0);
+        let nextLikes = currentLikes;
+        if (voteValue === 1 && prevVote !== 1) nextLikes = currentLikes + 1;
+        else if (voteValue !== 1 && prevVote === 1) nextLikes = Math.max(0, currentLikes - 1);
+
+        // Optimistically sync both panels instantly
+        broadcastVoteUpdate({
+          reviewId,
+          isReview: true,
+          score: (post.score || 0) + (voteValue - prevVote),
+          likesCount: nextLikes,
+          dislikesCount: post.dislikesCount || 0,
+          userId: myId,
+          vote: voteValue,
+        });
+
+        try {
+          const res = await axios.post(`/community/reviews/${reviewId}/vote`, { vote: voteValue });
+          broadcastVoteUpdate({
+            reviewId,
+            isReview: true,
+            score: res.data.score,
+            likesCount: res.data.likesCount,
+            dislikesCount: res.data.dislikesCount,
+            userId: myId,
+            vote: res.data.vote,
+          });
+        } catch (err) {
+          console.error("Failed to vote on review:", err);
+          broadcastVoteUpdate({
+            reviewId,
+            isReview: true,
+            score: post.score || 0,
+            likesCount: currentLikes,
+            dislikesCount: post.dislikesCount || 0,
+            userId: myId,
+            vote: prevVote,
+          });
+        }
+      }
+      return;
+    }
+
+    const postId = String(post._id || post.id || "").replace(/^post-/, "");
+    if (postId) {
+      if (!token) return;
+      const prevVote = post.vote || 0;
+      const currentLikes = post.likesCount !== undefined ? post.likesCount : Math.max(0, post.score || 0);
+      let nextLikes = currentLikes;
+      if (voteValue === 1 && prevVote !== 1) nextLikes = currentLikes + 1;
+      else if (voteValue !== 1 && prevVote === 1) nextLikes = Math.max(0, currentLikes - 1);
+
+      // Optimistically sync both panels instantly
+      broadcastVoteUpdate({
+        postId,
+        isReview: false,
+        score: (post.score || 0) + (voteValue - prevVote),
+        likesCount: nextLikes,
+        dislikesCount: post.dislikesCount || 0,
+        userId: myId,
+        vote: voteValue,
+      });
+
+      try {
+        const res = await axios.post(`/community/posts/${postId}/vote`, { vote: voteValue });
+        broadcastVoteUpdate({
+          postId,
+          isReview: false,
+          score: res.data.score,
+          likesCount: res.data.likesCount,
+          dislikesCount: res.data.dislikesCount,
+          userId: myId,
+          vote: res.data.vote,
+        });
+      } catch (err) {
+        console.error("Failed to vote on post:", err);
+        broadcastVoteUpdate({
+          postId,
+          isReview: false,
+          score: post.score || 0,
+          likesCount: currentLikes,
+          dislikesCount: post.dislikesCount || 0,
+          userId: myId,
+          vote: prevVote,
+        });
+      }
+    } else {
+      savePost(post.communityGameId, post.id, (item) => {
+        const prevVote = item.vote || 0;
+        const currentLikes = item.likesCount !== undefined ? item.likesCount : Math.max(0, item.score || 0);
+        let nextLikes = currentLikes;
+        if (voteValue === 1 && prevVote !== 1) {
+          nextLikes = currentLikes + 1;
+        } else if (voteValue !== 1 && prevVote === 1) {
+          nextLikes = Math.max(0, currentLikes - 1);
+        }
+        return {
+          ...item,
+          vote: voteValue,
+          likesCount: nextLikes,
+          score: (item.score || 0) + (voteValue - prevVote),
+        };
+      });
+    }
+  };
+
+  const handleComment = async (post, text) => {
+    const postId = post._id || (String(post.id).startsWith("post-") ? post.id.replace(/^post-/, "") : null);
+    if (postId) {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+      try {
+        const res = await axios.post(`/community/posts/${postId}/comment`, { body: text }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.comment) {
+          setBackendPosts((prev) => prev.map((p) => (String(p._id) === String(postId) || String(p.id) === String(post.id) ? { ...p, comments: [...(p.comments || []), res.data.comment] } : p)));
+          return true;
+        }
+      } catch { return false; }
+    } else {
+      return savePost(post.communityGameId, post.id, (item) => ({
+        ...item,
+        comments: [...(item.comments || []), { id: crypto.randomUUID(), body: text, createdAt: new Date().toISOString() }],
+      }));
+    }
+  };
   const syncPosts = () => setPosts((previous) => {
     const latest = readPosts();
     const keyFor = (post) => `${post.communityGameId}:${post.id}`;
@@ -434,7 +789,8 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
     }
   };
   const selected = gameMap.get(selectedGame) || (linkedGame && idOf(linkedGame) === selectedGame ? linkedGame : null);
-  const composerGames = selected && !gameMap.has(selectedGame) ? [...games, selected] : games;
+  const composerGames = games;
+
   const onPostCreated = () => { setPosts(readPosts()); setThreadVersion((version) => version + 1); };
   const toggleStreamFullscreen = async () => {
     if (document.fullscreenElement === hubRef.current) { await document.exitFullscreen(); return; }
@@ -460,7 +816,7 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
     onLostPointerCapture={() => { dragRef.current = null; setDraggingDivider(null); }}
     onKeyDown={(event) => { if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return; event.preventDefault(); const panel = side === "left" ? gamesRef.current : feedRef.current; const direction = event.key === "ArrowRight" ? 1 : -1; resizePanel(side, panel.getBoundingClientRect().width + direction * (side === "left" ? 1 : -1) * (event.shiftKey ? 40 : 10)); }} />;
   return <div className={`community-hub${draggingDivider ? " is-resizing" : ""}`} ref={hubRef} style={{ ...(panelWidths.left != null ? { "--community-left-width": `${panelWidths.left}px` } : {}), ...(panelWidths.right != null ? { "--community-feed-width": `${panelWidths.right}px` } : {}) }}>
-    <aside ref={gamesRef} className="community-game-sidebar" aria-label="My communities and homies"><CommunitySearch /><div className="community-sidebar-sections"><section className="community-sidebar-section" aria-labelledby="community-games-heading"><div className="community-sidebar-heading"><h2 id="community-games-heading" className="community-games-heading">My Communities</h2><button type="button" className="community-sidebar-heading-button" aria-label="My Communities options" title="My Communities options"><ArrowUpRight size={15} aria-hidden="true" /></button></div><div className="community-game-list">{loading ? <div className="community-side-loading"><LoadingIndicator label="Loading your games" small /></div> : <>{error && <p className="community-side-message" role="alert">{error}</p>}{games.length ? games.map((game) => { const id = idOf(game); const item = activity[id] || {}; const launched = (item.launched || 0) > (item.opened || 0); const time = launched ? item.launched : item.opened; return selectedGame === id ? <ExpandedGame key={id} game={game} activity={item} inLibrary={library.some((entry) => idOf(entry) === id)} onSelect={() => changeGame(id)} /> : <button type="button" key={id} className="community-game-filter" onClick={() => changeGame(id)} aria-pressed="false"><GameAvatar game={game} /><span><strong>{gameNameFor(game)}</strong><small>{time ? `${launched ? "Launched" : "Community opened"} · ${relativeTime(time)}` : game.demo ? "Demo community" : "In your library"}</small></span></button>; }) : <p className="community-side-message">Your library games and opened communities will appear here.</p>}</>}</div></section><section className="community-sidebar-section community-homies-section" aria-labelledby="community-homies-heading"><div className="community-sidebar-heading"><h2 id="community-homies-heading" className="community-games-heading">My Homies</h2><button type="button" className="community-sidebar-heading-button" aria-label="My Homies options" title="My Homies options"><ArrowUpRight size={15} aria-hidden="true" /></button></div><div className="community-homies-list">{favoriteCreators.length ? favoriteCreators.map((stream) => <HomieRow key={getStreamFavoriteKey(stream)} stream={stream} active={liveId === stream.id || !!liveId && getStreamFavoriteKey([...streams, ...creatorSnapshots].find((item) => item.id === liveId) || {}) === getStreamFavoriteKey(stream)} />) : <p className="community-side-message">Favorite a streamer to see them here.</p>}</div></section></div></aside>
+    <aside ref={gamesRef} className="community-game-sidebar" aria-label="My communities and homies"><CommunitySearch /><div className="community-sidebar-sections"><section className="community-sidebar-section" aria-labelledby="community-games-heading"><div className="community-sidebar-heading"><h2 id="community-games-heading" className="community-games-heading">My Communities</h2><button type="button" className="community-sidebar-heading-button" aria-label="My Communities options" title="My Communities options"><ArrowUpRight size={15} aria-hidden="true" /></button></div><div className="community-game-list">{loading ? <div className="community-side-loading"><LoadingIndicator label="Loading your games" small /></div> : <>{error && <p className="community-side-message" role="alert">{error}</p>}{games.length ? games.map((game) => { const id = idOf(game); const item = activity[id] || {}; const launched = (item.launched || 0) > (item.opened || 0); const time = launched ? item.launched : item.opened; const statusText = game.isInstalled ? "Installed" : game.inLibrary ? "In your library" : game.isFavorite ? "In your wishlist" : game.isVisited ? "Recently visited" : game.demo ? "Demo community" : "Community"; return selectedGame === id ? <ExpandedGame key={id} game={game} activity={item} inLibrary={Boolean(game.inLibrary || library.some((entry) => idOf(entry) === id))} onSelect={() => changeGame(id)} /> : <button type="button" key={id} className="community-game-filter" onClick={() => changeGame(id)} aria-pressed="false"><GameAvatar game={game} /><span><strong>{gameNameFor(game)}</strong><small>{time ? `${launched ? "Launched" : "Opened"} · ${relativeTime(time)}` : statusText}</small></span></button>; }) : <p className="community-side-message">Your library, wishlist, and visited games will appear here.</p>}</>}</div></section><section className="community-sidebar-section community-homies-section" aria-labelledby="community-homies-heading"><div className="community-sidebar-heading"><h2 id="community-homies-heading" className="community-games-heading">My Homies</h2><button type="button" className="community-sidebar-heading-button" aria-label="My Homies options" title="My Homies options"><ArrowUpRight size={15} aria-hidden="true" /></button></div><div className="community-homies-list">{favoriteCreators.length ? favoriteCreators.map((stream) => <HomieRow key={getStreamFavoriteKey(stream)} stream={stream} active={liveId === stream.id || !!liveId && getStreamFavoriteKey([...streams, ...creatorSnapshots].find((item) => item.id === liveId) || {}) === getStreamFavoriteKey(stream)} />) : <p className="community-side-message">Favorite a streamer to see them here.</p>}</div></section></div></aside>
     {divider("left", "Resize My Communities and live streams")}
     <main className="community-main-view" ref={mainRef} aria-label="Community content">
       <div className={`community-main-content community-main-content--home${liveId ? " community-main-content--live" : ""}`}>
@@ -474,7 +830,7 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
       {chatStreamId && <div className="community-stream-chat" hidden={rightPanel !== "chat"}><LiveChat key={`${chatStreamId}-${chatRefreshVersion}`} streamId={chatStreamId} showHeading={false} /></div>}
       <div className="community-feed-scroll" ref={feedScrollRef} role="region" aria-label="Feed posts" tabIndex={0} hidden={!!chatStreamId && rightPanel !== "feed"}>
       {postError && <p className="community-error" role="alert">{postError}</p>}
-      {visiblePosts.length ? <div className="community-hub-posts">{visiblePosts.map((post) => { const id = post.communityGameId; const game = gameMap.get(id) || { steam_appid: id, name: post.gameName || `Game ${id}` }; return <CommunityPost key={`${id}-${post.id}`} game={game} post={post} clickable onComment={(postId, body) => savePost(id, postId, (item) => ({ ...item, comments: [...(item.comments || []), { id: crypto.randomUUID(), body, createdAt: new Date().toISOString() }] }))} onVote={(postId, vote) => savePost(id, postId, (item) => ({ ...item, vote }))} />; })}</div> : <div className="community-hub-empty"><MessageCircle size={25} /><h3>No posts here yet</h3><p>Explore a game community to start a discussion.</p><Link to="/community/home">Explore games <ArrowUpRight size={15} /></Link></div>}
+      {visiblePosts.length ? <div className="community-hub-posts">{visiblePosts.map((post) => { const id = post.communityGameId; const game = gameMap.get(id) || { steam_appid: id, name: post.gameName || `Game ${id}` }; return <CommunityPost key={`${id}-${post.id || post._id}`} game={game} post={post} clickable onComment={(postId, body) => handleComment(post, body)} onVote={(postId, vote) => handleVote(post, vote)} />; })}</div> : <div className="community-hub-empty"><MessageCircle size={25} /><h3>No posts here yet</h3><p>Explore a game community to start a discussion.</p><Link to="/community/home">Explore games <ArrowUpRight size={15} /></Link></div>}
       </div>
       <div className="community-feed-composer-dock" hidden={!!chatStreamId && rightPanel !== "feed"}>
         <CommunityComposer user={user} games={composerGames} Picker={CommunityPicker} onCreated={onPostCreated} />
