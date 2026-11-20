@@ -32,9 +32,42 @@ function CommunityPostPageContent({ name, postId, embedded, refreshToken, onPost
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (postId?.startsWith("review-")) {
+      const dbId = postId.replace(/^review-/, "");
+      axios
+        .get("/community/reviews", { params: { appid: name } })
+        .then((res) => {
+          const list = Array.isArray(res.data) ? res.data : [];
+          const found = list.find((r) => String(r._id) === dbId);
+          if (found) {
+            setPost({
+              id: `review-${found._id}`,
+              dbId: found._id,
+              communityGameId: String(found.steam_appid),
+              gameName: found.gameName || game?.name || "Game",
+              author: found.user?.username ? `@${found.user.username}` : (found.user?.name || "Player"),
+              authorId: found.user?._id,
+              authorPic: found.user?.profilePic,
+              rating: found.rating,
+              isReview: true,
+              title: `Player Review: ${found.rating} / 5 Stars`,
+              body: found.comment || `Rated ${found.rating} out of 5 stars.`,
+              createdAt: found.createdAt,
+              score: (found.likes || 0) - (found.dislikes || 0),
+              comments: [],
+            });
+            setError("");
+          }
+        })
+        .catch(() => {
+          setError("Could not load this review.");
+        });
+      return;
+    }
+
     try { setPost(getDemoPosts().find((item) => item.id === postId && item.communityGameId === name) || readLocalPosts(key).find((item) => item.id === postId) || null); }
     catch { setError("Could not load the post saved on this device."); }
-  }, [key, name, postId, refreshToken]);
+  }, [key, name, postId, refreshToken, game?.name]);
 
   useEffect(() => {
     let active = true;

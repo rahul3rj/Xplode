@@ -21,6 +21,7 @@ export default function CommunityThread({ routeName, embedded = false, onBack, i
   const [body, setBody] = useState("");
   const [storageError, setStorageError] = useState("");
   const [demoPosts, setDemoPosts] = useState(getDemoPosts);
+  const [backendReviews, setBackendReviews] = useState([]);
   useEffect(() => { setDemoPosts(getDemoPosts()); }, [refreshToken]);
   useEffect(() => {
     let active = true;
@@ -41,6 +42,42 @@ export default function CommunityThread({ routeName, embedded = false, onBack, i
     catch { setPosts([]); setStorageError("Could not load posts saved on this device."); }
     setTitle(""); setBody("");
   }, [key, refreshToken]);
+
+  useEffect(() => {
+    const gid = game ? gameId(game) : null;
+    if (!gid) return;
+    let active = true;
+    axios
+      .get("/community/reviews", { params: { appid: gid } })
+      .then((res) => {
+        if (!active) return;
+        const reviews = Array.isArray(res.data) ? res.data : [];
+        const mapped = reviews.map((r) => ({
+          id: `review-${r._id}`,
+          dbId: r._id,
+          communityGameId: String(r.steam_appid),
+          gameName: r.gameName || gameName(game),
+          author: r.user?.username ? `@${r.user.username}` : (r.user?.name || "Player"),
+          authorId: r.user?._id,
+          authorPic: r.user?.profilePic,
+          rating: r.rating,
+          isReview: true,
+          title: `Player Review: ${r.rating} / 5 Stars`,
+          body: r.comment || `Rated ${r.rating} out of 5 stars.`,
+          createdAt: r.createdAt,
+          score: (r.likes || 0) - (r.dislikes || 0),
+          comments: [],
+        }));
+        setBackendReviews(mapped);
+      })
+      .catch((err) => {
+        console.error("Failed to load community reviews:", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [game, refreshToken]);
+
   const save = (next) => {
     try { localStorage.setItem(key, JSON.stringify(next)); setPosts(next); setStorageError(""); onPostsChanged?.(); return true; }
     catch { setStorageError("Could not save. Check your browser storage and try again."); return false; }
@@ -59,7 +96,7 @@ export default function CommunityThread({ routeName, embedded = false, onBack, i
   const vote = (postId, value) => demoPosts.some((post) => post.id === postId) ? updateDemo(postId, (post) => ({ ...post, vote: value })) : save(posts.map((post) => post.id === postId ? { ...post, vote: value } : post));
   if (loading) return <div className="community-state"><LoadingIndicator label="Loading community" /></div>;
   if (error || !game) return <div className="community-state" role="alert"><p>{error}</p><Link to="/community">Back to communities</Link></div>;
-  const allPosts = [...posts, ...demoPosts.filter((post) => post.communityGameId === String(gameId(game)))].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const allPosts = [...backendReviews, ...posts, ...demoPosts.filter((post) => post.communityGameId === String(gameId(game)))].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return <div className={embedded ? "community-thread--embedded" : undefined}>
     {embedded ? <button type="button" className="community-icon-back" onClick={onBack} aria-label="Back to community home" title="Back to community home"><ArrowLeft size={18} /></button> : <Link className="community-icon-back" to="/community/home" aria-label="Back to community home" title="Back to community home"><ArrowLeft size={18} /></Link>}
     <div className="community-thread-hero">{hero(game) && <ArtworkImage src={hero(game)} alt="" />}<div className="community-thread-title"><p>GAME COMMUNITY</p><h1>{gameName(game)}</h1><span>Talk about everything {gameName(game)}.</span></div><Link className="community-thread-view-game" to={`/game/${encodeURIComponent(gameId(game))}`}>View game <ArrowUpRight size={15} /></Link></div>

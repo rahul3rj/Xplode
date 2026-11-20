@@ -6,6 +6,9 @@ const { updateGamesInDB } = require("../scripts/updateHomeGames");
 const { updateSearchGamesInDB } = require("../scripts/updateSearchGames");
 const { updateCommunityGamesInDB } = require("../scripts/updateCommunityGames");
 const SearchGames = require("../models/SearchGames");
+const GameComment = require("../models/GameComment");
+const verifyToken = require("../middlewares/verifyToken");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 // Cache configuration
@@ -359,6 +362,150 @@ router.get("/game/:appid", async (req, res) => {
   } catch (err) {
     console.error("Error fetching game by appid:", err.message);
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// Helper to compute overall review stats for a game
+async function getOverallRatingStats(appid) {
+  const [stats, distribution] = await Promise.all([
+    GameComment.aggregate([
+      { $match: { steam_appid: appid } },
+      {
+        $group: {
+          _id: null,
+          avgRating: { $avg: "$rating" },
+          total: { $sum: 1 },
+        },
+      },
+    ]),
+    GameComment.aggregate([
+      { $match: { steam_appid: appid } },
+      { $group: { _id: "$rating", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const totalRatings = stats[0]?.total || 0;
+  const averageRating = totalRatings > 0 ? Math.round(stats[0].avgRating * 10) / 10 : 0;
+  const distMap = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  distribution.forEach((item) => {
+    if (item._id >= 1 && item._id <= 5) {
+      distMap[item._id] = item.count;
+    }
+  });
+
+  return { averageRating, totalRatings, distribution: distMap };
+}
+
+// ✅ GET /api/games/:appid/reviews - Overall rating and optional personal user review
+router.get("/:appid/reviews", async (req, res) => {
+  try {
+    const appid = parseInt(req.params.appid, 10);
+    if (isNaN(appid)) {
+      return res.status(400).json({ message: "Invalid appid" });
+    }
+
+    const overall = await getOverallRatingStats(appid);
+
+    // Optional user check from Bearer token
+    let userReview = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_KEY);
+        if (decoded?.id) {
+          const found = await GameComment.findOne({
+            user_id: decoded.id,
+            steam_appid: appid,
+          }).lean();
+          if (found) {
+            userReview = {
+              _id: found._id,
+              rating: found.rating,
+              comment: found.comment,
+              createdAt: found.createdAt,
+              updatedAt: found.updatedAt,
+            };
+          }
+        }
+      } catch {
+        // Token invalid or expired: gracefully ignore for public review view
+      }
+    }
+
+    res.json({ overall, userReview });
+  } catch (err) {
+    console.error("Error fetching reviews:", err.message);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ✅ POST /api/games/:appid/review - Upsert personal review and return updated stats
+router.post("/:appid/review", verifyToken, async (req, res) => {
+  try {
+    const appid = parseInt(req.params.appid, 10);
+    if (isNaN(appid)) {
+      return res.status(400).json({ message: "Invalid appid" });
+    }
+
+    const rating = Number(req.body.rating);
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5 stars" });
+    }
+
+    const comment = typeof req.body.review === "string"
+      ? req.body.review.trim()
+      : typeof req.body.comment === "string"
+      ? req.body.comment.trim()
+      : "";
+
+    const user_id = req.user.id;
+
+    const review = await GameComment.findOneAndUpdate(
+      { user_id, steam_appid: appid },
+      {
+        rating,
+        comment,
+        is_edited: true,
+        updatedAt: new Date(),
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    const overall = await getOverallRatingStats(appid);
+
+    res.json({
+      message: "Review saved successfully",
+      userReview: {
+        _id: review._id,
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+      },
+      overall,
+    });
+  } catch (err) {
+    console.error("Error saving review:", err.message);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ✅ DELETE /api/games/:appid/review - Remove personal review
+router.delete("/:appid/review", verifyToken, async (req, res) => {
+  try {
+    const appid = parseInt(req.params.appid, 10);
+    if (isNaN(appid)) {
+      return res.status(400).json({ message: "Invalid appid" });
+    }
+
+    await GameComment.findOneAndDelete({ user_id: req.user.id, steam_appid: appid });
+    const overall = await getOverallRatingStats(appid);
+
+    res.json({ message: "Review deleted successfully", overall });
+  } catch (err) {
+    console.error("Error deleting review:", err.message);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 

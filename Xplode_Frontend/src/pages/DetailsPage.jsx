@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Heart, Play, Plus, Star, X } from "lucide-react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Heart, Play, Plus, Star, X, MessageCircle } from "lucide-react";
 import DetailsCommunity from "../components/DetailsCommunity";
 import { GameLogo, StoreDrawer, WishlistShowcase } from "../components/StoreShowcase";
 import StoreFooter from "../components/StoreFooter";
@@ -20,43 +20,236 @@ const plainText = (html) => {
   return doc.body.textContent.trim();
 };
 
-function ReviewSection({ appid }) {
-  const storageKey = `xplode-review-${appid}`;
+function ReviewSection({ appid, game }) {
+  const [overall, setOverall] = useState({ averageRating: 0, totalRatings: 0, distribution: {} });
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
   const [saved, setSaved] = useState(null);
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
-      setSaved(stored && stored.rating >= 1 && stored.rating <= 5 ? stored : null);
-      setRating(stored?.rating || 0);
-      setReview(stored?.review || "");
-    } catch { setSaved(null); setRating(0); setReview(""); }
+    let active = true;
     setMessage("");
-  }, [storageKey]);
+    setIsError(false);
 
-  const save = (event) => {
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    axios
+      .get(`/games/${appid}/reviews`, { headers })
+      .then((res) => {
+        if (!active) return;
+        const data = res.data || {};
+        if (data.overall) {
+          setOverall(data.overall);
+        }
+        if (data.userReview) {
+          setSaved(data.userReview);
+          setRating(data.userReview.rating || 0);
+          setReview(data.userReview.comment || "");
+        } else {
+          setSaved(null);
+          setRating(0);
+          setReview("");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load reviews:", err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [appid]);
+
+  const save = async (event) => {
     event.preventDefault();
-    if (!rating) { setMessage("Choose a star rating first."); return; }
-    const entry = { rating, review: review.trim() };
-    try { localStorage.setItem(storageKey, JSON.stringify(entry)); setSaved(entry); setMessage("Your review was saved on this device."); }
-    catch { setMessage("Your review could not be saved on this device."); }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsError(true);
+      setMessage("Please log in to submit a review.");
+      return;
+    }
+    if (!rating) {
+      setIsError(true);
+      setMessage("Choose a star rating first.");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    setIsError(false);
+
+    try {
+      const res = await axios.post(
+        `/games/${appid}/review`,
+        { rating, review: review.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data?.userReview) {
+        setSaved(res.data.userReview);
+      }
+      if (res.data?.overall) {
+        setOverall(res.data.overall);
+      }
+      setMessage(saved ? "Your review was updated successfully!" : "Your review has been published to the community!");
+      setIsError(false);
+    } catch (err) {
+      setIsError(true);
+      setMessage(err.response?.data?.message || "Failed to save review. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  return <section className="details-reviews" id="reviews" aria-labelledby="reviews-title">
-    <div className="details-section-head"><h2 id="reviews-title">Reviews</h2><span>Your rating</span></div>
-    <div className="details-review-layout">
-      <div className="details-review-summary"><span className="details-review-number">{saved ? `${saved.rating}.0` : "—"}</span><div><div className="details-stars" aria-label={saved ? `${saved.rating} out of 5 stars` : "No rating yet"}>{[1, 2, 3, 4, 5].map((n) => <Star key={n} size={19} fill={saved?.rating >= n ? "currentColor" : "none"} />)}</div><p>{saved ? "Your saved rating" : "No rating yet"}</p></div></div>
-      <form className="details-review-form" onSubmit={save}>
-        <label>Your rating</label><div className="details-rating-input" role="radiogroup" aria-label="Your star rating">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} ${n === 1 ? "star" : "stars"}`} onClick={() => { setRating(n); setMessage(""); }}><Star size={24} fill={rating >= n ? "currentColor" : "none"} /></button>)}</div>
-        <label htmlFor="game-review">Your review <span>optional</span></label><textarea id="game-review" value={review} maxLength={1000} onChange={(e) => setReview(e.target.value)} placeholder="Share your experience with this game" />
-        <div className="details-review-footer"><p>Saved only on this device. Reviews are not shared yet.</p><button type="submit">{saved ? "Update review" : "Save review"}</button></div>{message && <p className="details-review-message" role="status">{message}</p>}
-      </form>
-    </div>
-    {saved?.review && <div className="details-saved-review"><div><strong>Your review</strong><span>{saved.rating} / 5</span></div><p>{saved.review}</p></div>}
-  </section>;
+  const avgNum = overall.totalRatings > 0 ? Number(overall.averageRating).toFixed(1) : "—";
+  const communityId = game?.steam_appid || game?.appid || appid;
+  const gameTitle = game?.name || game?.title || "Game";
+
+  return (
+    <section className="details-reviews" id="reviews" aria-labelledby="reviews-title">
+      <div className="details-section-head">
+        <h2 id="reviews-title">Reviews</h2>
+        <span>{saved ? "Your review submitted" : "Rate & review"}</span>
+      </div>
+      <div className="details-review-layout">
+        <div className="details-review-summary">
+          <span className="details-review-number">{avgNum}</span>
+          <div>
+            <div
+              className="details-stars"
+              aria-label={overall.totalRatings > 0 ? `${avgNum} out of 5 stars` : "No ratings yet"}
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Star
+                  key={n}
+                  size={19}
+                  fill={Number(overall.averageRating) >= n ? "currentColor" : "none"}
+                />
+              ))}
+            </div>
+            <p>
+              {overall.totalRatings > 0
+                ? `Overall rating (${overall.totalRatings} ${overall.totalRatings === 1 ? "review" : "reviews"})`
+                : "No ratings yet"}
+            </p>
+          </div>
+        </div>
+
+        <form className="details-review-form" onSubmit={save}>
+          <label>Your rating</label>
+          <div className="details-rating-input" role="radiogroup" aria-label="Your star rating">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={rating === n}
+                aria-label={`${n} ${n === 1 ? "star" : "stars"}`}
+                onClick={() => {
+                  setRating(n);
+                  setMessage("");
+                  setIsError(false);
+                }}
+              >
+                <Star size={24} fill={rating >= n ? "currentColor" : "none"} />
+              </button>
+            ))}
+          </div>
+          <label htmlFor="game-review">
+            Your review <span>optional</span>
+          </label>
+          <textarea
+            id="game-review"
+            value={review}
+            maxLength={1000}
+            onChange={(e) => setReview(e.target.value)}
+            placeholder="Share your experience with this game"
+          />
+          <div className="details-review-footer">
+            <p>Reviews are dynamic and published to the game community feed.</p>
+            <button type="submit" disabled={saving}>
+              {saving ? "Saving..." : saved ? "Update review" : "Save review"}
+            </button>
+          </div>
+          {message && (
+            <p
+              className="details-review-message"
+              role="status"
+              style={{ color: isError ? "#f87171" : "#4ade80", fontWeight: 500, marginTop: "6px" }}
+            >
+              {message}
+            </p>
+          )}
+        </form>
+      </div>
+
+      {saved && (
+        <div className="details-saved-review">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong>Your review</strong>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#facc15" }}>
+              <Star size={15} fill="currentColor" /> {saved.rating} / 5
+            </span>
+          </div>
+          {saved.comment ? (
+            <p>{saved.comment}</p>
+          ) : (
+            <p style={{ fontStyle: "italic", color: "#777" }}>Rating only (no text review added)</p>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
+            <span style={{ color: "#666", fontSize: "11px" }}>
+              {saved.updatedAt ? `Updated ${new Date(saved.updatedAt).toLocaleDateString()}` : ""}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          marginTop: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 18px",
+          background: "rgba(255, 255, 255, 0.03)",
+          borderRadius: "8px",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <MessageCircle size={18} style={{ color: "#a1a1aa", flexShrink: 0 }} />
+          <span style={{ fontSize: "13px", color: "#d4d4d8" }}>
+            See what other players say in the <strong>xp/{gameTitle}</strong> community discussions.
+          </span>
+        </div>
+        <Link
+          to={`/community/${encodeURIComponent(communityId)}`}
+          state={{ communityGame: game }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "#fff",
+            fontSize: "12px",
+            fontWeight: 600,
+            textDecoration: "none",
+            background: "rgba(255, 255, 255, 0.1)",
+            padding: "7px 14px",
+            borderRadius: "999px",
+            transition: "all 0.2s ease",
+          }}
+        >
+          Community Feed <ArrowUpRight size={14} />
+        </Link>
+      </div>
+    </section>
+  );
 }
 
 function MediaGallery({ game }) {
@@ -191,7 +384,7 @@ export default function DetailsPage() {
     </section>
     <div className="details-body">
     <div className="details-information"><section className="details-downloads"><div className="details-section-head"><h2>Download options</h2></div><div className="details-download-list">{downloads.map((option) => <div className="details-download-row" key={option.name}><div><img src={option.icon} alt="" /><span>{option.name}</span></div>{option.href ? <a href={option.href} target="_blank" rel="noopener noreferrer">Visit store <ArrowUpRight size={15} /></a> : <span className="details-unavailable">Unavailable</span>}</div>)}</div></section><section className="details-metadata"><div className="details-section-head"><h2>Game details</h2></div><dl>{[["Release date", typeof game.release_date === "object" ? game.release_date?.date : game.release_date], ["Developer", listValue(game.developers || game.developer)], ["Publisher", listValue(game.publishers || game.publisher)], ["Genres", genres.join(", ")]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "Not available"}</dd></div>)}</dl></section></div>
-    <ReviewSection key={appid} appid={appid} />
+    <ReviewSection key={appid} appid={appid} game={game} />
     <div className="h-[50svh] w-full flex justify-start items-start mb-15"><DetailsCommunity game={game} appid={game.steam_appid} /></div>
     <AboutGame key={appid} game={game} />
     {(requirements.minimum || requirements.recommended) && <section className="details-requirements"><div className="details-section-head"><h2>System requirements</h2></div><div>{[["Minimum", requirements.minimum], ["Recommended", requirements.recommended]].filter(([, value]) => value).map(([label, value]) => <article key={label}><h3>{label}</h3><p>{plainText(value)}</p></article>)}</div></section>}

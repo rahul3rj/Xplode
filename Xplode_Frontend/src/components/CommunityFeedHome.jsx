@@ -219,6 +219,7 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
   const [posts, setPosts] = useState(readPosts);
   const [activity] = useState(getCommunityActivity);
   const [favoriteCreators, setFavoriteCreators] = useState([]);
+  const [backendReviews, setBackendReviews] = useState([]);
   const [selectedGame, setSelectedGame] = useState(initialCommunity || "all");
   const [linkedGame, setLinkedGame] = useState(() => {
     if (!initialCommunity) return null;
@@ -333,7 +334,53 @@ export default function CommunityFeedHome({ initialCommunity, postId, liveId, ex
     list.querySelectorAll(":scope > .community-game-filter, :scope > .community-game-expanded").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
   }, [games, loading, selectedGame]);
-  const visiblePosts = posts;
+
+  useEffect(() => {
+    let active = true;
+    axios
+      .get("/community/reviews")
+      .then((res) => {
+        if (!active) return;
+        const reviews = Array.isArray(res.data) ? res.data : [];
+        const mapped = reviews.map((r) => ({
+          id: `review-${r._id}`,
+          dbId: r._id,
+          communityGameId: String(r.steam_appid),
+          gameName: r.gameName || `Game ${r.steam_appid}`,
+          author: r.user?.username ? `@${r.user.username}` : (r.user?.name || "Player"),
+          authorId: r.user?._id,
+          authorPic: r.user?.profilePic,
+          rating: r.rating,
+          isReview: true,
+          title: `Player Review: ${r.rating} / 5 Stars`,
+          body: r.comment || `Rated ${r.rating} out of 5 stars.`,
+          createdAt: r.createdAt,
+          score: (r.likes || 0) - (r.dislikes || 0),
+          comments: [],
+        }));
+        setBackendReviews(mapped);
+      })
+      .catch((err) => {
+        console.error("Failed to load community reviews in feed:", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [threadVersion]);
+
+  const visiblePosts = useMemo(() => {
+    const combined = [...backendReviews, ...posts];
+    const seen = new Set();
+    const result = [];
+    for (const post of combined) {
+      const key = `${post.communityGameId}:${post.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(post);
+      }
+    }
+    return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [backendReviews, posts]);
   const syncPosts = () => setPosts((previous) => {
     const latest = readPosts();
     const keyFor = (post) => `${post.communityGameId}:${post.id}`;
