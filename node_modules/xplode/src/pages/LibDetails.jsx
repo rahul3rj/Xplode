@@ -1,13 +1,111 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
 import { recordCommunityActivity } from "../utils/communityActivity";
 import ArtworkImage from "../components/ArtworkImage";
+import { useSocket } from "../contexts/SocketContext";
+
+const formatTimeAgo = (dateValue) => {
+  if (!dateValue) return "recently";
+  const date = new Date(dateValue);
+  const now = new Date();
+  const diffInSeconds = Math.max(0, Math.floor((now - date) / 1000));
+
+  if (diffInSeconds < 60) return "just now";
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} ${diffInMinutes === 1 ? "minute" : "minutes"} ago`;
+  }
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
+  }
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) {
+    return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
+  }
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) {
+    return `${diffInMonths} ${diffInMonths === 1 ? "month" : "months"} ago`;
+  }
+  const diffInYears = Math.floor(diffInMonths / 12);
+  return `${diffInYears} ${diffInYears === 1 ? "year" : "years"} ago`;
+};
+
+const getAvatarSrc = (profilePic) => {
+  if (!profilePic) return "/profile/profile_pic2.jpg";
+  if (typeof profilePic === "string") {
+    if (profilePic.startsWith("http") || profilePic.startsWith("/") || profilePic.startsWith("data:")) {
+      return profilePic;
+    }
+    return `data:image/jpeg;base64,${profilePic}`;
+  }
+  if (profilePic.data) {
+    return `data:${profilePic.contentType || "image/jpeg"};base64,${profilePic.data}`;
+  }
+  return "/profile/profile_pic2.jpg";
+};
 
 const LibDetails = ({ game, onVerified }) => {
   const [isVerified, setIsVerified] = useState(game.verified);
   const [verifying, setVerifying] = useState(false);
+  const [friendsWhoPlay, setFriendsWhoPlay] = useState([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+  const { socket } = useSocket() || {};
   const navigate = useNavigate();
+
+  const fetchFriendsWhoPlay = useCallback(async () => {
+    if (!game?.steam_appid) return;
+    try {
+      const response = await axios.get(`/library/friends-who-play/${game.steam_appid}`);
+      if (Array.isArray(response.data)) {
+        setFriendsWhoPlay(response.data);
+      }
+    } catch (err) {
+      console.error("Error fetching friends who play:", err);
+    } finally {
+      setLoadingFriends(false);
+    }
+  }, [game?.steam_appid]);
+
+  useEffect(() => {
+    setLoadingFriends(true);
+    fetchFriendsWhoPlay();
+  }, [fetchFriendsWhoPlay]);
+
+  // Real-time listener for friends playing games
+  useEffect(() => {
+    if (!socket || !game?.steam_appid) return;
+    const handleGamePlayed = (data) => {
+      if (String(data.steam_appid) === String(game.steam_appid)) {
+        fetchFriendsWhoPlay();
+      }
+    };
+    socket.on("gamePlayed", handleGamePlayed);
+    return () => {
+      socket.off("gamePlayed", handleGamePlayed);
+    };
+  }, [socket, game?.steam_appid, fetchFriendsWhoPlay]);
+
+  const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+
+  const { recentlyPlayed, previouslyPlayed } = useMemo(() => {
+    const recent = [];
+    const previous = [];
+    const now = Date.now();
+
+    friendsWhoPlay.forEach((friend) => {
+      const playedTimestamp = new Date(friend.lastPlayed).getTime();
+      const diff = now - playedTimestamp;
+      if (diff < TEN_DAYS_MS) {
+        recent.push(friend);
+      } else {
+        previous.push(friend);
+      }
+    });
+
+    return { recentlyPlayed: recent, previouslyPlayed: previous };
+  }, [friendsWhoPlay]);
 
    const handleVerify = async () => {
     setVerifying(true);
@@ -48,9 +146,39 @@ const LibDetails = ({ game, onVerified }) => {
     }
   };
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
+    // Optimistically update the first friend's lastPlayed in local state so the UI updates immediately
+    if (friendsWhoPlay.length > 0) {
+      setFriendsWhoPlay((prev) => {
+        if (!prev || !prev.length) return prev;
+        const now = new Date();
+        const updated = [...prev];
+        updated[0] = { ...updated[0], lastPlayed: now };
+        return updated.sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
+      });
+    }
+
+    try {
+      await axios.post(`/library/play/${game.steam_appid}`, {
+        name: game.name,
+        portrait_image: game.portrait_image,
+        hero_image: game.hero_image,
+      });
+      fetchFriendsWhoPlay();
+    } catch (err) {
+      console.error("Error updating play status:", err);
+    }
+
     recordCommunityActivity(game, "launched");
-    window.location.href = `steam://rungameid/${game.steam_appid}`;
+
+    // Launch steam protocol safely (doesn't matter if game actually opens or not)
+    try {
+      if (game?.steam_appid) {
+        window.location.href = `steam://rungameid/${game.steam_appid}`;
+      }
+    } catch (e) {
+      console.log("Steam launch skipped:", e);
+    }
   };
 
   if (!game) {
@@ -181,54 +309,97 @@ const LibDetails = ({ game, onVerified }) => {
             </div>
           </div>
         </div>
-        <div className="library-detail-friends h-[34vh] w-[20vw] bg-[#8800FF]/20 rounded-sm px-5 py-5">
+        <div className="library-detail-friends h-[34vh] w-[20vw] bg-[#8800FF]/20 rounded-sm px-5 py-5 overflow-y-auto hide-scrollbar">
           <div className="h-auto w-full flex items-center justify-between">
             <h1 className="text-sm font-[gilroy-bold] text-[#A641FF] ">
               FRIENDS WHO PLAY
             </h1>
+            {friendsWhoPlay.length > 0 && (
+              <span className="text-xs font-[gilroy-bold] text-[#696969]">
+                {friendsWhoPlay.length}
+              </span>
+            )}
           </div>
-          <div className="flex justify-between items-center mt-3">
-            <h1 className="text-xs font-[gilroy-bold] text-[#696969] ">
-              RECENTLY PLAYED
-            </h1>
-            <div className="h-[1px] w-[60%] bg-[#696969]"></div>
-          </div>
-          <div className="h-[7vh] w-full flex justify-start items-center mt-3">
-            <div className="h-[5vh] w-[5vh] rounded-full overflow-hidden border-1 border-[#A641FF]">
-              <img src="/profile/profile_pic2.jpg" alt="" className="" />
+
+          {loadingFriends ? (
+            <div className="h-[20vh] w-full flex items-center justify-center">
+              <span className="text-xs font-[gilroy] text-[#696969]">Loading...</span>
             </div>
-            <div className="h-full w-auto flex flex-col justify-center items-center gap-1 ml-3">
-              <h1 className="text-sm font-[gilroy-bold] text-white">
-                Moneykitty
-              </h1>
-              <h1 className="text-xs font-[gilroy-bold] text-[#696969]">
-                4 hours ago
-              </h1>
+          ) : friendsWhoPlay.length === 0 ? (
+            <div className="h-[20vh] w-full flex flex-col items-center justify-center text-center px-2">
+              <p className="text-xs font-[gilroy] text-[#696969]">
+                None of your friends have played this game yet
+              </p>
             </div>
-          </div>
-          <div className="flex justify-between items-center mt-3">
-            <h1 className="text-xs font-[gilroy-bold] text-[#696969] ">
-              PREVIOUSLY PLAYED
-            </h1>
-            <div className="h-[1px] w-[55%] bg-[#696969]"></div>
-          </div>
-          <div className="h-[7vh] w-full flex justify-start items-center mt-3">
-            <div className="h-[5vh] w-[5vh] rounded-full overflow-hidden border-1 border-[#A641FF]">
-              <img
-                src="https://i.pinimg.com/736x/21/53/26/2153260146bd63ceb63741b06a82059f.jpg"
-                alt=""
-                className=""
-              />
-            </div>
-            <div className="h-full w-auto flex flex-col justify-center items-center gap-1 ml-3">
-              <h1 className="text-sm font-[gilroy-bold] text-white">
-                CheapThriller
-              </h1>
-              <h1 className="text-xs font-[gilroy-bold] text-[#696969]">
-                2 months ago
-              </h1>
-            </div>
-          </div>
+          ) : (
+            <>
+              {recentlyPlayed.length > 0 && (
+                <>
+                  <div className="flex justify-between items-center mt-3">
+                    <h1 className="text-xs font-[gilroy-bold] text-[#696969] whitespace-nowrap mr-2">
+                      RECENTLY PLAYED
+                    </h1>
+                    <div className="h-[1px] flex-1 bg-[#696969]"></div>
+                  </div>
+                  {recentlyPlayed.map((friend) => (
+                    <div key={friend._id} className="h-[7vh] w-full flex justify-start items-center mt-3">
+                      <div className="h-[5vh] w-[5vh] flex-shrink-0 rounded-full overflow-hidden border border-[#A641FF]">
+                        <img
+                          src={getAvatarSrc(friend.profilePic)}
+                          alt={friend.name || friend.username}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/profile/profile_pic2.jpg";
+                          }}
+                        />
+                      </div>
+                      <div className="h-full w-auto flex flex-col justify-center items-start gap-1 ml-3 truncate">
+                        <h1 className="text-sm font-[gilroy-bold] text-white truncate">
+                          {friend.name || friend.username}
+                        </h1>
+                        <h1 className="text-xs font-[gilroy-bold] text-[#696969]">
+                          {formatTimeAgo(friend.lastPlayed)}
+                        </h1>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {previouslyPlayed.length > 0 && (
+                <>
+                  <div className="flex justify-between items-center mt-3">
+                    <h1 className="text-xs font-[gilroy-bold] text-[#696969] whitespace-nowrap mr-2">
+                      PREVIOUSLY PLAYED
+                    </h1>
+                    <div className="h-[1px] flex-1 bg-[#696969]"></div>
+                  </div>
+                  {previouslyPlayed.map((friend) => (
+                    <div key={friend._id} className="h-[7vh] w-full flex justify-start items-center mt-3">
+                      <div className="h-[5vh] w-[5vh] flex-shrink-0 rounded-full overflow-hidden border border-[#A641FF]">
+                        <img
+                          src={getAvatarSrc(friend.profilePic)}
+                          alt={friend.name || friend.username}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/profile/profile_pic2.jpg";
+                          }}
+                        />
+                      </div>
+                      <div className="h-full w-auto flex flex-col justify-center items-start gap-1 ml-3 truncate">
+                        <h1 className="text-sm font-[gilroy-bold] text-white truncate">
+                          {friend.name || friend.username}
+                        </h1>
+                        <h1 className="text-xs font-[gilroy-bold] text-[#696969]">
+                          {formatTimeAgo(friend.lastPlayed)}
+                        </h1>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -20,10 +20,11 @@ const LibrarySchema = new mongoose.Schema({
   // Add user reference to associate games with specific users
   user: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
+    ref: 'user', 
     required: true 
   },
   verified: { type: Boolean, default: false },
+  lastPlayed: { type: Date, default: null },
 });
 
 // Create compound index to ensure each user can only have a game once
