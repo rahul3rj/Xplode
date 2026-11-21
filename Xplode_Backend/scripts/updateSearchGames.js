@@ -1,3 +1,4 @@
+require("dotenv").config();
 const SearchGame = require("../models/SearchGames");
 const axios = require("axios");
 
@@ -84,10 +85,15 @@ async function fetchPortraitImage(appid) {
     }
     return [];
   } catch (err) {
+    if (err.response?.status === 404) {
+      // 404 is normal for DLCs or games not indexed in SteamGridDB
+      return [];
+    }
     console.warn(`grid fetch failed for ${appid}: ${err.message}`);
     return [];
   }
 }
+
 async function fetchHeroImage(appid) {
   try {
     const res = await axios.get(
@@ -102,6 +108,10 @@ async function fetchHeroImage(appid) {
     }
     return [];
   } catch (err) {
+    if (err.response?.status === 404) {
+      // 404 is normal for DLCs or games not indexed in SteamGridDB
+      return [];
+    }
     console.warn(`Hero fetch failed for ${appid}: ${err.message}`);
     return [];
   }
@@ -249,6 +259,124 @@ async function updateSearchGamesInDB() {
   console.log(`Skipped: ${skipped}`);
 }
 
+async function fetchAndSaveGameToDB(appid, fallbackName) {
+  try {
+    const numericAppId = Number(appid);
+    if (!numericAppId) return null;
+
+    console.log(`[fetchAndSaveGameToDB] Fetching Steam details for appid ${numericAppId}...`);
+    let details = await fetchSteamDetails(numericAppId);
+    if (!details) {
+      console.warn(`[fetchAndSaveGameToDB] No details from Steam for appid ${numericAppId}`);
+      return null;
+    }
+
+    let [heroImage, portraitImage, capsule_image] = await Promise.all([
+      fetchHeroImage(numericAppId),
+      fetchPortraitImage(numericAppId),
+      getValidCapsuleImage(numericAppId, details.header_image),
+    ]);
+
+    // If it's a DLC and has no custom SteamGridDB art, try the parent base game's assets
+    const parentAppId = details.fullgame?.appid;
+    if (parentAppId && (!heroImage?.length || !portraitImage?.length)) {
+      const [parentHero, parentPortrait] = await Promise.all([
+        !heroImage?.length ? fetchHeroImage(parentAppId) : heroImage,
+        !portraitImage?.length ? fetchPortraitImage(parentAppId) : portraitImage,
+      ]);
+      if (!heroImage?.length && parentHero?.length) heroImage = parentHero;
+      if (!portraitImage?.length && parentPortrait?.length) portraitImage = parentPortrait;
+    }
+
+    const screenshots = (details.screenshots || []).map((ss) => ({
+      id: ss.id,
+      url: ss.path_full || ss.path_thumbnail || null,
+      path_thumbnail: ss.path_thumbnail || null,
+    }));
+
+    const defaultPortrait = [
+      {
+        url: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${numericAppId}/library_600x900.jpg`,
+        thumb: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${numericAppId}/library_600x900.jpg`,
+      },
+    ];
+
+    const defaultHero = {
+      url: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${numericAppId}/library_hero.jpg`,
+      thumb: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${numericAppId}/library_hero.jpg`,
+    };
+
+    const gameDoc = {
+      steam_appid: numericAppId,
+      name: details.name || fallbackName || "Unknown Title",
+
+      // Basic
+      description: details.short_description || "",
+      release_date: details.release_date?.date || "",
+      price: details.price_overview?.final_formatted || (details.is_free ? "Free" : "Price not available"),
+      platforms: details.platforms || {},
+      genres: details.genres?.map((g) => g.description) || [],
+
+      // Media
+      header_image: details.header_image || `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${numericAppId}/header.jpg`,
+      background: details.background || "/default-game-cover.jpg",
+      background_raw: details.background_raw || "/default-game-cover.jpg",
+      capsule_image: capsule_image || details.header_image || "/default-game-cover.jpg",
+      portrait_image: portraitImage && portraitImage.length ? portraitImage : defaultPortrait,
+      hero_image: heroImage && (heroImage.length || heroImage.url) ? heroImage : defaultHero,
+      screenshots,
+
+      // Texts
+      supported_languages: details.supported_languages || "",
+      website: details.website || "",
+      about_the_game: details.about_the_game || "",
+      detailed_description: details.detailed_description || "",
+
+      // Extra fields
+      is_free: details.is_free || false,
+      required_age: details.required_age || 0,
+      controller_support: details.controller_support || "",
+
+      developers: details.developers || [],
+      publishers: details.publishers || [],
+
+      price_overview: details.price_overview || {},
+      recommendations: details.recommendations || {},
+      achievements: details.achievements || {},
+      ratings: details.ratings || {},
+      support_info: details.support_info || {},
+      content_descriptors: details.content_descriptors || {},
+      categories: details.categories || [],
+      movies: details.movies || [],
+      dlc: details.dlc || [],
+      packages: details.packages || [],
+      package_groups: details.package_groups || [],
+      type: details.type || "game",
+
+      // Requirements
+      pc_requirements: details.pc_requirements || {},
+      mac_requirements: details.mac_requirements || [],
+      linux_requirements: details.linux_requirements || [],
+
+      // Misc
+      lastUpdated: new Date(),
+    };
+
+    const savedGame = await SearchGame.findOneAndUpdate(
+      { steam_appid: numericAppId },
+      { $set: gameDoc },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    console.log(`✅ [Import] Successfully saved to DB: ${savedGame.name} (${numericAppId})`);
+    return savedGame;
+  } catch (err) {
+    console.error(`❌ [Import] Error for appid ${appid}:`, err.message);
+    return null;
+  }
+}
+
 module.exports = {
   updateSearchGamesInDB,
+  fetchAndSaveGameToDB,
 };

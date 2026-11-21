@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require("axios");
 const HomeGame = require("../models/HomeGames");
 const { updateGamesInDB } = require("../scripts/updateHomeGames");
-const { updateSearchGamesInDB } = require("../scripts/updateSearchGames");
+const { updateSearchGamesInDB, fetchAndSaveGameToDB } = require("../scripts/updateSearchGames");
 const { updateCommunityGamesInDB } = require("../scripts/updateCommunityGames");
 const SearchGames = require("../models/SearchGames");
 const GameComment = require("../models/GameComment");
@@ -141,9 +141,83 @@ router.get("/home", async (req, res) => {
   }
 });
 
+// Search Steam for games matching query (raw data from Steam)
+async function searchSteamRawGames(query, existingAppIds = new Set(), limit = 8) {
+  const rawResults = [];
+  const seenIds = new Set(existingAppIds);
+
+  // 1. First try Steam Store Search API (instant results from Steam store)
+  try {
+    const storeRes = await axios.get(
+      `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(query)}&l=english&cc=US`,
+      {
+        timeout: 4000,
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+      }
+    );
+    const items = storeRes.data?.items || [];
+    for (const item of items) {
+      const id = Number(item.id);
+      if (id && !seenIds.has(id)) {
+        seenIds.add(id);
+        rawResults.push({
+          appid: id,
+          name: item.name,
+          header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/header.jpg`,
+          capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/capsule_616x353.jpg`,
+          portrait_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/library_600x900.jpg`,
+          hero_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/library_hero.jpg`,
+          publisher: "Steam Store",
+          developer: "Steam",
+          price: item.price?.final ? `$${(item.price.final / 100).toFixed(2)}` : "View details",
+          genres: ["Steam Game"],
+          release_date: "Steam",
+          categories: [],
+          movies: [],
+          website: `https://store.steampowered.com/app/${id}`,
+          isRaw: true,
+        });
+        if (rawResults.length >= limit) break;
+      }
+    }
+  } catch (err) {
+    console.warn("Steam Store search failed:", err.message);
+  }
+
+  // 2. If needed, also search in gameCache.rawGames if available
+  if (rawResults.length < limit && gameCache.rawGames && gameCache.rawGames.length > 0) {
+    const lowerQ = query.toLowerCase();
+    for (const g of gameCache.rawGames) {
+      if (g.name && g.name.toLowerCase().includes(lowerQ) && !seenIds.has(g.appid)) {
+        seenIds.add(g.appid);
+        rawResults.push({
+          appid: g.appid,
+          name: g.name,
+          header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${g.appid}/header.jpg`,
+          capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${g.appid}/capsule_616x353.jpg`,
+          portrait_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${g.appid}/library_600x900.jpg`,
+          hero_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${g.appid}/library_hero.jpg`,
+          publisher: "Steam Store",
+          developer: "Steam",
+          price: "View details",
+          genres: ["Steam Game"],
+          release_date: "Steam",
+          categories: [],
+          movies: [],
+          website: `https://store.steampowered.com/app/${g.appid}`,
+          isRaw: true,
+        });
+        if (rawResults.length >= limit) break;
+      }
+    }
+  }
+
+  return rawResults;
+}
+
 router.get("/search", async (req, res) => {
   const q = (req.query.q || "").trim();
-  const limit = parseInt(req.query.limit) || 7; // Default to 7 if not specified
+  const limit = parseInt(req.query.limit) || 8; // Default to 8 if not specified
 
   if (!q) return res.status(200).json([]);
 
@@ -178,7 +252,15 @@ router.get("/search", async (req, res) => {
       capsule_image:
         d.capsule_image || d.header_image || "/default-game-cover.jpg",
       website: d.website || "No website available",
+      isRaw: false,
     }));
+
+    // If we have fewer results than the limit, also search Steam raw data so user can find games not yet in MongoDB
+    if (results.length < limit) {
+      const existingIds = new Set(results.map((r) => Number(r.appid)));
+      const rawGames = await searchSteamRawGames(q, existingIds, limit - results.length);
+      results.push(...rawGames);
+    }
 
     res.status(200).json(results);
   } catch (err) {
@@ -352,7 +434,13 @@ router.get("/game/:appid", async (req, res) => {
       return res.status(400).json({ message: "Invalid appid" });
     }
 
-    const game = await SearchGames.findOne({ steam_appid: appid });
+    let game = await SearchGames.findOne({ steam_appid: appid });
+
+    // If game is not in DB yet, fetch full details from Steam and save to DB
+    if (!game) {
+      console.log(`[GET /game/:appid] Game ${appid} not found in DB. Fetching and importing to DB...`);
+      game = await fetchAndSaveGameToDB(appid);
+    }
 
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
@@ -362,6 +450,31 @@ router.get("/game/:appid", async (req, res) => {
   } catch (err) {
     console.error("Error fetching game by appid:", err.message);
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// Explicit endpoint to import a game by appid
+router.post("/import/:appid", async (req, res) => {
+  try {
+    const appid = parseInt(req.params.appid, 10);
+    if (isNaN(appid)) {
+      return res.status(400).json({ message: "Invalid appid" });
+    }
+
+    let game = await SearchGames.findOne({ steam_appid: appid });
+    if (!game) {
+      console.log(`[POST /import/:appid] Importing game ${appid} to DB...`);
+      game = await fetchAndSaveGameToDB(appid);
+    }
+
+    if (!game) {
+      return res.status(404).json({ message: "Failed to import game from Steam" });
+    }
+
+    res.status(200).json({ success: true, message: "Game imported successfully", game });
+  } catch (err) {
+    console.error("Error importing game:", err.message);
+    res.status(500).json({ message: "Import failed", error: err.message });
   }
 });
 

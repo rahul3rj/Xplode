@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LoadingIndicator from "./LoadingIndicator";
+import axios from "../utils/axios";
 
 const DEBOUNCE_MS = 600;
 
@@ -62,6 +63,11 @@ const SearchBar = ({
       <Link
         key={`${game.appid || index}  `}
         to={`/game/${game.appid}`}
+        onClick={() => {
+          if (game.isRaw) {
+            axios.post(`/games/import/${game.appid}`).catch(() => {});
+          }
+        }}
         className="flex items-center gap-4 p-2 px-5 hover:bg-[#A641FF]/20 transition-all duration-300 cursor-pointer"
       >
         {!storeAppearance && <img
@@ -77,9 +83,16 @@ const SearchBar = ({
             <h3 className="text-white w-full font-medium truncate">
               {game.name}
             </h3>
-            <h5 className="text-[#B5B5B5] font-[gilroy] font-[600] text-[10px]">
-              {game.publisher}
-            </h5>
+            <div className="flex items-center gap-2">
+              <h5 className="text-[#B5B5B5] font-[gilroy] font-[600] text-[10px]">
+                {game.publisher || "Steam Store"}
+              </h5>
+              {game.isRaw && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#A641FF]/30 text-[#c084fc] font-semibold">
+                  Steam
+                </span>
+              )}
+            </div>
           </div>
           <div className="w-full flex justify-between items-end">
             {/* <h5 className="text-white font-[gilroy-bold] text-sm">

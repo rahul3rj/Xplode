@@ -5,6 +5,7 @@ import Notification from "./Notification";
 import LoadingIndicator from "./LoadingIndicator";
 import { useSearch } from "../lib/SearchContext";
 import { useSocket } from "../contexts/SocketContext";
+import axios from "../utils/axios";
 import "../pages/store.css";
 
 export default function StoreChrome({ user }) {
@@ -70,7 +71,22 @@ export default function StoreChrome({ user }) {
           {query && <button className="store-search-clear" type="button" onClick={() => setQuery("")} aria-label="Clear search"><X size={15} /></button>}
         </form>
         {searchFocused && query.trim() && <div className="store-search-results">
-          {isLoading ? <div className="store-search-loading"><LoadingIndicator label="Searching games" small /></div> : filteredGames.length ? filteredGames.slice(0, 6).map((game, index) => <Link key={game.appid || game.steam_appid || index} to={`/game/${game.appid || game.steam_appid}`} onClick={() => setSearchFocused(false)}>{game.header_image && <img src={game.header_image} alt="" />}<span>{game.name}</span></Link>) : <p>No games found</p>}
+          {isLoading ? <div className="store-search-loading"><LoadingIndicator label="Searching games" small /></div> : filteredGames.length ? filteredGames.slice(0, 8).map((game, index) => (
+            <Link
+              key={game.appid || game.steam_appid || index}
+              to={`/game/${game.appid || game.steam_appid}`}
+              onClick={() => {
+                setSearchFocused(false);
+                if (game.isRaw) {
+                  axios.post(`/games/import/${game.appid || game.steam_appid}`).catch(() => {});
+                }
+              }}
+            >
+              {game.header_image && <img src={game.header_image} alt="" onError={(e) => { e.currentTarget.src = "/default.png"; }} />}
+              <span>{game.name}</span>
+              {game.isRaw && <span style={{ marginLeft: "auto", fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(166, 65, 255, 0.2)", color: "#c084fc", fontWeight: "600" }}>Steam</span>}
+            </Link>
+          )) : <p>No games found</p>}
         </div>}
       </div>
       <div className="store-header-actions">
