@@ -101,21 +101,24 @@ export default function RedditComments({
 
     const handleCommentVoteEvent = (event) => {
       const data = event.detail;
-      if (!data) return;
-      if (String(data.targetId) !== rawId) return;
+      if (!data || !data.commentId) return;
+
+      const normDataTarget = String(data.targetId || "").replace(/^(post|review)-/, "");
+      const normRawId = String(rawId || "").replace(/^(post|review)-/, "");
+      if (normDataTarget && normRawId && normDataTarget !== normRawId) return;
 
       const myId = getCurrentUserId();
-      const isCaller = myId && String(data.userId) === String(myId);
+      const isCaller = Boolean(myId && data.userId && String(data.userId) === String(myId));
 
       setComments((prev) =>
         prev.map((c) => {
-          if (String(c._id) === String(data.commentId)) {
+          if (String(c._id || c.id) === String(data.commentId)) {
             return {
               ...c,
-              score: data.score,
-              likesCount: data.likesCount,
-              dislikesCount: data.dislikesCount,
-              vote: isCaller ? data.vote : c.vote,
+              score: data.score != null ? data.score : c.score,
+              likesCount: data.likesCount != null ? data.likesCount : c.likesCount,
+              dislikesCount: data.dislikesCount != null ? data.dislikesCount : c.dislikesCount,
+              vote: isCaller && data.vote !== undefined ? data.vote : c.vote,
             };
           }
           return c;
@@ -167,20 +170,45 @@ export default function RedditComments({
   // Voting on comment
   const handleVote = async (comment, voteValue) => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      alert("Please log in to vote on comments.");
+      return;
+    }
+
+    const commentId = String(comment._id || comment.id || "");
+    if (!commentId) return;
 
     const prevVote = comment.vote || 0;
     const prevScore = comment.score || 0;
-    const newScore = prevScore + (voteValue - prevVote);
-    const commentId = String(comment._id);
+    const currentLikes = comment.likesCount !== undefined ? comment.likesCount : Math.max(0, comment.score || 0);
 
-    // Optimistic local & window broadcast
+    let nextLikes = currentLikes;
+    if (voteValue === 1 && prevVote !== 1) nextLikes = currentLikes + 1;
+    else if (voteValue !== 1 && prevVote === 1) nextLikes = Math.max(0, currentLikes - 1);
+
+    const newScore = prevScore + (voteValue - prevVote);
+
+    // 1. Immediately update local state for instantaneous feedback
+    setComments((prev) =>
+      prev.map((c) =>
+        String(c._id || c.id) === commentId
+          ? {
+              ...c,
+              score: newScore,
+              likesCount: nextLikes,
+              vote: voteValue,
+            }
+          : c
+      )
+    );
+
+    // 2. Optimistic local & window broadcast
     broadcastCommentVote({
       commentId,
       targetId: rawId,
       targetType,
       score: newScore,
-      likesCount: comment.likesCount || 0,
+      likesCount: nextLikes,
       dislikesCount: comment.dislikesCount || 0,
       userId: currentUserId,
       vote: voteValue,
@@ -190,28 +218,58 @@ export default function RedditComments({
       const res = await axios.post(`/community/comments/${commentId}/vote`, {
         vote: voteValue,
       });
-      broadcastCommentVote({
-        commentId,
-        targetId: rawId,
-        targetType,
-        score: res.data.score,
-        likesCount: res.data.likesCount,
-        dislikesCount: res.data.dislikesCount,
-        userId: currentUserId,
-        vote: res.data.vote,
-      });
-    } catch {
+
+      if (res.data) {
+        setComments((prev) =>
+          prev.map((c) =>
+            String(c._id || c.id) === commentId
+              ? {
+                  ...c,
+                  score: res.data.score,
+                  likesCount: res.data.likesCount,
+                  dislikesCount: res.data.dislikesCount,
+                  vote: res.data.vote,
+                }
+              : c
+          )
+        );
+        broadcastCommentVote({
+          commentId,
+          targetId: rawId,
+          targetType,
+          score: res.data.score,
+          likesCount: res.data.likesCount,
+          dislikesCount: res.data.dislikesCount,
+          userId: currentUserId,
+          vote: res.data.vote,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to vote on comment:", err);
       // Revert on failure
+      setComments((prev) =>
+        prev.map((c) =>
+          String(c._id || c.id) === commentId
+            ? {
+                ...c,
+                score: prevScore,
+                likesCount: currentLikes,
+                vote: prevVote,
+              }
+            : c
+        )
+      );
       broadcastCommentVote({
         commentId,
         targetId: rawId,
         targetType,
         score: prevScore,
-        likesCount: comment.likesCount || 0,
+        likesCount: currentLikes,
         dislikesCount: comment.dislikesCount || 0,
         userId: currentUserId,
         vote: prevVote,
       });
+      alert(err.response?.data?.message || "Failed to vote on comment.");
     }
   };
 
@@ -272,7 +330,9 @@ export default function RedditComments({
 
     // Sort order comparator
     const compare = (a, b) => {
-      if (sortBy === "top") return (b.score || 0) - (a.score || 0) || new Date(b.createdAt) - new Date(a.createdAt);
+      const aLikes = a.likesCount !== undefined ? a.likesCount : Math.max(0, a.score || 0);
+      const bLikes = b.likesCount !== undefined ? b.likesCount : Math.max(0, b.score || 0);
+      if (sortBy === "top") return bLikes - aLikes || new Date(b.createdAt) - new Date(a.createdAt);
       if (sortBy === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
       if (sortBy === "oldest") return new Date(a.createdAt) - new Date(b.createdAt);
       return 0;
@@ -426,6 +486,7 @@ function RedditCommentNode({
 
   const isOP = postAuthorId && String(comment.authorId) === String(postAuthorId);
   const isAuthor = currentUserId && String(comment.authorId) === String(currentUserId);
+  const displayLikes = comment.likesCount !== undefined ? comment.likesCount : Math.max(0, comment.score || 0);
 
   useEffect(() => {
     if (isReplying) {
@@ -524,20 +585,26 @@ function RedditCommentNode({
                   type="button"
                   className={`reddit-vote-btn up ${comment.vote === 1 ? "active" : ""}`}
                   aria-label="Upvote comment"
-                  onClick={() => onVote(comment, comment.vote === 1 ? 0 : 1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVote(comment, comment.vote === 1 ? 0 : 1);
+                  }}
                 >
                   <ArrowBigUp size={16} fill={comment.vote === 1 ? "currentColor" : "none"} />
                 </button>
 
                 <span className={`reddit-comment-score ${comment.vote === 1 ? "upvoted" : comment.vote === -1 ? "downvoted" : ""}`}>
-                  {comment.score || 0}
+                  {displayLikes}
                 </span>
 
                 <button
                   type="button"
                   className={`reddit-vote-btn down ${comment.vote === -1 ? "active" : ""}`}
                   aria-label="Downvote comment"
-                  onClick={() => onVote(comment, comment.vote === -1 ? 0 : -1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVote(comment, comment.vote === -1 ? 0 : -1);
+                  }}
                 >
                   <ArrowBigDown size={16} fill={comment.vote === -1 ? "currentColor" : "none"} />
                 </button>
